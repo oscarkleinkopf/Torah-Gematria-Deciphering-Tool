@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Torá Gematria & Decodificador Místico</title>
+  <meta name="description" content="Explora los secretos numéricos de la Torá y el Sionismo usando el antiguo arte de la Gematria. Calcula equivalencias en hebreo y español, y reflexiona sobre sus conexiones históricas.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Fondo Cósmico -->
+  <div class="stars"></div>
+
+  <div class="app-container">
+    <!-- Encabezado -->
+    <header>
+      <h1>DECODIFICADOR DE GEMATRIA</h1>
+      <p>Explora el entrelazado místico del alfabeto hebreo, las correspondencias numéricas de la Torá y los hitos del Sionismo a través del lente de la numerología espiritual.</p>
+    </header>
+
+    <!-- Navegación Principal -->
+    <nav>
+      <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
+      <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
+      <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
+      <button class="nav-btn" data-tab="zionism">Correlación Sionista</button>
+      <button class="nav-btn" data-tab="comparison">Comparador Místico</button>
+      <button class="nav-btn" data-tab="letters">Espejo de Letras</button>
+      <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
+    </nav>
+
+    <!-- SECCIÓN 1: CALCULADORA -->
+    <div id="calculator" class="tab-content active">
+      <div class="calculator-grid">
+        <!-- Panel Izquierdo: Entrada de Texto y Teclado -->
+        <div class="glass-card input-panel">
+          <div class="input-header">
+            <h3 class="input-title">Ingresar Palabra o Frase</h3>
+            <div class="language-switch">
+              <button class="lang-btn active" id="btnHebrewInput">Hebreo</button>
+              <button class="lang-btn" id="btnSpanishInput">Español (Fonético)</button>
+            </div>
+          </div>
+
+          <div class="textarea-wrapper">
+            <textarea id="txtInput" class="gematria-input rtl" placeholder="Escribe en hebreo o usa el teclado inferior..." dir="rtl" autocomplete="off" spellcheck="false"></textarea>
+          </div>
+
+          <div class="phonetic-hint" id="phoneticContainer" style="display: none;">
+            <span>Equivalencia en hebreo generada:</span>
+            <span class="translit-output" id="lblTranslitHebrew"></span>
+          </div>
+
+          <!-- Teclado Virtual Hebreo -->
+          <div class="hebrew-keyboard" id="virtualKeyboard">
+            <!-- Las teclas se generarán dinámicamente con JavaScript -->
+          </div>
+
+          <div class="keyboard-actions">
+            <button class="kbd-action-btn" id="btnBackspace">Retroceder</button>
+            <button class="kbd-action-btn" id="btnClear">Limpiar</button>
+            <button class="kbd-action-btn" id="btnSpace">Espacio</button>
+          </div>
+        </div>
+
+        <!-- Panel Derecho: Resultados del Cálculo -->
+        <div class="glass-card results-panel">
+          <h3 class="results-header">Valores Calculados</h3>
+          
+          <div class="results-grid">
+            <div class="result-card primary" title="Suma estándar del valor de cada letra. Es el método más tradicional (Mispar Hechrah).">
+              <span class="result-card-label">Absoluto</span>
+              <div class="result-card-value" id="valAbsolute">0</div>
+              <span class="result-card-desc">Estándar (Mispar Hechrah)</span>
+            </div>
+
+            <div class="result-card" title="Variante de Gematria donde las letras finales (Sofit) toman un valor extendido (500 a 900).">
+              <span class="result-card-label">Absoluto Gadol</span>
+              <div class="result-card-value" id="valAbsoluteGadol">0</div>
+              <span class="result-card-desc">Sofit Extendida</span>
+            </div>
+
+            <div class="result-card" title="Suma las posiciones relativas de las letras en el alfabeto del 1 al 22 (Mispar Sidri).">
+              <span class="result-card-label">Ordinal</span>
+              <div class="result-card-value" id="valOrdinal">0</div>
+              <span class="result-card-desc">Posición (Mispar Sidri)</span>
+            </div>
+
+            <div class="result-card" title="Suma reducida de cada dígito hasta obtener un solo valor del 1 al 9 (Mispar Katan).">
+              <span class="result-card-label">Reducido</span>
+              <div class="result-card-value" id="valReduced">0</div>
+              <span class="result-card-desc">Esencia (Mispar Katan)</span>
+            </div>
+
+            <div class="result-card" style="grid-column: 1 / -1; text-align: left;" title="Cifrado por sustitución recíproca (Alef=Tav, Bet=Shin, etc.).">
+              <span class="result-card-label">Cifrado Atbash</span>
+              <div class="atbash-text-display" id="valAtbashText">—</div>
+              <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                <span>Equivalencia cifrada</span>
+                <span>Valor Atbash: <strong id="valAtbashValue" style="color: var(--gold-primary);">0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desglose Letra por Letra -->
+          <div class="breakdown-section">
+            <h4 class="breakdown-title">Desglose de Letras</h4>
+            <div class="breakdown-flex" id="breakdownContainer">
+              <span style="color: var(--text-secondary); font-style: italic; font-size: 0.9rem;">Escribe una palabra para ver su desglose...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fila Inferior del Calculador: Visualizador de Relaciones -->
+        <div class="glass-card relation-section">
+          <h3 class="relation-title">Nodos de Relación Cósmica</h3>
+          <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary); margin-top: -0.8rem;">
+            Visualiza las coincidencias matemáticas entre tu palabra e hitos históricos o textos sagrados.
+          </p>
+          <div class="canvas-wrapper">
+            <canvas id="relationCanvas"></canvas>
+            <div class="canvas-instructions">Haz clic en los nodos para ver sus detalles</div>
+          </div>
+        </div>
+
+        <!-- Panel de Descubrimientos en Tiempo Real -->
+        <div class="glass-card discoveries-section" id="discoveriesSection" style="display: none; grid-column: 1 / -1;">
+          <h3 class="relation-title">✨ CORRELACIONES DESCUBIERTAS</h3>
+          <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary); margin-top: -0.8rem;">
+            Hemos escudriñado el grafo de conocimiento. Estas son las sincronías matemáticas de tu palabra:
+          </p>
+          <div class="discoveries-carousel" id="discoveriesCarousel">
+            <!-- Cargado dinámicamente: Tarjetas de correlación -->
+          </div>
+          <div class="discovery-details-box" id="discoveryDetailsBox" style="display: none;">
+            <!-- Explicación de la correlación seleccionada -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: BUSCADOR EN LA TORÁ -->
+    <div id="torah" class="tab-content">
+      <div class="glass-card torah-search-section">
+        <h3 class="input-title">Buscador Gematria en la Torá</h3>
+        <p style="color: var(--text-secondary); margin-top: -1rem; font-size: 0.95rem;">
+          Ingresa un número (ej: 708, 156, 13) o una palabra hebrea para encontrar pasajes bíblicos que coincidan exactamente con esa frecuencia matemática.
+        </p>
+
+        <div class="search-bar-wrapper">
+          <input type="text" id="txtSearchTorah" class="search-input" placeholder="Ingresa un valor numérico o una palabra..." autocomplete="off">
+          <button id="btnSearchTorah" class="search-btn">Buscar Conexiones</button>
+        </div>
+
+        <div class="results-list" id="torahResultsContainer">
+          <!-- Resultados dinámicos -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: CORRELACIONES DEL SIONISMO -->
+    <div id="zionism" class="tab-content">
+      <div class="glass-card zionism-section">
+        <div class="zionism-intro">
+          <h3 class="input-title" style="font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center;">El Hilo Místico del Sionismo</h3>
+          <p style="color: var(--text-secondary); font-size: 1.05rem;">
+            El retorno de la nación judía a su hogar histórico en la era moderna (el Sionismo) ha sido analizado por filósofos y místicos a través de sincronías matemáticas. Explora las conexiones gemátricas que entrelazan palabras sagradas y eventos cruciales.
+          </p>
+        </div>
+
+        <!-- Línea de Tiempo del Sionismo -->
+        <div class="glass-card timeline-card">
+          <h3 class="relation-title" style="margin-bottom: 0.5rem;">Línea de Tiempo del Sionismo</h3>
+          <p style="text-align: center; color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">
+            Explora las sincronías cronológicas. Si la gematria de tu palabra coincide con los años o conceptos del hito, este se iluminará en la línea de tiempo.
+          </p>
+          <div class="timeline-wrapper" style="height: 180px; position: relative; background: rgba(5,4,10,0.6); border-radius: 12px; border: 1px solid var(--card-border); overflow: hidden;">
+            <canvas id="timelineCanvas"></canvas>
+            <div class="canvas-instructions">Haz clic en los puntos para ver los hitos</div>
+          </div>
+          <div class="timeline-detail-panel" id="timelineDetailPanel" style="margin-top: 1.5rem; display: none;">
+            <!-- Detalle dinámico del evento seleccionado -->
+          </div>
+        </div>
+
+        <div class="zionism-grid" id="zionismGrid">
+          <!-- Tarjetas del Sionismo generadas dinámicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE COMPARACIÓN DE DOS PALABRAS -->
+    <div id="comparison" class="tab-content">
+      <div class="comparison-grid">
+        <!-- Panel Izquierdo: Inputs de comparación -->
+        <div class="glass-card comparison-inputs-panel">
+          <h3 class="input-title">Comparador Místico</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Ingresa dos términos (en hebreo o español fonético) para buscar conexiones ocultas y construir su puente cabalístico.
+          </p>
+          
+          <div class="compare-inputs-flex">
+            <div class="compare-input-box">
+              <label for="txtCompareA" class="compare-label">Palabra A (Hebreo o Español)</label>
+              <input type="text" id="txtCompareA" class="compare-text-input" placeholder="Término A..." autocomplete="off">
+              <div class="compare-hebrew-hint" id="hintCompareA">—</div>
+            </div>
+            
+            <div class="compare-divider-vs">VS</div>
+            
+            <div class="compare-input-box">
+              <label for="txtCompareB" class="compare-label">Palabra B (Hebreo o Español)</label>
+              <input type="text" id="txtCompareB" class="compare-text-input" placeholder="Término B..." autocomplete="off">
+              <div class="compare-hebrew-hint" id="hintCompareB">—</div>
+            </div>
+          </div>
+          
+          <div class="compare-action-container" style="margin-top: 1.5rem;">
+            <button id="btnCompare" class="search-btn" style="width: 100%; height: auto; padding: 0.9rem;">Encontrar Puentes Gematria</button>
+          </div>
+        </div>
+
+        <!-- Panel Derecho: Puente Narrativo y Canvas Dual -->
+        <div class="glass-card comparison-results-panel">
+          <h3 class="results-header">Puente y Relaciones Místicas</h3>
+          
+          <!-- Canvas Dual Orbitas -->
+          <div class="canvas-wrapper" style="height: 220px; margin-bottom: 1.5rem; background: rgba(5,4,10,0.6);">
+            <canvas id="comparisonCanvas"></canvas>
+            <div class="canvas-instructions">Intersección orbital de frecuencias</div>
+          </div>
+          
+          <div class="comparison-bridge-content" id="comparisonBridge">
+            <div class="empty-bridge-msg" style="text-align: center; padding: 2rem 0;">
+              <span style="color: var(--text-secondary); font-style: italic;">Ingresa dos palabras y haz clic en Buscar para revelar las conexiones de su puente espiritual.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: CÓDIGO DE LA BIBLIA (ELS MATRIX) -->
+    <div id="biblecode" class="tab-content">
+      <div class="biblecode-grid">
+        <!-- Panel Izquierdo: Formulario de Búsqueda ELS -->
+        <div class="glass-card biblecode-inputs-panel">
+          <h3 class="input-title">Código de la Biblia (ELS)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Busca palabras en el texto continuo de Génesis (Capítulos 1-5). El motor buscará secuencias de letras equidistantes a saltos positivos y negativos.
+          </p>
+
+          <div class="search-bar-wrapper" style="margin-bottom: 1.5rem;">
+            <input type="text" id="txtSearchELS" class="search-input" placeholder="Escribe palabra en español o hebreo..." autocomplete="off">
+            <button id="btnSearchELS" class="search-btn">Buscar Código</button>
+          </div>
+
+          <div class="els-range-controls" style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem;">
+            <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin-bottom: 0.8rem; font-size: 0.95rem;">Rango de Saltos (Skips)</h4>
+            <div style="display: flex; justify-content: space-between; gap: 1rem;">
+              <div style="flex: 1;">
+                <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">Salto Mínimo</label>
+                <input type="number" id="numMinSkip" class="compare-text-input" style="width: 100%; padding: 0.5rem; background: rgba(10,10,20,0.5);" value="2" min="2" max="100">
+              </div>
+              <div style="flex: 1;">
+                <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">Salto Máximo</label>
+                <input type="number" id="numMaxSkip" class="compare-text-input" style="width: 100%; padding: 0.5rem; background: rgba(10,10,20,0.5);" value="120" min="5" max="300">
+              </div>
+            </div>
+          </div>
+
+          <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin-bottom: 0.8rem; font-size: 1.05rem;">Coincidencias Encontradas</h4>
+          <div class="els-results-list" id="elsResultsList" style="max-height: 250px; overflow-y: auto; background: rgba(10,8,20,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.5rem; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
+            <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 2rem 0; font-size: 0.9rem;">
+              Ingresa una palabra para escanear la Torá...
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Derecho: Visualizador de Matriz -->
+        <div class="glass-card biblecode-results-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+            <h3 class="results-header" style="border: none; padding: 0; margin: 0;">Matriz del Código</h3>
+            
+            <!-- Controles de Columnas -->
+            <div id="matrixWidthController" style="display: none; align-items: center; gap: 0.8rem; background: rgba(0,0,0,0.4); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+              <label for="rangeMatrixWidth" style="font-size: 0.8rem; color: var(--text-secondary);">Columnas:</label>
+              <input type="range" id="rangeMatrixWidth" min="10" max="150" value="50" style="accent-color: var(--gold-primary);">
+              <span id="lblMatrixWidth" style="font-size: 0.85rem; color: var(--gold-primary); font-weight: bold; min-width: 25px; display: inline-block; text-align: center;">50</span>
+            </div>
+          </div>
+
+          <!-- Tabla de visualización de la matriz -->
+          <div class="matrix-table-wrapper" style="position: relative; overflow-x: auto; max-height: 480px; overflow-y: auto; background: rgba(5,4,10,0.8); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: center; align-items: flex-start; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
+            <!-- Overlay de Escaneo (Animación Cyber-Mística) -->
+            <div id="matrixScannerOverlay" class="matrix-scanner-overlay" style="display: none;">
+              <div class="scanner-matrix-bg" id="scannerMatrixBg"></div>
+              <div class="scanner-terminal">
+                <div class="scanner-terminal-header">
+                  <span class="terminal-dot red"></span>
+                  <span class="terminal-dot yellow"></span>
+                  <span class="terminal-dot green"></span>
+                  <span class="terminal-title">TORAH_AUTO_DECODER.EXE</span>
+                </div>
+                <div class="scanner-terminal-body" id="scannerTerminalBody">
+                  <div class="term-line">> Inicializando decodificador automático...</div>
+                </div>
+              </div>
+              <div class="scanner-progress-bar-wrapper">
+                <div class="scanner-progress-bar" id="scannerProgressBar"></div>
+              </div>
+            </div>
+
+            <div id="matrixEmptyState" style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 4rem 0; width: 100%;">
+              Selecciona una coincidencia para construir la matriz del código.
+            </div>
+            <div id="matrixContainer" style="display: none; width: 100%;">
+              <!-- Tabla renderizada dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Panel de interrelación secundaria (Grafo / Palabras secundarias) -->
+          <div id="elsSecondaryPanel" style="display: none; margin-top: 1.2rem; background: rgba(142,68,173,0.08); border: 1px solid rgba(142,68,173,0.2); border-radius: 12px; padding: 1rem;">
+            <div style="font-family: var(--font-serif); color: #c8a2c8; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🔮 Conexiones Secundarias Resaltadas (Cruces)</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+              Las siguientes palabras clave del grafo de conocimiento también fueron encontradas dentro de los límites de esta matriz y se han resaltado en color púrpura:
+            </p>
+            <div id="elsSecondaryWordsList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              <!-- Badges de palabras cruzadas encontradas -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: ESPEJO DE LETRAS -->
+    <div id="letters" class="tab-content">
+      <div class="glass-card">
+        <h3 class="input-title" style="margin-bottom: 1.5rem; text-align: center;">El Espejo de las Letras Hebreas (Autot)</h3>
+        <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2.5rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+          En la mística de la Torá, las letras no son meros símbolos de lenguaje; son ladrillos cósmicos de la creación. Haz clic en cualquiera de las 22 letras para abrir su espejo y meditar sobre su significado espiritual, valor de gematria e influencia cosmológica.
+        </p>
+
+        <div class="letters-grid" id="lettersGrid">
+          <!-- Las tarjetas de las 22 letras se cargarán dinámicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 5: ESPACIO DE REFLEXIÓN -->
+    <div id="reflection" class="tab-content">
+      <div class="glass-card">
+        <h3 class="input-title" style="margin-bottom: 1.5rem; text-align: center;">Reflexión y Sabiduría Mística</h3>
+        <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2.5rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+          Tómate un momento para meditar sobre las matemáticas ocultas del universo. Las coincidencias numéricas nos invitan a cuestionar si el azar rige nuestra realidad o si existe un orden inteligente subyacente.
+        </p>
+
+        <div class="reflection-layout">
+          <!-- Lista de Temas -->
+          <div class="reflection-topics" id="reflectionTopicsContainer">
+            <!-- Botones dinámicos de temas -->
+          </div>
+
+          <!-- Panel de Contenido -->
+          <div class="glass-card reflection-content-panel">
+            <div id="reflectionContent">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pie de Página -->
+    <footer>
+      <p>Desarrollado para la reflexión, la educación y el estudio de las correspondencias numéricas en la Torá.</p>
+      <p>&copy; 2026 GematriaDecipher. Creado para ser desplegado en <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">Netlify</a>.</p>
+    </footer>
+  </div>
+
+  <!-- Modal para Detalle de Letra -->
+  <div class="modal-overlay" id="letterModal">
+    <div class="modal-content">
+      <button class="modal-close" id="btnModalClose">&times;</button>
+      <div class="modal-header-flex">
+        <div class="modal-char" id="modalLetterChar">א</div>
+        <div class="modal-titles">
+          <h2 id="modalLetterName">Alef</h2>
+          <p>Cosmología: <span id="modalLetterCosmology" style="color: var(--gold-primary);">Aire</span></p>
+        </div>
+      </div>
+
+      <div class="modal-values-grid">
+        <div class="modal-val-box">
+          <span class="lbl">Estándar</span>
+          <span class="val" id="modalValAbsolute">1</span>
+        </div>
+        <div class="modal-val-box">
+          <span class="lbl">Ordinal</span>
+          <span class="val" id="modalValOrdinal">1</span>
+        </div>
+        <div class="modal-val-box">
+          <span class="lbl">Reducido</span>
+          <span class="val" id="modalValReduced">1</span>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <h4 style="color: var(--gold-primary); margin-bottom: 0.5rem; font-family: var(--font-serif);">Significado Místico</h4>
+        <p id="modalLetterMeaning">El líder, la fuerza divina...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="database.js"></script>
+  <script src="torah_text.js"></script>
+  <script src="gematria.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
