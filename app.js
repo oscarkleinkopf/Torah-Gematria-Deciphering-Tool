@@ -1772,30 +1772,84 @@ document.addEventListener('DOMContentLoaded', () => {
     return "Génesis 5:32";
   }
 
-  // Manejador del submit de búsqueda ELS
-  function handleELSSearch() {
-    const query = txtSearchELS.value.trim();
-    if (!query) return;
-
-    let searchHebrew = query;
-    if (/[a-zA-Z]/.test(query)) {
-      searchHebrew = Engine.SpanishToHebrew(query);
+  // --- FASE 5: HISTORIAL Y SUGERENCIAS RÁPIDAS DE BÚSQUEDA ELS ---
+  function getELSSearchHistory() {
+    try {
+      return JSON.parse(localStorage.getItem('els_search_history') || '[]');
+    } catch (e) {
+      return [];
     }
-    searchHebrew = searchHebrew.replace(/[^א-ת]/g, '');
+  }
 
-    if (searchHebrew.length < 2) {
-      elsResultsList.innerHTML = `
-        <div style="color: var(--text-secondary); text-align: center; padding: 2rem 0; font-size: 0.9rem;">
-          La palabra debe tener al menos 2 letras hebreas. (Buscado: "${searchHebrew}")
-        </div>
-      `;
+  function saveELSSearchHistory(query) {
+    if (!query || query.trim().length === 0) return;
+    let history = getELSSearchHistory();
+    history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
+    history.unshift(query);
+    if (history.length > 8) history = history.slice(0, 8);
+    try {
+      localStorage.setItem('els_search_history', JSON.stringify(history));
+    } catch (e) {}
+    renderELSSearchHistory();
+  }
+
+  function renderELSSearchHistory() {
+    const section = document.getElementById('elsHistorySection');
+    const container = document.getElementById('elsHistoryChips');
+    if (!section || !container) return;
+
+    const history = getELSSearchHistory();
+    if (history.length === 0) {
+      section.style.display = 'none';
       return;
     }
 
+    section.style.display = 'block';
+    container.innerHTML = '';
+
+    history.forEach(item => {
+      const chip = document.createElement('button');
+      chip.className = 'els-history-chip';
+      chip.textContent = item;
+      chip.addEventListener('click', () => {
+        txtSearchELS.value = item;
+        handleELSSearch();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  const btnClearELSHistory = document.getElementById('btnClearELSHistory');
+  if (btnClearELSHistory) {
+    btnClearELSHistory.addEventListener('click', () => {
+      localStorage.removeItem('els_search_history');
+      renderELSSearchHistory();
+    });
+  }
+
+  // Quick Pick Chips
+  const quickPickChips = document.querySelectorAll('.els-quick-chip');
+  quickPickChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const query = chip.getAttribute('data-query');
+      if (query) {
+        txtSearchELS.value = query;
+        handleELSSearch();
+      }
+    });
+  });
+
+  // Manejador del submit de búsqueda ELS (Soporta Multi-Término)
+  function handleELSSearch() {
+    const rawQuery = txtSearchELS.value.trim();
+    if (!rawQuery) return;
+
+    saveELSSearchHistory(rawQuery);
+
     const minSkip = parseInt(numMinSkip.value, 10) || 2;
     const maxSkip = parseInt(numMaxSkip.value, 10) || 120;
-
     const text = window.TorahText || "";
+
     if (!text) {
       elsResultsList.innerHTML = `
         <div style="color: #e74c3c; text-align: center; padding: 2rem 0; font-size: 0.9rem;">
@@ -1805,17 +1859,41 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const matches = Engine.FindELS(text, searchHebrew, minSkip, maxSkip);
-    renderELSResultsList(matches, searchHebrew);
+    // Dividir por comas para multi-término
+    const termsRaw = rawQuery.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    let allMatches = [];
+
+    termsRaw.forEach((termStr, termIdx) => {
+      let searchHebrew = termStr;
+      if (/[a-zA-Z]/.test(termStr)) {
+        searchHebrew = Engine.SpanishToHebrew(termStr);
+      }
+      searchHebrew = searchHebrew.replace(/[^א-ת]/g, '');
+
+      if (searchHebrew.length >= 2) {
+        const matches = Engine.FindELS(text, searchHebrew, minSkip, maxSkip);
+        matches.forEach(m => {
+          m.termIndex = termIdx;
+          m.rawQuery = termStr;
+          allMatches.push(m);
+        });
+      }
+    });
+
+    const countBadge = document.getElementById('elsResultCountBadge');
+    if (countBadge) countBadge.textContent = `${allMatches.length} hallazgo(s)`;
+
+    renderELSResultsList(allMatches, rawQuery, termsRaw);
   }
 
-  function renderELSResultsList(matches, searchedHebrew) {
+  function renderELSResultsList(matches, searchedQuery, termsArray) {
     elsResultsList.innerHTML = '';
+    const narrativePanel = document.getElementById('elsNarrativePanel');
 
     if (matches.length === 0) {
       elsResultsList.innerHTML = `
         <div style="color: var(--text-secondary); text-align: center; padding: 2rem 0; font-size: 0.9rem;">
-          No se encontraron secuencias ELS para "${searchedHebrew}" en el rango especificado.
+          No se encontraron secuencias ELS para "${searchedQuery}" en el rango de saltos especificado.
         </div>
       `;
       
@@ -1824,6 +1902,7 @@ document.addEventListener('DOMContentLoaded', () => {
       matrixContainer.style.display = 'none';
       matrixWidthController.style.display = 'none';
       elsSecondaryPanel.style.display = 'none';
+      if (narrativePanel) narrativePanel.style.display = 'none';
       return;
     }
 
@@ -1832,10 +1911,14 @@ document.addEventListener('DOMContentLoaded', () => {
       item.className = 'els-result-item';
       
       const verseContext = getVerseContext(match.start);
+      const termBadgeClass = `term-badge-${match.termIndex % 4}`;
 
       item.innerHTML = `
         <div class="els-result-header-row">
-          <span class="els-result-word">${match.word}</span>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <span class="els-result-word">${match.word}</span>
+            ${termsArray && termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${match.rawQuery}</span>` : ''}
+          </div>
           <span class="els-result-skip">Salto: ${match.skip}</span>
         </div>
         <div class="els-result-context" style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
@@ -1874,7 +1957,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (bibleCodeState.activeMatch) {
-      // Correr la animación para el primer resultado seleccionado al buscar
       const match = bibleCodeState.activeMatch;
       const w = bibleCodeState.matrixWidth;
       const text = window.TorahText || "";
@@ -1918,6 +2000,33 @@ document.addEventListener('DOMContentLoaded', () => {
     return matches;
   }
 
+  function renderNarrativePanel(match, crossovers) {
+    const panel = document.getElementById('elsNarrativePanel');
+    const textContainer = document.getElementById('elsNarrativeText');
+    if (!panel || !textContainer || !match) return;
+
+    panel.style.display = 'block';
+
+    const verseCtx = getVerseContext(match.start);
+    const skipDirection = match.skip > 0 ? 'hacia adelante' : 'hacia atrás (inverso)';
+    const termColorClass = `term-badge-${(match.termIndex || 0) % 4}`;
+
+    let crossoverNarrative = '';
+    if (crossovers && crossovers.length > 0) {
+      const crossoverNames = crossovers.map(c => `<strong>${c.entry.spanish}</strong> (${c.entry.hebrew})`).join(', ');
+      crossoverNarrative = ` En esta misma cuadrícula se cruzan los conceptos del grafo místico: ${crossoverNames}. La proximidad espacial de estos términos en el código sugiere una densidad conceptual compartida.`;
+    } else {
+      crossoverNarrative = ' No se detectaron cruces de conceptos del grafo secundario en este cuadrante específico.';
+    }
+
+    textContainer.innerHTML = `
+      La palabra <span class="term-badge ${termColorClass}" style="font-family: var(--font-hebrew); font-size: 0.95rem;">${match.word}</span> 
+      ${match.rawQuery ? `(búsqueda: "${match.rawQuery}")` : ''} 
+      aparece codificada en la Torá con un salto de <strong>${match.skip} letras</strong> ${skipDirection}, iniciando en la letra <strong>#${match.start}</strong> (correspondiente a <strong>${verseCtx}</strong>). 
+      ${crossoverNarrative}
+    `;
+  }
+
   function renderBibleCodeMatrix() {
     const match = bibleCodeState.activeMatch;
     if (!match) return;
@@ -1942,6 +2051,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bibleCodeState.secondaryMatches = searchSecondaryMatches(visibleStartIdx, visibleEndIdx);
 
     renderSecondaryPanel();
+    renderNarrativePanel(match, bibleCodeState.secondaryMatches);
 
     matrixEmptyState.style.display = 'none';
     matrixContainer.style.display = 'block';
@@ -1950,6 +2060,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const table = document.createElement('table');
     table.className = 'bible-code-matrix';
+
+    const termHighlightClass = `highlight-term-${(match.termIndex || 0) % 4}`;
 
     for (let r = minRow; r <= maxRow; r++) {
       const tr = document.createElement('tr');
@@ -1968,7 +2080,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const isPrimary = matchIndices.includes(globalIdx);
           if (isPrimary) {
-            td.classList.add('highlight-primary');
+            td.classList.add(termHighlightClass);
           }
 
           let isSecondary = false;
@@ -2023,6 +2135,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Integración de búsqueda ELS desde el panel de la línea de tiempo del Sionismo
+  const origShowTimelineEventDetails = showTimelineEventDetails;
+  showTimelineEventDetails = function(event) {
+    origShowTimelineEventDetails(event);
+    if (!timelineDetailPanel) return;
+
+    if (event.searchTerms && event.searchTerms.length > 0) {
+      const btnContainer = document.createElement('div');
+      btnContainer.style.marginTop = '0.8rem';
+
+      const btnELS = document.createElement('button');
+      btnELS.className = 'search-btn';
+      btnELS.style.fontSize = '0.8rem';
+      btnELS.style.padding = '0.4rem 1rem';
+      btnELS.style.width = 'auto';
+      btnELS.style.background = 'linear-gradient(135deg, var(--gold-primary) 0%, var(--purple-accent) 100%)';
+      btnELS.innerHTML = `🔍 Buscar "${event.searchTerms.join(', ')}" en el Código de la Biblia`;
+
+      btnELS.addEventListener('click', () => {
+        switchTab('biblecode');
+        txtSearchELS.value = event.searchTerms.join(', ');
+        handleELSSearch();
+      });
+
+      btnContainer.appendChild(btnELS);
+      timelineDetailPanel.appendChild(btnContainer);
+    }
+  };
+
   // --- LISTENERS DEL CÓDIGO DE LA BIBLIA ---
   if (btnSearchELS) {
     btnSearchELS.addEventListener('click', handleELSSearch);
@@ -2052,6 +2193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLettersGrid();
     renderZionismGrid();
     renderReflectionTab();
+    renderELSSearchHistory();
     
     processInputText('');
     

@@ -241,37 +241,87 @@
 
     <!-- SECCIÓN: CÓDIGO DE LA BIBLIA (ELS MATRIX) -->
     <div id="biblecode" class="tab-content">
+      <!-- Onboarding Collapsible -->
+      <details class="glass-card els-onboarding" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+        <summary style="font-family: var(--font-serif); color: var(--gold-primary); font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+          <span>📖 ¿Qué es el Código de la Biblia y cómo funciona el motor ELS?</span>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">▼ haz clic para leer</span>
+        </summary>
+        <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.8rem;">
+          <p>
+            El <strong>Código de la Biblia</strong> o búsqueda por <strong>Secuencias de Letras Equidistantes (ELS)</strong> busca términos ocultos en el texto hebreo continuo de la Torá (Génesis 1-5, sin espacios ni puntuación).
+          </p>
+          <p style="margin-top: 0.5rem;">
+            El motor toma una palabra y prueba todos los saltos posibles (ej: tomar cada 7ª letra). Si las letras de la palabra forman una secuencia a igual intervalo y se disponen en una cuadrícula con el ancho adecuado, la palabra aparece alineada verticalmente o en diagonal, permitiendo visualizar cruces con otras palabras clave en la misma matriz.
+          </p>
+          <p style="margin-top: 0.5rem; color: var(--gold-glow); font-size: 0.85rem;">
+            💡 <strong>Consejo:</strong> Puedes ingresar una o varias palabras separadas por coma (ej: <code>Israel, Moisés</code>) para buscar sus coincidencias y ver sus intersecciones de color.
+          </p>
+        </div>
+      </details>
+
       <div class="biblecode-grid">
         <!-- Panel Izquierdo: Formulario de Búsqueda ELS -->
         <div class="glass-card biblecode-inputs-panel">
           <h3 class="input-title">Código de la Biblia (ELS)</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-            Busca palabras en el texto continuo de Génesis (Capítulos 1-5). El motor buscará secuencias de letras equidistantes a saltos positivos y negativos.
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+            Ingresa palabras en español o hebreo (separadas por coma para multi-búsqueda):
           </p>
 
-          <div class="search-bar-wrapper" style="margin-bottom: 1.5rem;">
-            <input type="text" id="txtSearchELS" class="search-input" placeholder="Escribe palabra en español o hebreo..." autocomplete="off">
+          <div class="search-bar-wrapper" style="margin-bottom: 1rem;">
+            <input type="text" id="txtSearchELS" class="search-input" placeholder="Ej: Israel, Moisés, Shalom..." autocomplete="off">
             <button id="btnSearchELS" class="search-btn">Buscar Código</button>
           </div>
 
-          <div class="els-range-controls" style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem;">
-            <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin-bottom: 0.8rem; font-size: 0.95rem;">Rango de Saltos (Skips)</h4>
+          <!-- Sugerencias Rápidas / Quick Picks -->
+          <div style="margin-bottom: 1.2rem;">
+            <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: bold;">
+              ✨ Búsquedas Sugeridas (Clic para probar):
+            </div>
+            <div class="quick-picks-container" id="elsQuickPicks" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+              <button class="els-quick-chip" data-query="ישראל">🇮🇱 Israel (ישראל)</button>
+              <button class="els-quick-chip" data-query="תורה">📜 Torá (תורה)</button>
+              <button class="els-quick-chip" data-query="משה">👑 Moisés (משה)</button>
+              <button class="els-quick-chip" data-query="ציון">⛰️ Sión (ציון)</button>
+              <button class="els-quick-chip" data-query="שלום">🕊️ Shalom (שלום)</button>
+              <button class="els-quick-chip" data-query="מדינה, תש"ח">🏛️ Estado 1948 (מדינה, תש"ח)</button>
+              <button class="els-quick-chip" data-query="משיח">✨ Mesías (משיח)</button>
+            </div>
+          </div>
+
+          <!-- Búsquedas Recientes -->
+          <div id="elsHistorySection" style="margin-bottom: 1.2rem; display: none;">
+            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>🕒 Historial Reciente:</span>
+              <button id="btnClearELSHistory" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.7rem;">Limpiar</button>
+            </div>
+            <div class="els-history-chips" id="elsHistoryChips" style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
+          <div class="els-range-controls" style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0.8rem 1rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.2rem;">
+            <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin-bottom: 0.5rem; font-size: 0.9rem;">Rango de Saltos (Skips)</h4>
             <div style="display: flex; justify-content: space-between; gap: 1rem;">
               <div style="flex: 1;">
                 <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">Salto Mínimo</label>
-                <input type="number" id="numMinSkip" class="compare-text-input" style="width: 100%; padding: 0.5rem; background: rgba(10,10,20,0.5);" value="2" min="2" max="100">
+                <input type="number" id="numMinSkip" class="compare-text-input" style="width: 100%; padding: 0.4rem; background: rgba(10,10,20,0.5);" value="2" min="2" max="100">
               </div>
               <div style="flex: 1;">
                 <label style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">Salto Máximo</label>
-                <input type="number" id="numMaxSkip" class="compare-text-input" style="width: 100%; padding: 0.5rem; background: rgba(10,10,20,0.5);" value="120" min="5" max="300">
+                <input type="number" id="numMaxSkip" class="compare-text-input" style="width: 100%; padding: 0.4rem; background: rgba(10,10,20,0.5);" value="120" min="5" max="300">
               </div>
             </div>
           </div>
 
-          <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin-bottom: 0.8rem; font-size: 1.05rem;">Coincidencias Encontradas</h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin: 0; font-size: 1rem;">Coincidencias Encontradas</h4>
+            <span id="elsResultCountBadge" style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 0.2rem 0.6rem; border-radius: 10px;">0 hallazgos</span>
+          </div>
+
           <div class="els-results-list" id="elsResultsList" style="max-height: 250px; overflow-y: auto; background: rgba(10,8,20,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.5rem; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
             <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 2rem 0; font-size: 0.9rem;">
-              Ingresa una palabra para escanear la Torá...
+              Ingresa una palabra o usa una sugerencia rápida...
             </div>
           </div>
         </div>
@@ -290,7 +340,7 @@
           </div>
 
           <!-- Tabla de visualización de la matriz -->
-          <div class="matrix-table-wrapper" style="position: relative; overflow-x: auto; max-height: 480px; overflow-y: auto; background: rgba(5,4,10,0.8); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: center; align-items: flex-start; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
+          <div class="matrix-table-wrapper" style="position: relative; overflow-x: auto; max-height: 440px; overflow-y: auto; background: rgba(5,4,10,0.8); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: center; align-items: flex-start; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
             <!-- Overlay de Escaneo (Animación Cyber-Mística) -->
             <div id="matrixScannerOverlay" class="matrix-scanner-overlay" style="display: none;">
               <div class="scanner-matrix-bg" id="scannerMatrixBg"></div>
@@ -318,8 +368,18 @@
             </div>
           </div>
 
+          <!-- Panel Narrativo del Hallazgo -->
+          <div id="elsNarrativePanel" style="display: none; margin-top: 1rem; background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 1rem;">
+            <div style="font-family: var(--font-serif); color: var(--gold-primary); font-weight: bold; font-size: 0.95rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+              <span>📜 Explicación y Análisis del Hallazgo</span>
+            </div>
+            <div id="elsNarrativeText" style="font-size: 0.88rem; color: var(--text-primary); line-height: 1.5;">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
           <!-- Panel de interrelación secundaria (Grafo / Palabras secundarias) -->
-          <div id="elsSecondaryPanel" style="display: none; margin-top: 1.2rem; background: rgba(142,68,173,0.08); border: 1px solid rgba(142,68,173,0.2); border-radius: 12px; padding: 1rem;">
+          <div id="elsSecondaryPanel" style="display: none; margin-top: 1rem; background: rgba(142,68,173,0.08); border: 1px solid rgba(142,68,173,0.2); border-radius: 12px; padding: 1rem;">
             <div style="font-family: var(--font-serif); color: #c8a2c8; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
               <span>🔮 Conexiones Secundarias Resaltadas (Cruces)</span>
             </div>

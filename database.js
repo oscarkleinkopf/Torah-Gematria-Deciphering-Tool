@@ -603,14 +603,14 @@ const KNOWLEDGE_GRAPH = [
 ];
 
 const HISTORICAL_EVENTS = [
-  { year: -586, label: '586 a.C.', title: 'Destrucción del Primer Templo', desc: 'El Templo de Salomón es destruido por los babilonios, dando inicio al primer exilio judío.', hebrewYear: 'ג\'קכ"ד', gematriaMatches: [586] },
-  { year: 70, label: '70 d.C.', title: 'Destrucción del Segundo Templo', desc: 'Los romanos destruyen Jerusalén y el Segundo Templo, iniciando el exilio prolongado (Galut).', hebrewYear: 'ג\'תת"ק', gematriaMatches: [70, 800] },
-  { year: 1492, label: '1492', title: 'Expulsión de España', desc: 'Los Reyes Católicos decretan la expulsión de los judíos de España (Sefarad). Gran migración espiritual.', hebrewYear: 'ה\' CCLII', gematriaMatches: [1492, 252] },
-  { year: 1882, label: '1882', title: 'Primera Aliyá & BILU', desc: 'Inicia el retorno sionista agrícola moderno. Fundación de Rishon LeZion y Petaj Tikva.', hebrewYear: 'תרמ"ב', gematriaMatches: [1882, 642, 48] },
-  { year: 1897, label: '1897', title: 'Congreso de Basilea', desc: 'Theodor Herzl preside el Primer Congreso Sionista Mundial en Basilea, formulando el Programa Sionista.', hebrewYear: 'תרנ"ז', gematriaMatches: [1897, 657, 325, 39] },
-  { year: 1948, label: '1948', title: 'Declaración del Estado de Israel', desc: 'Proclamada el 14 de mayo por David Ben-Gurión, marcando la soberanía nacional judía tras 19 siglos.', hebrewYear: 'תש"ח', gematriaMatches: [1948, 708, 1045, 321] },
-  { year: 1967, label: '1967', title: 'Guerra de los Seis Días', desc: 'Reunificación de Jerusalén, recuperando el acceso al Muro de los Lamentos y el casco antiguo.', hebrewYear: 'תשכ"ז', gematriaMatches: [1967, 727, 582] },
-  { year: 1993, label: '1993', title: 'Acuerdos de Oslo', desc: 'Primer acuerdo cara a cara entre el Estado de Israel y la OLP para buscar una paz regional.', hebrewYear: 'תשsn"ג', gematriaMatches: [1993, 753] }
+  { year: -586, label: '586 a.C.', title: 'Destrucción del Primer Templo', desc: 'El Templo de Salomón es destruido por los babilonios, dando inicio al primer exilio judío.', hebrewYear: 'ג\'קכ"ד', gematriaMatches: [586], searchTerms: ['מקדש', 'בבל', 'גלות'] },
+  { year: 70, label: '70 d.C.', title: 'Destrucción del Segundo Templo', desc: 'Los romanos destruyen Jerusalén y el Segundo Templo, iniciando el exilio prolongado (Galut).', hebrewYear: 'ג\'תת"ק', gematriaMatches: [70, 800], searchTerms: ['רומא', 'ירושלים', 'מקדש'] },
+  { year: 1492, label: '1492', title: 'Expulsión de España', desc: 'Los Reyes Católicos decretan la expulsión de los judíos de España (Sefarad). Gran migración espiritual.', hebrewYear: 'ה\'רנ"ב', gematriaMatches: [1492, 252], searchTerms: ['ספרד', 'גורש', 'גלות'] },
+  { year: 1882, label: '1882', title: 'Primera Aliyá & BILU', desc: 'Inicia el retorno sionista agrícola moderno. Fundación de Rishon LeZion y Petaj Tikva.', hebrewYear: 'תרמ"ב', gematriaMatches: [1882, 642, 48], searchTerms: ['ביל"ו', 'עליה', 'ציון'] },
+  { year: 1897, label: '1897', title: 'Congreso de Basilea', desc: 'Theodor Herzl preside el Primer Congreso Sionista Mundial en Basilea, formulando el Programa Sionista.', hebrewYear: 'תרנ"ז', gematriaMatches: [1897, 657, 325, 39], searchTerms: ['הרצל', 'בזל', 'מדינה'] },
+  { year: 1948, label: '1948', title: 'Declaración del Estado de Israel', desc: 'Proclamada el 14 de mayo por David Ben-Gurión, marcando la soberanía nacional judía tras 19 siglos.', hebrewYear: 'תש"ח', gematriaMatches: [1948, 708, 1045, 321], searchTerms: ['ישראל', 'מדינה', 'תש"ח'] },
+  { year: 1967, label: '1967', title: 'Guerra de los Seis Días', desc: 'Reunificación de Jerusalén, recuperando el acceso al Muro de los Lamentos y el casco antiguo.', hebrewYear: 'תשכ"ז', gematriaMatches: [1967, 727, 582], searchTerms: ['ירושלים', 'ציון', 'שלום'] },
+  { year: 1993, label: '1993', title: 'Acuerdos de Oslo', desc: 'Primer acuerdo cara a cara entre el Estado de Israel y la OLP para buscar una paz regional.', hebrewYear: 'תשנ"ג', gematriaMatches: [1993, 753], searchTerms: ['שלום', 'ישראל', 'ברית'] }
 ];
 
 // Exportación compatible tanto con módulos ES6 como con scripts convencionales del navegador
