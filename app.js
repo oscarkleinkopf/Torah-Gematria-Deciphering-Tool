@@ -1848,6 +1848,84 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Manejador del submit de búsqueda ELS (Soporta Multi-Término)
+  // --- WEB WORKER para búsquedas ELS pesadas ---
+  let elsWorkerInstance = null;
+  let activeELSRequestId = null;
+
+  function getELSWorker() {
+    if (!elsWorkerInstance && typeof Worker !== 'undefined') {
+      try {
+        elsWorkerInstance = new Worker('elsWorker.js');
+        elsWorkerInstance.onmessage = handleWorkerMessage_ELS;
+        elsWorkerInstance.onerror = (e) => {
+          console.warn('[ELS Worker] Error:', e.message);
+          elsWorkerInstance = null; // reset so fallback is used
+        };
+      } catch (e) {
+        console.warn('[ELS Worker] Worker creation failed, using sync fallback:', e.message);
+        elsWorkerInstance = null;
+      }
+    }
+    return elsWorkerInstance;
+  }
+
+  function handleWorkerMessage_ELS(event) {
+    const msg = event.data;
+    if (!msg) return;
+    if (msg.requestId && msg.requestId !== activeELSRequestId) return; // stale
+
+    if (msg.action === 'progress') {
+      updateELSProgressBar(msg.percent, msg.currentSkip, msg.searchWord);
+    } else if (msg.action === 'elsResults') {
+      hideELSProgressBar();
+      renderELSResultsList(msg.matches, msg.searchWord, [msg.searchWord]);
+    } else if (msg.action === 'error') {
+      hideELSProgressBar();
+      elsResultsList.innerHTML = `<div style="color:#e74c3c;text-align:center;padding:1.5rem;">Error en el worker: ${msg.error}</div>`;
+    }
+  }
+
+  function showELSProgressBar(word) {
+    let bar = document.getElementById('elsProgressBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'elsProgressBar';
+      bar.style.cssText = 'margin-bottom:0.8rem;background:rgba(0,0,0,0.4);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--gold-primary);';
+      elsResultsList.parentNode.insertBefore(bar, elsResultsList);
+    }
+    bar.style.display = 'block';
+    bar.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+        <span>⚙️ Escaneando Torá para <strong style="font-family:var(--font-hebrew)">${word}</strong>...</span>
+        <button id="btnCancelELS" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:#e74c3c;padding:0.2rem 0.6rem;border-radius:8px;cursor:pointer;font-size:0.72rem;">✕ Cancelar</button>
+      </div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:6px;overflow:hidden;height:6px;">
+        <div id="elsProgressFill" style="height:100%;background:linear-gradient(90deg,var(--gold-primary),#00ced1);width:0%;transition:width 0.3s;border-radius:6px;"></div>
+      </div>
+      <div id="elsProgressLabel" style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.3rem;">Inicializando...</div>
+    `;
+    const btnCancel = document.getElementById('btnCancelELS');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', () => {
+        if (elsWorkerInstance) elsWorkerInstance.postMessage({ action: 'cancel', requestId: activeELSRequestId });
+        hideELSProgressBar();
+        elsResultsList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:1rem;font-style:italic;">Búsqueda cancelada.</div>';
+      });
+    }
+  }
+
+  function updateELSProgressBar(percent, currentSkip, word) {
+    const fill = document.getElementById('elsProgressFill');
+    const label = document.getElementById('elsProgressLabel');
+    if (fill) fill.style.width = percent + '%';
+    if (label) label.textContent = `Progreso: ${percent}% | Salto actual: ${currentSkip}`;
+  }
+
+  function hideELSProgressBar() {
+    const bar = document.getElementById('elsProgressBar');
+    if (bar) bar.style.display = 'none';
+  }
+
   function handleELSSearch() {
     const rawQuery = txtSearchELS.value.trim();
     if (!rawQuery) return;
@@ -1869,8 +1947,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dividir por comas para multi-término
     const termsRaw = rawQuery.split(',').map(t => t.trim()).filter(t => t.length > 0);
-    let allMatches = [];
+    
+    // Para búsquedas multi-término o saltos amplios, usar Web Worker
+    const useWorker = (maxSkip - minSkip > 30 || termsRaw.length === 1) && typeof Worker !== 'undefined';
 
+    if (useWorker && termsRaw.length === 1) {
+      let searchHebrew = termsRaw[0];
+      if (/[a-zA-Z]/.test(searchHebrew)) searchHebrew = Engine.SpanishToHebrew(searchHebrew);
+      searchHebrew = searchHebrew.replace(/[^א-ת]/g, '');
+
+      if (searchHebrew.length < 2) {
+        elsResultsList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:1rem;">La palabra debe tener al menos 2 letras hebreas.</div>';
+        return;
+      }
+
+      const worker = getELSWorker();
+      if (worker) {
+        activeELSRequestId = `req_${Date.now()}`;
+        elsResultsList.innerHTML = '';
+        showELSProgressBar(searchHebrew);
+
+        worker.postMessage({
+          action: 'searchELS',
+          searchWord: searchHebrew,
+          minSkip,
+          maxSkip,
+          requestId: activeELSRequestId
+        });
+        return; // resultado llega en handleWorkerMessage_ELS
+      }
+    }
+
+    // Fallback síncrono (multi-término o worker no disponible)
+    let allMatches = [];
     termsRaw.forEach((termStr, termIdx) => {
       let searchHebrew = termStr;
       if (/[a-zA-Z]/.test(termStr)) {
