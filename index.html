@@ -29,10 +29,12 @@
     <nav>
       <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
+      <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
       <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
       <button class="nav-btn" data-tab="zionism">Correlación Sionista</button>
       <button class="nav-btn" data-tab="comparison">Comparador Místico</button>
       <button class="nav-btn" data-tab="letters">Espejo de Letras</button>
+      <button class="nav-btn" data-tab="favorites">⭐ Favoritos</button>
       <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
     </nav>
 
@@ -105,6 +107,25 @@
               <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
                 <span>Equivalencia cifrada</span>
                 <span>Valor Atbash: <strong id="valAtbashValue" style="color: var(--gold-primary);">0</strong></span>
+              </div>
+            </div>
+
+            <!-- Cifrados Albam y Avgad -->
+            <div class="result-card" style="text-align: left;" title="Cifrado Albam: sustituye las primeras 11 letras por las últimas 11 (א↔ל, ב↔מ, etc.).">
+              <span class="result-card-label">Cifrado Albam</span>
+              <div class="atbash-text-display" id="valAlbamText">—</div>
+              <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                <span>Mitad del alfabeto</span>
+                <span>Valor: <strong id="valAlbamValue" style="color: #00ced1;">0</strong></span>
+              </div>
+            </div>
+
+            <div class="result-card" style="text-align: left;" title="Cifrado Avgad: sustituye cada letra por la siguiente en el alfabeto (+1 cíclico).">
+              <span class="result-card-label">Cifrado Avgad</span>
+              <div class="atbash-text-display" id="valAvgadText">—</div>
+              <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+                <span>Letra siguiente (+1)</span>
+                <span>Valor: <strong id="valAvgadValue" style="color: #2ecc71;">0</strong></span>
               </div>
             </div>
           </div>
@@ -335,14 +356,20 @@
 
         <!-- Panel Derecho: Visualizador de Matriz -->
         <div class="glass-card biblecode-results-panel">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem;">
             <h3 class="results-header" style="border: none; padding: 0; margin: 0;">Matriz del Código</h3>
             
-            <!-- Controles de Columnas -->
-            <div id="matrixWidthController" style="display: none; align-items: center; gap: 0.8rem; background: rgba(0,0,0,0.4); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-              <label for="rangeMatrixWidth" style="font-size: 0.8rem; color: var(--text-secondary);">Columnas:</label>
-              <input type="range" id="rangeMatrixWidth" min="10" max="150" value="50" style="accent-color: var(--gold-primary);">
-              <span id="lblMatrixWidth" style="font-size: 0.85rem; color: var(--gold-primary); font-weight: bold; min-width: 25px; display: inline-block; text-align: center;">50</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <!-- Controles de Columnas -->
+              <div id="matrixWidthController" style="display: none; align-items: center; gap: 0.8rem; background: rgba(0,0,0,0.4); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                <label for="rangeMatrixWidth" style="font-size: 0.8rem; color: var(--text-secondary);">Columnas:</label>
+                <input type="range" id="rangeMatrixWidth" min="10" max="150" value="50" style="accent-color: var(--gold-primary);">
+                <span id="lblMatrixWidth" style="font-size: 0.85rem; color: var(--gold-primary); font-weight: bold; min-width: 25px; display: inline-block; text-align: center;">50</span>
+              </div>
+              <!-- Botón Exportar PNG -->
+              <button id="btnExportMatrixPNG" title="Exportar matriz como imagen PNG" style="display: none; background: rgba(0,206,209,0.1); border: 1px solid rgba(0,206,209,0.3); color: #00ced1; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📷 Exportar PNG</button>
+              <!-- Botón Guardar Favorito -->
+              <button id="btnSaveELSFavorite" title="Guardar este hallazgo en Favoritos" style="display: none; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">⭐ Guardar</button>
             </div>
           </div>
 
@@ -434,6 +461,56 @@
             <div id="reflectionContent">
               <!-- Cargado dinámicamente -->
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: ACRÓSTICOS (ROSHEI / SOFEI TEIVOT) -->
+    <div id="acrostics" class="tab-content">
+      <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
+        <h3 class="input-title">Buscador de Acrósticos (ראשי תיבות / סופי תיבות)</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Detecta si las <strong>iniciales (Roshei Teivot)</strong> o las <strong>finales (Sofei Teivot)</strong> de las palabras en un texto hebreo forman una palabra oculta. Una técnica milenaria de exégesis cabalística.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--gold-primary); display: block; margin-bottom: 0.4rem;">Texto o frase en hebreo:</label>
+            <textarea id="txtAcrosticsInput" class="gematria-input rtl" dir="rtl" rows="4" placeholder="הַשֵּׁם מָלָךְ גֵּאוּת לָבֵשׁ..." style="width: 100%; font-size: 1.1rem;"></textarea>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--gold-primary); display: block; margin-bottom: 0.4rem;">Palabra a buscar (opcional):</label>
+            <input type="text" id="txtAcrosticsTarget" class="compare-text-input rtl" dir="rtl" placeholder="ישראל, תורה..." style="width: 100%; margin-bottom: 0.8rem;">
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Tipo de acróstico:</div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="els-quick-chip acrostic-type-btn active" data-type="roshei">Roshei Teivot (Iniciales)</button>
+              <button class="els-quick-chip acrostic-type-btn" data-type="sofei">Sofei Teivot (Finales)</button>
+              <button class="els-quick-chip acrostic-type-btn" data-type="both">Ambos</button>
+            </div>
+            <button id="btnFindAcrostics" class="search-btn" style="width: 100%; margin-top: 1rem;">🔍 Buscar Acróstico</button>
+          </div>
+        </div>
+
+        <div id="acrosticsResults" style="margin-top: 1rem; min-height: 80px; background: rgba(10,8,20,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem;">
+          <span style="color: var(--text-secondary); font-style: italic; font-size: 0.9rem;">Ingresa un texto y haz clic en Buscar Acróstico...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: FAVORITOS -->
+    <div id="favorites" class="tab-content">
+      <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <h3 class="input-title" style="margin: 0;">⭐ Hallazgos Guardados</h3>
+          <button id="btnClearAllFavorites" style="background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: #e74c3c; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;">🗑️ Limpiar Todo</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Aquí se guardan automáticamente los hallazgos ELS que marques como favoritos. Persisten entre sesiones del navegador.
+        </p>
+        <div id="favoritesContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+          <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem 0; grid-column: 1/-1;">
+            No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.
           </div>
         </div>
       </div>

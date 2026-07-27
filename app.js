@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const valReduced = document.getElementById('valReduced');
   const valAtbashText = document.getElementById('valAtbashText');
   const valAtbashValue = document.getElementById('valAtbashValue');
+  const valAlbamText = document.getElementById('valAlbamText');
+  const valAlbamValue = document.getElementById('valAlbamValue');
+  const valAvgadText = document.getElementById('valAvgadText');
+  const valAvgadValue = document.getElementById('valAvgadValue');
   const breakdownContainer = document.getElementById('breakdownContainer');
   
   const relationCanvas = document.getElementById('relationCanvas');
@@ -302,6 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
       valReduced.textContent = '0';
       valAtbashText.textContent = '—';
       valAtbashValue.textContent = '0';
+      if (valAlbamText) { valAlbamText.textContent = '—'; valAlbamValue.textContent = '0'; }
+      if (valAvgadText) { valAvgadText.textContent = '—'; valAvgadValue.textContent = '0'; }
       breakdownContainer.innerHTML = '<span style="color: var(--text-secondary); font-style: italic; font-size: 0.9rem;">Escribe una palabra para ver su desglose...</span>';
       return;
     }
@@ -312,13 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
     valReduced.textContent = result.reduced;
     valAtbashText.textContent = result.atbashText;
     valAtbashValue.textContent = result.atbashValue;
+    if (valAlbamText) { valAlbamText.textContent = result.albamText || '—'; valAlbamValue.textContent = result.albamValue || 0; }
+    if (valAvgadText) { valAvgadText.textContent = result.avgadText || '—'; valAvgadValue.textContent = result.avgadValue || 0; }
     
     // Renderizar desglose
     breakdownContainer.innerHTML = '';
     result.breakdown.forEach(item => {
       const chip = document.createElement('div');
       chip.className = 'breakdown-chip';
-      chip.title = `${item.name} | Ordinal: ${item.ordinal} | Reducido: ${item.reduced}`;
+      chip.title = `${item.name} | Ordinal: ${item.ordinal} | Reducido: ${item.reduced} | Albam: ${item.albam}(${item.albamVal}) | Avgad: ${item.avgad}(${item.avgadVal})`;
       
       const letter = document.createElement('span');
       letter.className = 'letter';
@@ -2181,6 +2189,333 @@ document.addEventListener('DOMContentLoaded', () => {
       renderBibleCodeMatrix();
     });
   }
+
+  // Mostrar/ocultar botones de exportar PNG y guardar favorito cuando haya un match activo
+  function toggleELSActionButtons(show) {
+    const btnPNG = document.getElementById('btnExportMatrixPNG');
+    const btnFav = document.getElementById('btnSaveELSFavorite');
+    if (btnPNG) btnPNG.style.display = show ? 'inline-block' : 'none';
+    if (btnFav) btnFav.style.display = show ? 'inline-block' : 'none';
+  }
+
+  // Sobreescribir renderBibleCodeMatrix original para añadir toggle de botones
+  const _origRenderBibleCodeMatrix = renderBibleCodeMatrix;
+  renderBibleCodeMatrix = function() {
+    _origRenderBibleCodeMatrix();
+    toggleELSActionButtons(!!bibleCodeState.activeMatch);
+  };
+
+  // --- MÓDULO: EXPORTAR MATRIZ ELS COMO PNG ---
+  const btnExportMatrixPNG = document.getElementById('btnExportMatrixPNG');
+  if (btnExportMatrixPNG) {
+    btnExportMatrixPNG.addEventListener('click', () => {
+      const table = matrixContainer.querySelector('.bible-code-matrix');
+      if (!table) return;
+
+      const match = bibleCodeState.activeMatch;
+      const wordLabel = match ? match.word : 'matriz';
+
+      // Crear canvas temporal con estilo
+      const W = table.offsetWidth + 40;
+      const H = table.offsetHeight + 80;
+      const canvas = document.createElement('canvas');
+      canvas.width = W * 2;
+      canvas.height = H * 2;
+      const ctx = canvas.getContext('2d');
+
+      // Fondo oscuro
+      ctx.scale(2, 2);
+      ctx.fillStyle = '#05040a';
+      ctx.fillRect(0, 0, W, H);
+
+      // Título
+      ctx.fillStyle = '#d4af37';
+      ctx.font = 'bold 13px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Código de la Biblia ELS — "${wordLabel}" | Salto: ${match ? match.skip : '?'} | Torah Gematria Decipher`, W / 2, 20);
+
+      // Usar html2canvas-like approach: renderizar via SVG foreignObject
+      const svgData = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${W - 40}" height="${H - 40}">
+          <foreignObject width="100%" height="100%">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: monospace; font-size: 11px; color: #ccc; background: #05040a; padding: 4px;">
+              ${table.outerHTML}
+            </div>
+          </foreignObject>
+        </svg>`;
+
+      const img = new Image();
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        ctx.drawImage(img, 20, 30);
+
+        // Pie de página
+        ctx.fillStyle = 'rgba(212,175,55,0.6)';
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Generado por GematriaDecipher — Torah Gematria Deciphering Tool', W / 2, H - 8);
+
+        URL.revokeObjectURL(url);
+
+        // Descargar
+        const link = document.createElement('a');
+        link.download = `ELS_${wordLabel.replace(/[^א-ת\w]/g, '_')}_skip${match ? match.skip : ''}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        // Fallback: solo descargar el canvas con fondo
+        const link = document.createElement('a');
+        link.download = `ELS_matrix.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+
+      img.src = url;
+    });
+  }
+
+  // --- MÓDULO: FAVORITOS ELS (localStorage) ---
+  function getFavorites() {
+    try { return JSON.parse(localStorage.getItem('els_favorites') || '[]'); } catch(e) { return []; }
+  }
+
+  function saveFavorites(favs) {
+    try { localStorage.setItem('els_favorites', JSON.stringify(favs)); } catch(e) {}
+  }
+
+  function renderFavoritesTab() {
+    const container = document.getElementById('favoritesContainer');
+    if (!container) return;
+    const favs = getFavorites();
+    if (favs.length === 0) {
+      container.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem 0; grid-column: 1/-1;">No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    favs.forEach((fav, idx) => {
+      const card = document.createElement('div');
+      card.className = 'glass-card';
+      card.style.cssText = 'padding: 1rem; border: 1px solid rgba(212,175,55,0.2); position: relative;';
+      const sigScore = (fav.significanceScore || 0).toFixed(2);
+      const sigClass = fav.significanceScore > 5 ? 'color: #2ecc71;' : fav.significanceScore > 2 ? 'color: var(--gold-primary);' : 'color: var(--text-secondary);';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <span style="font-family: var(--font-hebrew); font-size: 1.6rem; color: var(--gold-primary);">${fav.word}</span>
+          <button data-idx="${idx}" class="fav-remove-btn" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem;" title="Eliminar">✕</button>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+          Salto: <strong style="color: var(--text-primary);">${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
+        </div>
+        <div style="font-size: 0.78rem; ${sigClass}">
+          Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
+        </div>
+        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 0.4rem;">${new Date(fav.savedAt).toLocaleDateString()}</div>
+        <button data-idx="${idx}" class="fav-reload-btn" style="margin-top: 0.7rem; width: 100%; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.25); color: var(--gold-primary); padding: 0.3rem; border-radius: 10px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s;">🔍 Volver a buscar</button>
+      `;
+      container.appendChild(card);
+    });
+
+    // Eventos eliminar
+    container.querySelectorAll('.fav-remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const favs2 = getFavorites();
+        favs2.splice(parseInt(btn.dataset.idx, 10), 1);
+        saveFavorites(favs2);
+        renderFavoritesTab();
+      });
+    });
+
+    // Eventos volver a buscar
+    container.querySelectorAll('.fav-reload-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const fav = getFavorites()[parseInt(btn.dataset.idx, 10)];
+        if (!fav) return;
+        switchTab('biblecode');
+        txtSearchELS.value = fav.word;
+        handleELSSearch();
+      });
+    });
+  }
+
+  function switchTab(tabId) {
+    navButtons.forEach(b => b.classList.remove('active'));
+    tabContents.forEach(t => t.classList.remove('active'));
+    const btn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+    const tab = document.getElementById(tabId);
+    if (btn) btn.classList.add('active');
+    if (tab) tab.classList.add('active');
+    appState.currentTab = tabId;
+    if (tabId === 'favorites') renderFavoritesTab();
+  }
+
+  const btnSaveELSFavorite = document.getElementById('btnSaveELSFavorite');
+  if (btnSaveELSFavorite) {
+    btnSaveELSFavorite.addEventListener('click', () => {
+      const match = bibleCodeState.activeMatch;
+      if (!match) return;
+      const favs = getFavorites();
+      const already = favs.find(f => f.word === match.word && f.skip === match.skip && f.start === match.start);
+      if (already) {
+        btnSaveELSFavorite.textContent = '✅ Ya guardado';
+        setTimeout(() => { btnSaveELSFavorite.textContent = '⭐ Guardar'; }, 2000);
+        return;
+      }
+      favs.unshift({
+        word: match.word,
+        skip: match.skip,
+        start: match.start,
+        indices: match.indices,
+        pValue: match.pValue,
+        significanceScore: match.significanceScore,
+        verse: getVerseContext(match.start),
+        savedAt: new Date().toISOString()
+      });
+      if (favs.length > 50) favs.pop();
+      saveFavorites(favs);
+      btnSaveELSFavorite.textContent = '✅ Guardado';
+      setTimeout(() => { btnSaveELSFavorite.textContent = '⭐ Guardar'; }, 2000);
+    });
+  }
+
+  const btnClearAllFavorites = document.getElementById('btnClearAllFavorites');
+  if (btnClearAllFavorites) {
+    btnClearAllFavorites.addEventListener('click', () => {
+      if (confirm('¿Eliminar todos los favoritos guardados?')) {
+        localStorage.removeItem('els_favorites');
+        renderFavoritesTab();
+      }
+    });
+  }
+
+  // Renderizar favoritos cuando se navega a ese tab
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.getAttribute('data-tab') === 'favorites') {
+        renderFavoritesTab();
+      }
+    });
+  });
+
+  // --- MÓDULO: ACRÓSTICOS (ROSHEI / SOFEI TEIVOT) ---
+  const txtAcrosticsInput = document.getElementById('txtAcrosticsInput');
+  const txtAcrosticsTarget = document.getElementById('txtAcrosticsTarget');
+  const acrosticsResults = document.getElementById('acrosticsResults');
+  const btnFindAcrostics = document.getElementById('btnFindAcrostics');
+  const acrosticTypeBtns = document.querySelectorAll('.acrostic-type-btn');
+  let selectedAcrosticType = 'roshei';
+
+  if (acrosticTypeBtns.length > 0) {
+    acrosticTypeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        acrosticTypeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedAcrosticType = btn.getAttribute('data-type');
+      });
+    });
+  }
+
+  if (btnFindAcrostics) {
+    btnFindAcrostics.addEventListener('click', () => {
+      if (!txtAcrosticsInput || !acrosticsResults) return;
+      const text = txtAcrosticsInput.value.trim();
+      if (!text) {
+        acrosticsResults.innerHTML = '<span style="color: var(--text-secondary); font-style: italic;">Ingresa un texto hebreo para analizar.</span>';
+        return;
+      }
+
+      const targetRaw = txtAcrosticsTarget ? txtAcrosticsTarget.value.trim() : '';
+      let targetHebrew = targetRaw || null;
+      if (targetHebrew && /[a-zA-Z]/.test(targetHebrew)) {
+        targetHebrew = Engine.SpanishToHebrew(targetHebrew);
+      }
+      if (targetHebrew) targetHebrew = targetHebrew.replace(/[^א-ת]/g, '') || null;
+
+      const results = Engine.FindAcrostics(text, selectedAcrosticType, targetHebrew);
+
+      if (!results || results.length === 0) {
+        acrosticsResults.innerHTML = `
+          <div style="color: var(--text-secondary); text-align: center; padding: 1.5rem 0; font-size: 0.9rem;">
+            ${targetHebrew
+              ? `No se encontró el acróstico "<span style="font-family: var(--font-hebrew); color: var(--gold-primary);">${targetHebrew}</span>" en el texto ingresado.`
+              : 'No se pudo extraer acróstico del texto ingresado.'
+            }
+          </div>`;
+        return;
+      }
+
+      acrosticsResults.innerHTML = '';
+
+      results.forEach(r => {
+        const card = document.createElement('div');
+        card.style.cssText = 'margin-bottom: 1rem; padding: 0.8rem 1rem; background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.2); border-radius: 10px;';
+
+        const typeLabel = r.isRoshei ? 'Roshei Teivot (Iniciales)' : 'Sofei Teivot (Finales)';
+        const typeBadge = r.isRoshei
+          ? 'background: rgba(212,175,55,0.15); color: var(--gold-primary);'
+          : 'background: rgba(0,206,209,0.15); color: #00ced1;';
+
+        const lettersHtml = r.wordDetails.map(wd => `
+          <span style="display: inline-flex; flex-direction: column; align-items: center; margin: 0 0.3rem; gap: 0.1rem;">
+            <span style="font-family: var(--font-hebrew); font-size: 1.1rem; color: ${r.isRoshei ? 'var(--gold-primary)' : '#00ced1'}; font-weight: bold;">${wd.letter}</span>
+            <span style="font-size: 0.65rem; color: var(--text-secondary); max-width: 55px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${wd.word}</span>
+          </span>
+        `).join('');
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+            <span style="font-family: var(--font-hebrew); font-size: 1.8rem; color: var(--gold-primary);">${r.word}</span>
+            <span style="padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.72rem; font-weight: bold; ${typeBadge}">${typeLabel}</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-start; direction: rtl; padding: 0.5rem 0; border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04); margin: 0.5rem 0;">
+            ${lettersHtml}
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-secondary);">
+            Palabras: ${r.startIndex + 1} a ${r.endIndex + 1} del texto | Longitud del acróstico: ${r.word.length} letras
+          </div>
+        `;
+        acrosticsResults.appendChild(card);
+      });
+    });
+
+    // Enter también dispara la búsqueda
+    if (txtAcrosticsInput) {
+      txtAcrosticsInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) btnFindAcrostics.click();
+      });
+    }
+  }
+
+  // Añadir p-value y significancia estadística al panel de narrativa ELS
+  const _origRenderNarrative = renderNarrativePanel;
+  renderNarrativePanel = function(match, crossovers) {
+    _origRenderNarrative(match, crossovers);
+    const textContainer = document.getElementById('elsNarrativeText');
+    if (!textContainer || !match) return;
+
+    const pVal = match.pValue;
+    const sigScore = match.significanceScore || 0;
+    let sigLabel, sigColor;
+    if (sigScore > 8) { sigLabel = '🔥 Altamente Significativo'; sigColor = '#2ecc71'; }
+    else if (sigScore > 4) { sigLabel = '⚡ Significativo'; sigColor = 'var(--gold-primary)'; }
+    else if (sigScore > 2) { sigLabel = '🔍 Moderado'; sigColor = '#00ced1'; }
+    else { sigLabel = '📊 Bajo / Casual'; sigColor = 'var(--text-secondary)'; }
+
+    const statsHtml = (pVal !== undefined && pVal !== null) ? `
+      <div style="margin-top: 0.6rem; padding: 0.5rem 0.8rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.82rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+        <span>📈 <strong>Análisis Estadístico ELS</strong></span>
+        <span style="color: ${sigColor}; font-weight: bold;">${sigLabel}</span>
+        <span style="color: var(--text-secondary);">Score: <strong style="color: var(--text-primary);">${sigScore.toFixed(2)}</strong></span>
+        <span style="color: var(--text-secondary);">p-valor ≈ <strong style="color: var(--text-primary);">${pVal.toExponential(3)}</strong></span>
+      </div>` : '';
+
+    textContainer.insertAdjacentHTML('beforeend', statsHtml);
+  };
 
   // --- 11. INICIALIZACIÓN COMPLETA DE LA APP ---
   function init() {

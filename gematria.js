@@ -45,6 +45,28 @@ const ATBASH_PAIRS = {
   'ך': 'ל', 'ם': 'י', 'ן': 'ט', 'ף': 'ו', 'ץ': 'ה'
 };
 
+// Correspondencia Albam (sustitución por mitad del alfabeto: 1-11 <-> 12-22)
+const ALBAM_PAIRS = {
+  'א': 'ל', 'ב': 'מ', 'ג': 'נ', 'ד': 'ס', 'ה': 'ע',
+  'ו': 'פ', 'ז': 'צ', 'ח': 'ק', 'ט': 'ר', 'י': 'ש',
+  'כ': 'ת', 'ל': 'א', 'מ': 'ב', 'נ': 'ג', 'ס': 'ד',
+  'ע': 'ה', 'פ': 'ו', 'צ': 'ז', 'ק': 'ח', 'ר': 'ט',
+  'ש': 'י', 'ת': 'כ',
+  // Manejo de Sofit en Albam (se reducen a sus formas normales para Albam)
+  'ך': 'ת', 'ם': 'ב', 'ן': 'ג', 'ף': 'ו', 'ץ': 'ז'
+};
+
+// Correspondencia Avgad (sustitución por letra siguiente: +1 cíclico)
+const AVGAD_PAIRS = {
+  'א': 'ב', 'ב': 'ג', 'ג': 'ד', 'ד': 'ה', 'ה': 'ו',
+  'ו': 'ז', 'ז': 'ח', 'ח': 'ט', 'ט': 'י', 'י': 'כ',
+  'כ': 'ל', 'ל': 'מ', 'מ': 'נ', 'נ': 'ס', 'ס': 'ע',
+  'ע': 'פ', 'פ': 'צ', 'צ': 'ק', 'ק': 'ר', 'ר': 'ש',
+  'ש': 'ת', 'ת': 'א',
+  // Manejo de Sofit en Avgad (se reducen a sus formas normales para Avgad)
+  'ך': 'ל', 'ם': 'נ', 'ן': 'ס', 'ף': 'צ', 'ץ': 'ק'
+};
+
 /**
  * Convierte texto en español a caracteres hebreos usando un mapeo fonético aproximado.
  * Esto permite a personas de habla hispana calcular la gematria de sus propios nombres o palabras.
@@ -199,12 +221,18 @@ function CalculateGematria(hebrewText) {
     reduced: 0,
     atbashText: '',
     atbashValue: 0,
+    albamText: '',
+    albamValue: 0,
+    avgadText: '',
+    avgadValue: 0,
     breakdown: [] // Detalles letra por letra
   };
 
   for (let char of cleanHebrew) {
     if (char === ' ' || char === '\n' || char === '\r') {
       results.atbashText += char;
+      results.albamText += char;
+      results.avgadText += char;
       continue;
     }
 
@@ -231,6 +259,22 @@ function CalculateGematria(hebrewText) {
         results.atbashValue += atbashData.val;
       }
 
+      // Albam
+      let albamChar = ALBAM_PAIRS[char] || char;
+      results.albamText += albamChar;
+      let albamData = HEBREW_MAP[albamChar];
+      if (albamData) {
+        results.albamValue += albamData.val;
+      }
+
+      // Avgad
+      let avgadChar = AVGAD_PAIRS[char] || char;
+      results.avgadText += avgadChar;
+      let avgadData = HEBREW_MAP[avgadChar];
+      if (avgadData) {
+        results.avgadValue += avgadData.val;
+      }
+
       results.breakdown.push({
         letter: char,
         name: letterData.name,
@@ -239,11 +283,17 @@ function CalculateGematria(hebrewText) {
         ordinal: ord,
         reduced: red,
         atbash: atbashChar,
-        atbashVal: atbashData ? atbashData.val : 0
+        atbashVal: atbashData ? atbashData.val : 0,
+        albam: albamChar,
+        albamVal: albamData ? albamData.val : 0,
+        avgad: avgadChar,
+        avgadVal: avgadData ? avgadData.val : 0
       });
     } else {
       // Si hay un carácter no hebreo, simplemente lo pasamos sin sumarlo
       results.atbashText += char;
+      results.albamText += char;
+      results.avgadText += char;
     }
   }
 
@@ -381,14 +431,317 @@ function FindCorrelations(hebrewText, database) {
   return correlations;
 }
 
+// === MÓDULO DE ACRÓSTICOS (ROSHEI Y SOFEI TEIVOT) ===
+
+const SOFIT_MAP = {
+  'ך': 'כ',
+  'ם': 'מ',
+  'ן': 'נ',
+  'ף': 'פ',
+  'ץ': 'צ'
+};
+
+function NormalizeHebrewLetter(char) {
+  return SOFIT_MAP[char] || char;
+}
+
+function NormalizeHebrewString(str) {
+  if (!str) return '';
+  return str.split('').map(NormalizeHebrewLetter).join('');
+}
+
+function ExtractWordsForAcrostics(text) {
+  if (!text) return [];
+  const clean = text.replace(/[\u0591-\u05C7]/g, '');
+  const normalizedText = clean.replace(/[\u05BE\-]/g, ' ');
+  const rawTokens = normalizedText.split(/\s+/);
+  const words = [];
+
+  for (let token of rawTokens) {
+    const hebrewLetters = token.replace(/[^\u05D0-\u05EA]/g, '');
+    if (hebrewLetters.length > 0) {
+      const firstChar = hebrewLetters[0];
+      const lastChar = hebrewLetters[hebrewLetters.length - 1];
+      words.push({
+        rawWord: token,
+        cleanWord: hebrewLetters,
+        firstLetter: firstChar,
+        firstLetterNormalized: NormalizeHebrewLetter(firstChar),
+        lastLetter: lastChar,
+        lastLetterNormalized: NormalizeHebrewLetter(lastChar)
+      });
+    }
+  }
+  return words;
+}
+
+/**
+ * Detecta acrósticos Roshei Teivot (iniciales) y Sofei Teivot (finales) en un texto hebreo.
+ * 
+ * @param {string} text - Texto hebreo de entrada.
+ * @param {string} [type='roshei'] - Tipo de acróstico: 'roshei', 'sofei', o 'both'.
+ * @param {string|null} [targetWord=null] - Palabra objetivo a buscar. Si es null, extrae acrósticos completos del texto.
+ * @param {Object} [options={}] - Opciones de configuración.
+ * @param {boolean} [options.exactSofit=false] - Si es true, requiere coincidencia exacta de Sofit; si es false, normaliza Sofiyot.
+ * @returns {Array<Object>} Lista de acrósticos encontrados.
+ */
+function FindAcrostics(text, type = 'roshei', targetWord = null, options = {}) {
+  const exactSofit = options.exactSofit === true;
+  const words = ExtractWordsForAcrostics(text);
+  if (words.length === 0) return [];
+
+  let cleanTarget = null;
+  let targetNorm = null;
+  if (targetWord !== null && targetWord !== undefined) {
+    cleanTarget = String(targetWord).replace(/[^\u05D0-\u05EA]/g, '');
+    if (cleanTarget === '') return [];
+    targetNorm = NormalizeHebrewString(cleanTarget);
+  }
+
+  const typesToCheck = [];
+  if (type === 'roshei' || type === 'both') typesToCheck.push('roshei');
+  if (type === 'sofei' || type === 'both') typesToCheck.push('sofei');
+
+  const results = [];
+
+  for (let currentType of typesToCheck) {
+    const isRoshei = currentType === 'roshei';
+    const isSofei = currentType === 'sofei';
+
+    if (cleanTarget) {
+      const L = cleanTarget.length;
+      if (L > words.length) continue;
+
+      for (let i = 0; i <= words.length - L; i++) {
+        const windowWords = words.slice(i, i + L);
+        
+        let extractedRaw = '';
+        let extractedNorm = '';
+
+        if (isRoshei) {
+          extractedRaw = windowWords.map(w => w.firstLetter).join('');
+          extractedNorm = windowWords.map(w => w.firstLetterNormalized).join('');
+        } else {
+          extractedRaw = windowWords.map(w => w.lastLetter).join('');
+          extractedNorm = windowWords.map(w => w.lastLetterNormalized).join('');
+        }
+
+        let isMatch = false;
+        if (exactSofit) {
+          isMatch = (extractedRaw === cleanTarget);
+        } else {
+          isMatch = (extractedRaw === cleanTarget) || (extractedNorm === targetNorm);
+        }
+
+        if (isMatch) {
+          const phraseWords = windowWords.map(w => w.cleanWord).join(' ');
+          const indices = Array.from({ length: L }, (_, idx) => i + idx);
+          
+          results.push({
+            phrase: phraseWords,
+            cleanPhrase: phraseWords,
+            word: extractedRaw,
+            targetWord: cleanTarget,
+            isRoshei,
+            isSofei,
+            type: currentType,
+            startIndex: i,
+            endIndex: i + L - 1,
+            indices,
+            wordDetails: windowWords.map(w => ({
+              word: w.cleanWord,
+              rawWord: w.rawWord,
+              letter: isRoshei ? w.firstLetter : w.lastLetter,
+              normalizedLetter: isRoshei ? w.firstLetterNormalized : w.lastLetterNormalized,
+              position: isRoshei ? 'first' : 'last'
+            }))
+          });
+        }
+      }
+    } else {
+      // Extraer acróstico completo de la frase
+      const extractedRaw = words.map(w => isRoshei ? w.firstLetter : w.lastLetter).join('');
+      const phraseWords = words.map(w => w.cleanWord).join(' ');
+      const indices = Array.from({ length: words.length }, (_, idx) => idx);
+
+      results.push({
+        phrase: phraseWords,
+        cleanPhrase: phraseWords,
+        word: extractedRaw,
+        targetWord: extractedRaw,
+        isRoshei,
+        isSofei,
+        type: currentType,
+        startIndex: 0,
+        endIndex: words.length - 1,
+        indices,
+        wordDetails: words.map(w => ({
+          word: w.cleanWord,
+          rawWord: w.rawWord,
+          letter: isRoshei ? w.firstLetter : w.lastLetter,
+          normalizedLetter: isRoshei ? w.firstLetterNormalized : w.lastLetterNormalized,
+          position: isRoshei ? 'first' : 'last'
+        }))
+      });
+    }
+  }
+
+  return results;
+}
+
+// === MÓDULO DE ESTADÍSTICA ELS Y P-VALUE ===
+
+/**
+ * Calcula frecuencias relativas y conteo de letras en un texto hebreo.
+ * @param {string} text - Corpus o texto hebreo.
+ * @returns {Object} { counts: Object, frequencies: Object, N: number }
+ */
+function CalculateLetterFrequencies(text) {
+  const counts = {};
+  const N = text ? text.length : 0;
+  if (N === 0) return { counts: {}, frequencies: {}, N: 0 };
+
+  for (let i = 0; i < N; i++) {
+    const char = text[i];
+    counts[char] = (counts[char] || 0) + 1;
+  }
+
+  const frequencies = {};
+  for (const char in counts) {
+    frequencies[char] = counts[char] / N;
+  }
+
+  return { counts, frequencies, N };
+}
+
+/**
+ * Calcula el valor p de Poisson, coincidencias esperadas y puntaje de significancia estadística para ELS.
+ * @param {number} textLength - Longitud N del texto.
+ * @param {string} searchWord - Palabra ELS buscada.
+ * @param {number|number[]|{minSkip: number, maxSkip: number}} skipSpec - Salto entero, lista de saltos o rango.
+ * @param {Object} letterFrequencies - Mapa de frecuencias { [char]: frequency } o resultado de CalculateLetterFrequencies.
+ * @returns {Object} { expectedMatches: number, pValue: number, statisticalSignificanceScore: number, logPValue: number }
+ */
+function CalculateELSPValue(textLength, searchWord, skipSpec, letterFrequencies) {
+  if (!Number.isFinite(textLength) || textLength <= 0) {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  if (!searchWord || (typeof searchWord !== 'string' && !Array.isArray(searchWord))) {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  const k = searchWord.length;
+  if (k < 2 || !letterFrequencies) {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  if (skipSpec === null || skipSpec === undefined) {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  const freqs = letterFrequencies.frequencies || letterFrequencies;
+  let pWord = 1.0;
+  for (let i = 0; i < k; i++) {
+    const char = searchWord[i];
+    const freq = freqs[char] || 0;
+    if (freq === 0) {
+      pWord = 0;
+      break;
+    }
+    pWord *= freq;
+  }
+
+  if (pWord === 0) {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  let totalL = 0;
+
+  if (typeof skipSpec === 'number') {
+    if (!Number.isFinite(skipSpec)) {
+      return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+    }
+    if (skipSpec !== 0) {
+      totalL = Math.max(0, textLength - (k - 1) * Math.abs(skipSpec));
+    }
+  } else if (Array.isArray(skipSpec)) {
+    for (const s of skipSpec) {
+      if (typeof s === 'number' && Number.isFinite(s) && s !== 0) {
+        totalL += Math.max(0, textLength - (k - 1) * Math.abs(s));
+      }
+    }
+  } else if (typeof skipSpec === 'object') {
+    const minS = typeof skipSpec.minSkip === 'number' && Number.isFinite(skipSpec.minSkip) ? skipSpec.minSkip : null;
+    const maxS = typeof skipSpec.maxSkip === 'number' && Number.isFinite(skipSpec.maxSkip) ? skipSpec.maxSkip : null;
+
+    if (minS === null && maxS === null) {
+      return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+    }
+
+    const effectiveMin = minS !== null ? minS : 1;
+    const effectiveMax = maxS !== null ? maxS : effectiveMin;
+
+    let absMin, absMax;
+    if (effectiveMin <= 0 && effectiveMax >= 0) {
+      absMin = 1;
+      absMax = Math.max(Math.abs(effectiveMin), Math.abs(effectiveMax));
+    } else {
+      const a = Math.abs(effectiveMin);
+      const b = Math.abs(effectiveMax);
+      absMin = Math.min(a, b);
+      absMax = Math.max(a, b);
+      if (absMin === 0) absMin = 1;
+    }
+
+    const maxLimit = Math.min(textLength, Math.ceil(textLength / Math.max(1, k - 1)) + 1);
+    absMax = Math.min(absMax, maxLimit);
+
+    for (let s = absMin; s <= absMax; s++) {
+      totalL += 2 * Math.max(0, textLength - (k - 1) * s);
+    }
+  } else {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  const E = totalL * pWord;
+  if (E <= 0) {
+    return { expectedMatches: 0, pValue: 1.0, statisticalSignificanceScore: 0, significanceScore: 0, logPValue: 0 };
+  }
+
+  let pValue = -Math.expm1(-E);
+  if (pValue <= 0 || isNaN(pValue)) {
+    pValue = E;
+  }
+
+  let logPValue = Math.log10(pValue);
+  if (!isFinite(logPValue)) {
+    logPValue = Math.log10(E);
+  }
+
+  const statisticalSignificanceScore = -logPValue;
+
+  return {
+    expectedMatches: E,
+    pValue: pValue,
+    statisticalSignificanceScore: statisticalSignificanceScore,
+    significanceScore: statisticalSignificanceScore,
+    logPValue: logPValue
+  };
+}
+
 /**
  * Busca secuencias de letras equidistantes (ELS) para una palabra en un texto.
+ * Soporta callback de progreso a través de options.onProgress o 5º argumento callback.
  */
-function FindELS(text, searchWord, minSkip, maxSkip) {
+function FindELS(text, searchWord, minSkip, maxSkip, options = {}) {
   const results = [];
-  const wordLen = searchWord.length;
-  if (wordLen < 2) return results;
+  const wordLen = searchWord ? searchWord.length : 0;
+  if (!text || wordLen < 2) return results;
 
+  const onProgress = typeof options === 'function' ? options : (options && typeof options.onProgress === 'function' ? options.onProgress : null);
+
+  const freqData = CalculateLetterFrequencies(text);
   const firstChar = searchWord[0];
   const textLen = text.length;
 
@@ -399,9 +752,26 @@ function FindELS(text, searchWord, minSkip, maxSkip) {
     }
   }
 
-  for (let skip = -maxSkip; skip <= maxSkip; skip++) {
+  const effectiveMin = Math.max(1, parseInt(minSkip, 10) || 1);
+  const effectiveMax = Math.max(effectiveMin, parseInt(maxSkip, 10) || 1);
+  const totalSkips = 2 * (effectiveMax - effectiveMin + 1);
+  let processedSkips = 0;
+
+  for (let skip = -effectiveMax; skip <= effectiveMax; skip++) {
     const absSkip = Math.abs(skip);
-    if (absSkip < minSkip) continue;
+    if (absSkip < effectiveMin) continue;
+
+    processedSkips++;
+    if (onProgress) {
+      const percent = totalSkips > 0 ? Math.floor((processedSkips / totalSkips) * 100) : 100;
+      onProgress({
+        percent,
+        currentSkip: skip,
+        totalSkips,
+        processedSkips,
+        searchWord
+      });
+    }
 
     for (let startIdx of startIndices) {
       let match = true;
@@ -417,11 +787,15 @@ function FindELS(text, searchWord, minSkip, maxSkip) {
       }
 
       if (match) {
+        const stats = CalculateELSPValue(textLen, searchWord, skip, freqData.frequencies);
         results.push({
           word: searchWord,
           start: startIdx,
           skip: skip,
-          indices: pathIndices
+          indices: pathIndices,
+          expectedCount: stats.expectedMatches,
+          pValue: stats.pValue,
+          significanceScore: stats.statisticalSignificanceScore
         });
       }
     }
@@ -432,29 +806,47 @@ function FindELS(text, searchWord, minSkip, maxSkip) {
 }
 
 // Exportación compatible
+const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
     SpanishToHebrew, 
     CalculateGematria, 
     HEBREW_MAP, 
     ATBASH_PAIRS,
+    ALBAM_PAIRS,
+    AVGAD_PAIRS,
     FindSharedRoot,
     GetFactorRelation,
     ScoreCorrelation,
     FindCorrelations,
-    FindELS
+    FindELS,
+    NormalizeHebrewLetter,
+    NormalizeHebrewString,
+    FindAcrostics,
+    CalculateLetterFrequencies,
+    CalculateELSPValue
   };
-} else {
-  window.GematriaEngine = { 
+}
+
+if (_globalScope) {
+  _globalScope.GematriaEngine = { 
     SpanishToHebrew, 
     CalculateGematria, 
     HEBREW_MAP, 
     ATBASH_PAIRS,
+    ALBAM_PAIRS,
+    AVGAD_PAIRS,
     FindSharedRoot,
     GetFactorRelation,
     ScoreCorrelation,
     FindCorrelations,
-    FindELS
+    FindELS,
+    NormalizeHebrewLetter,
+    NormalizeHebrewString,
+    FindAcrostics,
+    CalculateLetterFrequencies,
+    CalculateELSPValue
   };
 }
 
