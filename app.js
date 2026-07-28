@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- ESTADO DE LA APLICACIÓN ---
   let autoScanDebounceTimer = null;
   let appState = {
-    currentTab: 'calculator',
+    currentTab: 'explore',
     inputLanguage: 'hebrew', // 'hebrew' o 'spanish'
     rawInputText: '',
     hebrewProcessedText: '',
@@ -2510,6 +2510,218 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
+
+  // --- MÓDULO: EXPLORAR CORRELACIONES (apellido / fecha / evento) ---
+  const Explore = window.GematriaExplore;
+  const txtExploreQuery = document.getElementById('txtExploreQuery');
+  const btnExploreSearch = document.getElementById('btnExploreSearch');
+  const exploreResults = document.getElementById('exploreResults');
+  const exploreStatus = document.getElementById('exploreStatus');
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function runExploreSearch(rawQuery) {
+    if (!Explore || typeof Explore.ExploreCorrelations !== 'function') {
+      if (exploreStatus) exploreStatus.textContent = 'Motor de exploración no disponible.';
+      return;
+    }
+    const query = (rawQuery != null ? rawQuery : (txtExploreQuery && txtExploreQuery.value) || '').trim();
+    if (txtExploreQuery) txtExploreQuery.value = query;
+    if (!query) {
+      if (exploreStatus) exploreStatus.textContent = 'Escribe un apellido, fecha, evento o número.';
+      if (exploreResults) exploreResults.innerHTML = '';
+      return;
+    }
+
+    const data = Explore.ExploreCorrelations(query, DB, Engine);
+    renderExploreResults(data);
+  }
+
+  function renderExploreResults(data) {
+    if (!exploreResults) return;
+    const meta = data.meta || {};
+    const typeLabels = {
+      surname: 'Apellido',
+      name: 'Nombre',
+      date: 'Fecha',
+      event: 'Evento',
+      number: 'Número',
+      concept: 'Concepto',
+      hebrew: 'Hebreo',
+      text: 'Texto'
+    };
+
+    const total =
+      data.knowledge.length + data.events.length + data.zionist.length + data.verses.length;
+
+    if (exploreStatus) {
+      const he = meta.primaryHebrew
+        ? ` · Hebreo: <span style="font-family:var(--font-hebrew)">${escapeHtml(meta.primaryHebrew)}</span>`
+        : '';
+      const g = meta.primaryGematria && meta.primaryGematria.absolute
+        ? ` · Gematria: <strong>${meta.primaryGematria.absolute}</strong>`
+        : (meta.numbers && meta.numbers.length ? ` · Números: ${meta.numbers.slice(0, 5).join(', ')}` : '');
+      exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g} · ${total} correlación(es)`;
+    }
+
+    if (total === 0 && !(data.suggestedELS && data.suggestedELS.length)) {
+      exploreResults.innerHTML = '<div class="explore-empty">Sin correlaciones directas. Prueba otro apellido, una fecha (ej. 1948) o un evento (ej. Oslo).</div>';
+      return;
+    }
+
+    let html = '';
+
+    if (meta.nameEntry || meta.dateInfo || meta.primaryGematria) {
+      html += '<div class="explore-summary-bar">';
+      if (meta.nameEntry) {
+        html += `<span>Diccionario: <strong>${escapeHtml(meta.nameEntry.note || meta.nameEntry.id)}</strong></span>`;
+      }
+      if (meta.dateInfo) {
+        html += `<span>Año: <strong>${meta.dateInfo.year}</strong>`;
+        if (meta.dateInfo.hebrewYearApprox) html += ` ≈ hebreo ~${meta.dateInfo.hebrewYearApprox}`;
+        html += '</span>';
+      }
+      if (meta.primaryGematria) {
+        html += `<span>Abs ${meta.primaryGematria.absolute} · Ord ${meta.primaryGematria.ordinal} · Red ${meta.primaryGematria.reduced}</span>`;
+      }
+      html += '</div>';
+    }
+
+    if (data.events.length) {
+      html += '<div><div class="explore-section-title">Línea de tiempo</div><div class="explore-grid">';
+      data.events.slice(0, 8).forEach((hit, idx) => {
+        const ev = hit.event;
+        html += `
+          <div class="explore-card">
+            <h4>${escapeHtml(ev.title)}</h4>
+            <div class="meta">${escapeHtml(ev.label)} · ${escapeHtml(ev.hebrewYear || '')}</div>
+            <div class="meta">${escapeHtml(ev.desc)}</div>
+            <div class="reasons">${escapeHtml((hit.reasons || []).join(' · '))}</div>
+            <div class="explore-actions">
+              <button type="button" class="explore-action-btn" data-explore-els="${idx}" data-els-terms="${escapeHtml((ev.searchTerms || []).join(','))}">Buscar ELS</button>
+              <button type="button" class="explore-action-btn" data-explore-zionism="1">Ver timeline</button>
+            </div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.knowledge.length) {
+      html += '<div><div class="explore-section-title">Grafo de conocimiento</div><div class="explore-grid">';
+      data.knowledge.slice(0, 12).forEach(corr => {
+        const e = corr.entry;
+        const matchDesc = (corr.matches || []).map(m => m.desc).join(' · ');
+        html += `
+          <div class="explore-card">
+            <div class="he">${escapeHtml(e.hebrew)}</div>
+            <h4>${escapeHtml(e.spanish)}</h4>
+            <div class="meta">${'⭐'.repeat(corr.stars || 1)} · ${escapeHtml(e.category || '')}</div>
+            <div class="meta">${escapeHtml((e.mysticalNote || '').slice(0, 160))}${(e.mysticalNote || '').length > 160 ? '…' : ''}</div>
+            <div class="reasons">${escapeHtml(matchDesc)}</div>
+            <div class="explore-actions">
+              <button type="button" class="explore-action-btn" data-explore-calc="${escapeHtml(e.hebrew)}">Abrir en calculadora</button>
+            </div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.zionist.length) {
+      html += '<div><div class="explore-section-title">Correlaciones sionistas</div><div class="explore-grid">';
+      data.zionist.slice(0, 6).forEach(hit => {
+        const c = hit.card;
+        html += `
+          <div class="explore-card">
+            <div class="he">${escapeHtml(c.hebrew)}</div>
+            <h4>${escapeHtml(c.concept)}</h4>
+            <div class="meta">Gematria ${c.gematria}</div>
+            <div class="meta">${escapeHtml((c.mysticalConnection || '').slice(0, 160))}…</div>
+            <div class="reasons">${escapeHtml((hit.reasons || []).join(' · '))}</div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.verses.length) {
+      html += '<div><div class="explore-section-title">Versículos por valor</div><div class="explore-grid">';
+      data.verses.forEach(hit => {
+        const v = hit.verse;
+        html += `
+          <div class="explore-card">
+            <h4>${escapeHtml(v.reference)}</h4>
+            <div class="he">${escapeHtml(v.hebrew)}</div>
+            <div class="meta">${escapeHtml(v.translation)}</div>
+            <div class="reasons">Gematria ${v.gematria}</div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.suggestedELS && data.suggestedELS.length) {
+      html += `
+        <div>
+          <div class="explore-section-title">Código de la Biblia (ELS)</div>
+          <p class="meta" style="margin-bottom:0.6rem;color:var(--text-secondary);font-size:0.85rem;">
+            Lanza una búsqueda ELS con los términos sugeridos a partir de tu consulta.
+          </p>
+          <div class="explore-actions">
+            <button type="button" class="explore-action-btn" id="btnExploreRunELS" data-els-terms="${escapeHtml(data.suggestedELS.join(','))}">
+              Buscar ELS: ${escapeHtml(data.suggestedELS.join(', '))}
+            </button>
+          </div>
+        </div>`;
+    }
+
+    exploreResults.innerHTML = html;
+
+    exploreResults.querySelectorAll('[data-els-terms]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const terms = btn.getAttribute('data-els-terms') || '';
+        if (!terms) return;
+        switchTab('biblecode');
+        if (txtSearchELS) {
+          txtSearchELS.value = terms;
+          handleELSSearch();
+        }
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-zionism]').forEach(btn => {
+      btn.addEventListener('click', () => switchTab('zionism'));
+    });
+
+    exploreResults.querySelectorAll('[data-explore-calc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const he = btn.getAttribute('data-explore-calc') || '';
+        switchTab('calculator');
+        setLanguage('hebrew');
+        if (txtInput) {
+          txtInput.value = he;
+          processInputText(he);
+        }
+      });
+    });
+  }
+
+  if (btnExploreSearch) {
+    btnExploreSearch.addEventListener('click', () => runExploreSearch());
+  }
+  if (txtExploreQuery) {
+    txtExploreQuery.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') runExploreSearch();
+    });
+  }
+  document.querySelectorAll('.explore-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      runExploreSearch(chip.getAttribute('data-q') || chip.textContent);
+    });
+  });
 
   // Añadir p-value y significancia estadística al panel de narrativa ELS
   const _origRenderNarrative = renderNarrativePanel;

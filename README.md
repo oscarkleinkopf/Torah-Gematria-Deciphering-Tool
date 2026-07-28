@@ -13,17 +13,21 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Grafo integrado con 57 conceptos clave (Nombres Divinos, Sefirot, Sionismo, Cábala, Personajes Bíblicos).
    - Genera tarjetas de resonancia matemática y puentes narrativos cabalísticos.
 
-3. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:
+3. **Explorar correlaciones (apellido / fecha / evento)**:
+   - Buscador unificado: apellido (Cohen, Herzl…), fecha (`14/05/1948`), evento (Oslo, Balfour) o número (`708`).
+   - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
+
+4. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:
    - Motor de búsqueda ELS sobre corpus consonántico embebido (~27k letras, 5 libros).
    - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y **cancelación real** (terminate + `shouldCancel`).
    - Matriz visual responsiva en orientación **RTL** con ajuste dinámico de columnas.
    - **Crossover Density**, p-valor / significancia estadística, historial y sugerencias rápidas.
    - Exportación **PNG** de la matriz y pestaña de **Favoritos** (LocalStorage).
 
-4. **Acrósticos (Roshei / Sofei Teivot)**:
+5. **Acrósticos (Roshei / Sofei Teivot)**:
    - Búsqueda de acrósticos de inicio/final de palabra sobre texto hebreo libre.
 
-5. **Línea de Tiempo del Sionismo & Comparador de Dos Palabras**:
+6. **Línea de Tiempo del Sionismo & Comparador de Dos Palabras**:
    - Canvas interactivo de sincronías históricas (Sinaí → Oslo, 13 hitos).
    - Comparador de órbitas duales que construye un puente espiritual entre dos términos.
 

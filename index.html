@@ -27,7 +27,8 @@
 
     <!-- Navegación Principal -->
     <nav>
-      <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
+      <button class="nav-btn active" data-tab="explore">Explorar</button>
+      <button class="nav-btn" data-tab="calculator">Calculadora de Gematria</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
       <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
       <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
@@ -38,8 +39,37 @@
       <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
     </nav>
 
+    <!-- SECCIÓN: EXPLORAR CORRELACIONES -->
+    <div id="explore" class="tab-content active">
+      <div class="glass-card explore-panel">
+        <h3 class="input-title">Explorar correlaciones</h3>
+        <p class="explore-lead">
+          Busca un <strong>apellido</strong>, <strong>nombre</strong>, <strong>fecha</strong> o <strong>evento</strong>
+          y descubre resonancias en el grafo de conocimiento, la línea de tiempo y la Torá.
+        </p>
+
+        <div class="explore-search-row">
+          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, Oslo, Herzl, 708…" autocomplete="off">
+          <button type="button" id="btnExploreSearch" class="explore-search-btn">Buscar</button>
+        </div>
+
+        <div class="explore-chips" id="exploreQuickChips">
+          <button type="button" class="explore-chip" data-q="Cohen">Cohen</button>
+          <button type="button" class="explore-chip" data-q="Herzl">Herzl</button>
+          <button type="button" class="explore-chip" data-q="14/05/1948">14/05/1948</button>
+          <button type="button" class="explore-chip" data-q="Oslo">Oslo</button>
+          <button type="button" class="explore-chip" data-q="708">708</button>
+          <button type="button" class="explore-chip" data-q="Sión">Sión</button>
+          <button type="button" class="explore-chip" data-q="Balfour">Balfour</button>
+        </div>
+
+        <div id="exploreStatus" class="explore-status" aria-live="polite"></div>
+        <div id="exploreResults" class="explore-results"></div>
+      </div>
+    </div>
+
     <!-- SECCIÓN 1: CALCULADORA -->
-    <div id="calculator" class="tab-content active">
+    <div id="calculator" class="tab-content">
       <div class="calculator-grid">
         <!-- Panel Izquierdo: Entrada de Texto y Teclado -->
         <div class="glass-card input-panel">
@@ -561,6 +591,7 @@
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
   <script src="gematria.js"></script>
+  <script src="explore.js"></script>
   <script src="storage.js"></script>
   <script src="export.js"></script>
   <script src="app.js"></script>

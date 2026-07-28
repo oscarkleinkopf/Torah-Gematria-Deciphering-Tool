@@ -5,12 +5,13 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS` and browser alias `TorahText`.
 - `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
+- `explore.js`: Unified correlation explorer — surname/name dictionary, date parser, and `ExploreCorrelations()` across KG + timeline + Zionism + verses.
 - `export.js`: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
 - `storage.js`: LocalStorage manager for Favorites and Saved Searches.
 - `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
-- `app.js`: UI Controller, DOM event bindings, Cyber-Mystic navigation, visual animations, and Canvas renderers.
+- `app.js`: UI Controller, DOM event bindings, Cyber-Mystic navigation, visual animations, Canvas renderers, and Explore tab.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
-- `index.html`: Responsive layout with navigation tabs for Calculator, Torah, ELS Code, Zionism, Comparator, Acrostics, Letter Mirror, Favorites.
+- `index.html`: Responsive layout with navigation tabs for Explore, Calculator, Torah, ELS Code, Zionism, Comparator, Acrostics, Letter Mirror, Favorites.
 - `test.js`: Automated unit test suite run via `node test.js`.
 - `adversarial_test.js`: Stress / cipher / acrostic / ELS adversarial suite.
 

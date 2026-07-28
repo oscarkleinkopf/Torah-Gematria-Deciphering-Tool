@@ -319,6 +319,36 @@ async function runAllTests() {
 
   assert(mainThreadTicks >= 0, `Demostración de no-bloqueo: hilo principal ejecutó ${mainThreadTicks} ticks de event loop mientras worker procesaba`);
 
+  console.log("\n=== SECCIÓN 17: EXPLORAR CORRELACIONES (apellido / fecha / evento) ===");
+  const Explore = require('./explore.js');
+  assert(typeof Explore.ExploreCorrelations === 'function', "explore.js exporta ExploreCorrelations");
+  assert(Explore.NAME_DICTIONARY.length >= 30, `NAME_DICTIONARY tiene al menos 30 entradas (actual: ${Explore.NAME_DICTIONARY.length})`);
+
+  const dateParsed = Explore.ParseDateQuery('14/05/1948');
+  assert(dateParsed && dateParsed.year === 1948 && dateParsed.day === 14 && dateParsed.month === 5, "ParseDateQuery entiende 14/05/1948");
+  assert(dateParsed.hebrewYearApprox === 5708, "ParseDateQuery estima año hebreo ~5708");
+
+  const cohen = Explore.ExploreCorrelations('Cohen', DB, Engine);
+  assert(cohen.queryType === 'surname' && cohen.meta.primaryHebrew === 'כהן', "Cohen resuelve a apellido כהן");
+  assert(cohen.knowledge.length > 0, "Cohen produce correlaciones en el grafo de conocimiento");
+  assert(cohen.suggestedELS.includes('כהן'), "Cohen sugiere ELS כהן");
+
+  const independence = Explore.ExploreCorrelations('14/05/1948', DB, Engine);
+  assert(independence.queryType === 'date', "14/05/1948 se clasifica como fecha");
+  assert(independence.events.some(e => e.event.year === 1948), "14/05/1948 correlaciona con la Independencia de 1948");
+
+  const oslo = Explore.ExploreCorrelations('Oslo', DB, Engine);
+  assert(oslo.events.some(e => /oslo/i.test(e.event.title)), "Oslo encuentra los Acuerdos de Oslo");
+
+  const num708 = Explore.ExploreCorrelations('708', DB, Engine);
+  assert(num708.queryType === 'number', "708 se clasifica como número");
+  assert(num708.verses.some(v => v.verse.gematria === 708), "708 encuentra Deuteronomio 32:3");
+  assert(num708.zionist.some(z => z.card.gematria === 708), "708 encuentra la tarjeta sionista Tashach");
+
+  const herzl = Explore.ExploreCorrelations('Herzl', DB, Engine);
+  assert(herzl.queryType === 'surname' && herzl.meta.primaryHebrew === 'הרצל', "Herzl resuelve a הרצל");
+  assert(herzl.events.some(e => e.event.year === 1897), "Herzl correlaciona con el Congreso de Basilea");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");
