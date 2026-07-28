@@ -367,9 +367,9 @@
                 <span id="lblMatrixWidth" style="font-size: 0.85rem; color: var(--gold-primary); font-weight: bold; min-width: 25px; display: inline-block; text-align: center;">50</span>
               </div>
               <!-- Botón Exportar PNG -->
-              <button id="btnExportMatrixPNG" title="Exportar matriz como imagen PNG" style="display: none; background: rgba(0,206,209,0.1); border: 1px solid rgba(0,206,209,0.3); color: #00ced1; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📷 Exportar PNG</button>
+              <button id="btnExportMatrixPNG" class="btn-els-action btn-export-png" title="Exportar matriz como imagen PNG" style="display: none;">📷 Exportar PNG</button>
               <!-- Botón Guardar Favorito -->
-              <button id="btnSaveELSFavorite" title="Guardar este hallazgo en Favoritos" style="display: none; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">⭐ Guardar</button>
+              <button id="btnSaveELSFavorite" class="btn-els-action btn-save-favorite" title="Guardar este hallazgo en Favoritos" style="display: none;">⭐ Guardar</button>
             </div>
           </div>
 
@@ -503,13 +503,13 @@
       <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <h3 class="input-title" style="margin: 0;">⭐ Hallazgos Guardados</h3>
-          <button id="btnClearAllFavorites" style="background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: #e74c3c; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;">🗑️ Limpiar Todo</button>
+          <button id="btnClearAllFavorites" class="btn-clear-favorites">🗑️ Limpiar Todo</button>
         </div>
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
           Aquí se guardan automáticamente los hallazgos ELS que marques como favoritos. Persisten entre sesiones del navegador.
         </p>
-        <div id="favoritesContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-          <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem 0; grid-column: 1/-1;">
+        <div id="favoritesContainer" class="favorites-grid">
+          <div class="favorites-empty">
             No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.
           </div>
         </div>
@@ -561,6 +561,8 @@
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
   <script src="gematria.js"></script>
+  <script src="storage.js"></script>
+  <script src="export.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

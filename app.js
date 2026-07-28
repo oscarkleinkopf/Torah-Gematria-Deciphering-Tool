@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- CARGAR BASE DE DATOS Y MOTOR ---
   const DB = window.GematriaDB;
   const Engine = window.GematriaEngine;
+  const Storage = window.GematriaStorage || {};
 
   if (!DB || !Engine) {
     console.error('Error: No se pudo cargar database.js o gematria.js.');
@@ -128,33 +129,38 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- 1. ENRUTADOR INTERNO DE PESTAÑAS ---
+  function switchTab(tabId) {
+    if (!tabId) return;
+
+    navButtons.forEach(btn => btn.classList.remove('active'));
+    tabContents.forEach(tab => tab.classList.remove('active'));
+
+    const btn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+    const tab = document.getElementById(tabId);
+    if (btn) btn.classList.add('active');
+    if (tab) tab.classList.add('active');
+
+    appState.currentTab = tabId;
+
+    if (tabId === 'calculator') {
+      resizeCanvas();
+      updateRelationGraph();
+    } else if (tabId === 'comparison') {
+      resizeComparisonCanvas();
+    } else if (tabId === 'zionism') {
+      resizeTimelineCanvas();
+    } else if (tabId === 'biblecode') {
+      if (bibleCodeState.activeMatch) {
+        renderBibleCodeMatrix();
+      }
+    } else if (tabId === 'favorites') {
+      renderFavoritesTab();
+    }
+  }
+
   navButtons.forEach(button => {
     button.addEventListener('click', () => {
-      const tabId = button.getAttribute('data-tab');
-      
-      // Actualizar botones de navegación
-      navButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-      
-      // Actualizar vistas
-      tabContents.forEach(tab => tab.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      
-      appState.currentTab = tabId;
-
-      // Resize y render según corresponda
-      if (tabId === 'calculator') {
-        resizeCanvas();
-        updateRelationGraph();
-      } else if (tabId === 'comparison') {
-        resizeComparisonCanvas();
-      } else if (tabId === 'zionism') {
-        resizeTimelineCanvas();
-      } else if (tabId === 'biblecode') {
-        if (bibleCodeState.activeMatch) {
-          renderBibleCodeMatrix();
-        }
-      }
+      switchTab(button.getAttribute('data-tab'));
     });
   });
 
@@ -610,14 +616,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDiscoveriesPanel(appState.gematriaResult);
   }
 
-  // Navegar a otra pestaña
-  function switchTab(tabId) {
-    const button = Array.from(navButtons).find(btn => btn.getAttribute('data-tab') === tabId);
-    if (button) {
-      button.click();
-    }
-  }
-
   // Animación interactiva del Matrix Scanner
   function triggerMatrixScannerAnimation(match, crossovers, callback) {
     const overlay = document.getElementById('matrixScannerOverlay');
@@ -648,9 +646,12 @@ document.addEventListener('DOMContentLoaded', () => {
       matrixBg.textContent = randomHebrew;
     }, 45);
 
+    const corpusLen = (typeof window.TORAH_TEXT === 'string' && window.TORAH_TEXT.length)
+      ? window.TORAH_TEXT.length.toLocaleString('es-ES')
+      : '26.371';
     const logs = [
       { text: '> INICIANDO DECODIFICADOR AUTOMÁTICO EN LA TORÁ...', delay: 0 },
-      { text: `> Cargando Génesis 1-5: 6,877 consonantes puras cargadas en memoria.`, delay: 200 },
+      { text: `> Cargando corpus de 5 libros: ${corpusLen} consonantes puras en memoria.`, delay: 200 },
       { text: `> Escaneando secuencias equidistantes para: "${match.word}"...`, delay: 400 },
       { text: `> ¡Palabra hallada! Salto constante = ${match.skip} letras (Letra de inicio: #${match.start}).`, delay: 650, class: 'info' },
       { text: `> Buscando cruces en el cuadrante con el Grafo de 50 conceptos...`, delay: 850 },
@@ -1781,23 +1782,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- FASE 5: HISTORIAL Y SUGERENCIAS RÁPIDAS DE BÚSQUEDA ELS ---
-  function getELSSearchHistory() {
-    try {
-      return JSON.parse(localStorage.getItem('els_search_history') || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
   function saveELSSearchHistory(query) {
-    if (!query || query.trim().length === 0) return;
-    let history = getELSSearchHistory();
-    history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
-    history.unshift(query);
-    if (history.length > 8) history = history.slice(0, 8);
-    try {
-      localStorage.setItem('els_search_history', JSON.stringify(history));
-    } catch (e) {}
+    if (Storage.SaveELSSearchHistory) Storage.SaveELSSearchHistory(query);
     renderELSSearchHistory();
   }
 
@@ -1806,7 +1792,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('elsHistoryChips');
     if (!section || !container) return;
 
-    const history = getELSSearchHistory();
+    const history = Storage.GetELSSearchHistory ? Storage.GetELSSearchHistory() : [];
     if (history.length === 0) {
       section.style.display = 'none';
       return;
@@ -1830,7 +1816,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearELSHistory = document.getElementById('btnClearELSHistory');
   if (btnClearELSHistory) {
     btnClearELSHistory.addEventListener('click', () => {
-      localStorage.removeItem('els_search_history');
+      if (Storage.ClearELSSearchHistory) Storage.ClearELSSearchHistory();
       renderELSSearchHistory();
     });
   }
@@ -2318,132 +2304,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportMatrixPNG = document.getElementById('btnExportMatrixPNG');
   if (btnExportMatrixPNG) {
     btnExportMatrixPNG.addEventListener('click', () => {
-      const table = matrixContainer.querySelector('.bible-code-matrix');
-      if (!table) return;
-
+      if (typeof window.ExportMatrixAsPNG !== 'function') return;
       const match = bibleCodeState.activeMatch;
-      const wordLabel = match ? match.word : 'matriz';
-
-      // Crear canvas temporal con estilo
-      const W = table.offsetWidth + 40;
-      const H = table.offsetHeight + 80;
-      const canvas = document.createElement('canvas');
-      canvas.width = W * 2;
-      canvas.height = H * 2;
-      const ctx = canvas.getContext('2d');
-
-      // Fondo oscuro
-      ctx.scale(2, 2);
-      ctx.fillStyle = '#05040a';
-      ctx.fillRect(0, 0, W, H);
-
-      // Título
-      ctx.fillStyle = '#d4af37';
-      ctx.font = 'bold 13px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Código de la Biblia ELS — "${wordLabel}" | Salto: ${match ? match.skip : '?'} | Torah Gematria Decipher`, W / 2, 20);
-
-      // Usar html2canvas-like approach: renderizar via SVG foreignObject
-      const svgData = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${W - 40}" height="${H - 40}">
-          <foreignObject width="100%" height="100%">
-            <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: monospace; font-size: 11px; color: #ccc; background: #05040a; padding: 4px;">
-              ${table.outerHTML}
-            </div>
-          </foreignObject>
-        </svg>`;
-
-      const img = new Image();
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = () => {
-        ctx.drawImage(img, 20, 30);
-
-        // Pie de página
-        ctx.fillStyle = 'rgba(212,175,55,0.6)';
-        ctx.font = '9px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Generado por GematriaDecipher — Torah Gematria Deciphering Tool', W / 2, H - 8);
-
-        URL.revokeObjectURL(url);
-
-        // Descargar
-        const link = document.createElement('a');
-        link.download = `ELS_${wordLabel.replace(/[^א-ת\w]/g, '_')}_skip${match ? match.skip : ''}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        // Fallback: solo descargar el canvas con fondo
-        const link = document.createElement('a');
-        link.download = `ELS_matrix.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      };
-
-      img.src = url;
+      window.ExportMatrixAsPNG(matrixContainer, undefined, match || null);
     });
   }
 
-  // --- MÓDULO: FAVORITOS ELS (localStorage) ---
-  function getFavorites() {
-    try { return JSON.parse(localStorage.getItem('els_favorites') || '[]'); } catch(e) { return []; }
-  }
-
-  function saveFavorites(favs) {
-    try { localStorage.setItem('els_favorites', JSON.stringify(favs)); } catch(e) {}
-  }
-
+  // --- MÓDULO: FAVORITOS ELS (storage.js) ---
   function renderFavoritesTab() {
     const container = document.getElementById('favoritesContainer');
     if (!container) return;
-    const favs = getFavorites();
+    const favs = Storage.GetFavorites ? Storage.GetFavorites() : [];
     if (favs.length === 0) {
-      container.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem 0; grid-column: 1/-1;">No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.</div>';
+      container.innerHTML = '<div class="favorites-empty">No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.</div>';
       return;
     }
 
     container.innerHTML = '';
     favs.forEach((fav, idx) => {
       const card = document.createElement('div');
-      card.className = 'glass-card';
-      card.style.cssText = 'padding: 1rem; border: 1px solid rgba(212,175,55,0.2); position: relative;';
+      card.className = 'glass-card favorite-card';
       const sigScore = (fav.significanceScore || 0).toFixed(2);
-      const sigClass = fav.significanceScore > 5 ? 'color: #2ecc71;' : fav.significanceScore > 2 ? 'color: var(--gold-primary);' : 'color: var(--text-secondary);';
+      const sigClass = fav.significanceScore > 5 ? 'sig-high' : fav.significanceScore > 2 ? 'sig-mid' : 'sig-low';
       card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-          <span style="font-family: var(--font-hebrew); font-size: 1.6rem; color: var(--gold-primary);">${fav.word}</span>
-          <button data-idx="${idx}" class="fav-remove-btn" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem;" title="Eliminar">✕</button>
+        <div class="favorite-card-header">
+          <span class="favorite-word">${fav.word}</span>
+          <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
         </div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
-          Salto: <strong style="color: var(--text-primary);">${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
+        <div class="favorite-meta">
+          Salto: <strong>${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
         </div>
-        <div style="font-size: 0.78rem; ${sigClass}">
+        <div class="favorite-sig ${sigClass}">
           Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
         </div>
-        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 0.4rem;">${new Date(fav.savedAt).toLocaleDateString()}</div>
-        <button data-idx="${idx}" class="fav-reload-btn" style="margin-top: 0.7rem; width: 100%; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.25); color: var(--gold-primary); padding: 0.3rem; border-radius: 10px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s;">🔍 Volver a buscar</button>
+        <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+        <button data-idx="${idx}" class="fav-reload-btn">🔍 Volver a buscar</button>
       `;
       container.appendChild(card);
     });
 
-    // Eventos eliminar
     container.querySelectorAll('.fav-remove-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const favs2 = getFavorites();
-        favs2.splice(parseInt(btn.dataset.idx, 10), 1);
-        saveFavorites(favs2);
+        if (Storage.RemoveFavorite) Storage.RemoveFavorite(parseInt(btn.dataset.idx, 10));
         renderFavoritesTab();
       });
     });
 
-    // Eventos volver a buscar
     container.querySelectorAll('.fav-reload-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const fav = getFavorites()[parseInt(btn.dataset.idx, 10)];
+        const fav = (Storage.GetFavorites ? Storage.GetFavorites() : [])[parseInt(btn.dataset.idx, 10)];
         if (!fav) return;
         switchTab('biblecode');
         txtSearchELS.value = fav.word;
@@ -2452,30 +2361,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function switchTab(tabId) {
-    navButtons.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(t => t.classList.remove('active'));
-    const btn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
-    const tab = document.getElementById(tabId);
-    if (btn) btn.classList.add('active');
-    if (tab) tab.classList.add('active');
-    appState.currentTab = tabId;
-    if (tabId === 'favorites') renderFavoritesTab();
-  }
-
   const btnSaveELSFavorite = document.getElementById('btnSaveELSFavorite');
   if (btnSaveELSFavorite) {
     btnSaveELSFavorite.addEventListener('click', () => {
       const match = bibleCodeState.activeMatch;
-      if (!match) return;
-      const favs = getFavorites();
-      const already = favs.find(f => f.word === match.word && f.skip === match.skip && f.start === match.start);
-      if (already) {
-        btnSaveELSFavorite.textContent = '✅ Ya guardado';
-        setTimeout(() => { btnSaveELSFavorite.textContent = '⭐ Guardar'; }, 2000);
-        return;
-      }
-      favs.unshift({
+      if (!match || !Storage.SaveFavorite) return;
+      const before = Storage.GetFavorites ? Storage.GetFavorites().length : 0;
+      Storage.SaveFavorite({
         word: match.word,
         skip: match.skip,
         start: match.start,
@@ -2485,9 +2377,8 @@ document.addEventListener('DOMContentLoaded', () => {
         verse: getVerseContext(match.start),
         savedAt: new Date().toISOString()
       });
-      if (favs.length > 50) favs.pop();
-      saveFavorites(favs);
-      btnSaveELSFavorite.textContent = '✅ Guardado';
+      const after = Storage.GetFavorites ? Storage.GetFavorites().length : 0;
+      btnSaveELSFavorite.textContent = after === before ? '✅ Ya guardado' : '✅ Guardado';
       setTimeout(() => { btnSaveELSFavorite.textContent = '⭐ Guardar'; }, 2000);
     });
   }
@@ -2496,20 +2387,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnClearAllFavorites) {
     btnClearAllFavorites.addEventListener('click', () => {
       if (confirm('¿Eliminar todos los favoritos guardados?')) {
-        localStorage.removeItem('els_favorites');
+        if (Storage.ClearFavorites) Storage.ClearFavorites();
         renderFavoritesTab();
       }
     });
   }
-
-  // Renderizar favoritos cuando se navega a ese tab
-  navButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      if (button.getAttribute('data-tab') === 'favorites') {
-        renderFavoritesTab();
-      }
-    });
-  });
 
   // --- MÓDULO: ACRÓSTICOS (ROSHEI / SOFEI TEIVOT) ---
   const txtAcrosticsInput = document.getElementById('txtAcrosticsInput');

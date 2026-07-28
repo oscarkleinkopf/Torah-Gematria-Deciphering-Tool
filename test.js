@@ -186,7 +186,10 @@ async function runAllTests() {
   assert(Math.abs(totalFreq - 1.0) < 1e-6, "La suma de las frecuencias de letras es igual a 1.0");
 
   // Validar CalculateELSPValue para 'תורה' en salto 50 con N=6877 benchmark
-  const pValStats6877 = Engine.CalculateELSPValue(6877, 'תורה', 50, freqsData.frequencies);
+  // Use letter frequencies from the historic Genesis 1–5 slice so the classic
+  // expectedMatches (~0.2004) stays independent of the expanded corpus mix.
+  const freqsGenesis15 = Engine.CalculateLetterFrequencies(TORAH_TEXT.slice(0, 6877));
+  const pValStats6877 = Engine.CalculateELSPValue(6877, 'תורה', 50, freqsGenesis15.frequencies);
   assert(Math.abs(pValStats6877.expectedMatches - 0.20036) < 1e-2, `Esperado para 'תורה' (s=50, N=6877) ~0.2004 (obtenido: ${pValStats6877.expectedMatches.toFixed(5)})`);
 
   // Validar CalculateELSPValue sobre corpus expandido

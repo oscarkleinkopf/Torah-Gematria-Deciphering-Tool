@@ -3,28 +3,29 @@
 ## Architecture
 Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `gematria.js`: Core Gematria calculations, Temura ciphers (Atbash, Albam, Avgad), Acrostics (Roshei/Sofei Teivot), ELS search & statistical p-value calculator.
-- `torah_text.js`: Expanded Hebrew biblical consonantal corpus.
+- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~26k letters across 5 books; post-Genesis books are curated excerpts). Consonants only (U+05D0–U+05EA).
 - `database.js`: Knowledge graph (50+ concepts) & historical timeline data.
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search and matrix computations to background thread.
-- `export.js` / Canvas exporter: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
+- `export.js`: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
 - `storage.js`: LocalStorage manager for Favorites and Saved Searches.
 - `app.js`: UI Controller, DOM event bindings, Cyber-Mystic navigation, visual animations, and Canvas renderers.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
 - `index.html`: Responsive layout with navigation tabs for Calculator, Torah, ELS Code, Zionism, Comparator, Acrostics, Letter Mirror, Favorites.
 - `test.js`: Automated unit test suite run via `node test.js`.
+- `adversarial_test.js`: Stress / cipher / acrostic / ELS adversarial suite.
 
 ## Code Layout
-- Root directory contains HTML, CSS, JS runtime files and `test.js` automated test suite.
-- `.agents/` metadata directory for agent coordination plans, progress tracking, and audit logs.
+- Root directory contains HTML, CSS, JS runtime files and automated test suites.
+- `.agents/` is gitignored (local agent metadata only).
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M1 | Analytical Engine Expansion (Temura & Acrostics & ELS Stats) | Add Albam & Avgad ciphers, Roshei & Sofei Teivot acrostic searcher, ELS expectation & p-value formula in `gematria.js` and `test.js` | None | DONE |
-| M2 | Multithreaded Worker & Expanded Torah Corpus | Implement `elsWorker.js` for async non-blocking ELS searches and expand Torah text in `torah_text.js` | M1 | PLANNED |
-| M3 | Export System & LocalStorage Favorites | Implement PNG visual export for matrix/breakdowns and LocalStorage persistence for favorites/searches | M1, M2 | PLANNED |
-| M4 | Cyber-Mystic UI Polish & Module Integration | Integrate Acrostics UI, ELS P-Value indicators, Worker progress UI, Export buttons, Favorites tab, and CSS polish across all tabs | M1, M2, M3 | PLANNED |
-| M5 | Final E2E Test Pass & Forensic Integrity Audit | Validate 100% test suite passing (`node test.js`), UI error-free execution, and full Forensic Integrity verification | M1, M2, M3, M4 | PLANNED |
+| M2 | Multithreaded Worker & Expanded Torah Corpus | Implement `elsWorker.js` for async non-blocking ELS searches and expand Torah text in `torah_text.js` | M1 | DONE |
+| M3 | Export System & LocalStorage Favorites | Implement PNG visual export for matrix/breakdowns and LocalStorage persistence for favorites/searches | M1, M2 | DONE |
+| M4 | Cyber-Mystic UI Polish & Module Integration | Integrate Acrostics UI, ELS P-Value indicators, Worker progress UI, Export buttons, Favorites tab, and CSS polish across all tabs | M1, M2, M3 | DONE |
+| M5 | Final E2E Test Pass & Forensic Integrity Audit | Validate 100% test suite passing (`node test.js`), UI error-free execution, and full Forensic Integrity verification | M1, M2, M3, M4 | DONE |
 
 ## Interface Contracts
 ### `gematria.js`
@@ -40,7 +41,13 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 ### `storage.js` / LocalStorage
 - `SaveFavorite(item)`: Saves `{ id, type, title, data, timestamp }`
 - `GetFavorites()`: Returns array of saved items
-- `RemoveFavorite(id)`: Removes item by ID
+- `RemoveFavorite(id)`: Removes item by ID (or numeric index)
 
-### Export Utility (`app.js` / `export.js`)
-- `ExportMatrixAsPNG(canvasElement | containerId, filename)`: Triggers PNG image download of ELS visual matrix or Gematria card.
+### Export Utility (`export.js`)
+- `ExportMatrixAsPNG(canvasElement | containerId, filename, matchMeta?)`: Triggers PNG image download of ELS visual matrix or canvas element.
+
+## Verification
+```bash
+node test.js
+node adversarial_test.js
+```

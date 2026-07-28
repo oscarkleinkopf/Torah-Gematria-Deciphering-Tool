@@ -1826,6 +1826,105 @@ footer a:hover {
   display: none;
 }
 
+/* ELS action buttons (export / favorites) */
+.btn-els-action {
+  display: none;
+  padding: 0.35rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-export-png {
+  background: rgba(0, 206, 209, 0.1);
+  border: 1px solid rgba(0, 206, 209, 0.3);
+  color: #00ced1;
+}
+.btn-save-favorite {
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--gold-primary);
+}
+.btn-clear-favorites {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #e74c3c;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+/* Favorites tab */
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.favorites-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 3rem 0;
+  grid-column: 1 / -1;
+}
+.favorite-card {
+  padding: 1rem;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  position: relative;
+}
+.favorite-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+.favorite-word {
+  font-family: var(--font-hebrew);
+  font-size: 1.6rem;
+  color: var(--gold-primary);
+}
+.fav-remove-btn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.favorite-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+.favorite-meta strong {
+  color: var(--text-primary);
+}
+.favorite-sig {
+  font-size: 0.78rem;
+}
+.favorite-sig.sig-high { color: #2ecc71; }
+.favorite-sig.sig-mid { color: var(--gold-primary); }
+.favorite-sig.sig-low { color: var(--text-secondary); }
+.favorite-date {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 0.4rem;
+}
+.fav-reload-btn {
+  margin-top: 0.7rem;
+  width: 100%;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: var(--gold-primary);
+  padding: 0.3rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: all 0.2s;
+}
+
 
 
 
