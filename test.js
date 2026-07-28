@@ -77,8 +77,8 @@ async function runAllTests() {
   assert(factorRelation !== null && factorRelation.factor === 2 && factorRelation.type === 'multiple', "26 es múltiplo x2 de 13");
 
   // 6. Validar integridad de la Base de Datos
-  assert(DB.KNOWLEDGE_GRAPH.length === 50, `KNOWLEDGE_GRAPH tiene exactamente 50 conceptos (actual: ${DB.KNOWLEDGE_GRAPH.length})`);
-  assert(DB.HISTORICAL_EVENTS.length === 8, `HISTORICAL_EVENTS tiene 8 hitos históricos (actual: ${DB.HISTORICAL_EVENTS.length})`);
+  assert(DB.KNOWLEDGE_GRAPH.length === 57, `KNOWLEDGE_GRAPH tiene exactamente 57 conceptos (actual: ${DB.KNOWLEDGE_GRAPH.length})`);
+  assert(DB.HISTORICAL_EVENTS.length === 13, `HISTORICAL_EVENTS tiene 13 hitos históricos (actual: ${DB.HISTORICAL_EVENTS.length})`);
 
   // 7. Validar búsqueda global de correlaciones
   const correlations = Engine.FindCorrelations('אהבה', DB.KNOWLEDGE_GRAPH);
@@ -229,6 +229,24 @@ async function runAllTests() {
     totalBookLength += bookText.length;
   });
   assert(totalBookLength === TORAH_TEXT.length, `La suma de longitudes de los 5 libros (${totalBookLength}) coincide con TORAH_TEXT.length (${TORAH_TEXT.length})`);
+
+  // Fase 4: sanitize pipeline + curated expansions
+  assert(typeof Engine.SanitizeHebrewConsonants === 'function', "Exporta SanitizeHebrewConsonants");
+  assert(Engine.SanitizeHebrewConsonants('שָׁ לוםบ') === 'שלוםב', "SanitizeHebrewConsonants elimina niqqud/espacios y corrige Thai→bet");
+  assert(TORAH_BOOKS.exodus.includes('אנכייהוהאלהיך'), "Éxodo incluye el Decálogo (Éx 20)");
+  assert(TORAH_BOOKS.deuteronomy.includes('שמעישראליהוהאלהינויהוהאחד'), "Deuteronomio incluye el Shemá");
+  assert(TORAH_BOOKS.numbers.includes('יברכךיהוהוישמרך'), "Números incluye Birkat Kohanim");
+
+  const { TORAH_BOOK_OFFSETS } = require('./torah_text.js');
+  assert(Array.isArray(TORAH_BOOK_OFFSETS) && TORAH_BOOK_OFFSETS.length === 5, "TORAH_BOOK_OFFSETS define offsets de 5 libros");
+
+  // FindELS shouldCancel aborta temprano
+  let cancelChecks = 0;
+  const cancelled = Engine.FindELS(TORAH_TEXT, 'תורה', 1, 200, {
+    shouldCancel: () => { cancelChecks++; return cancelChecks > 3; }
+  });
+  assert(Array.isArray(cancelled), "FindELS con shouldCancel retorna un arreglo (abortable)");
+  assert(cancelChecks > 3, "FindELS invoca shouldCancel durante el barrido");
 
   // 14, 15 y 16: Pruebas asíncronas de Worker, Progreso y Scoring no bloqueante
   console.log("\n=== SECCIÓN 14: MULTITHREADED ELS WORKER & MENSAJERÍA ASÍNCRONA ===");

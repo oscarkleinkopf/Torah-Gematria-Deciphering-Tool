@@ -1,6 +1,6 @@
 # Torá Gematria & Decodificador Místico (Bible Code ELS)
 
-Una aplicación web interactiva y estática (deployable en Netlify / GitHub Pages) para explorar las correlaciones de Gematria, el entrelazado místico del alfabeto hebreo, la línea de tiempo del Sionismo y el motor de búsqueda del **Código de la Biblia (ELS - Equidistant Letter Sequences)** sobre un corpus consonántico de los **5 libros de la Torá** (~26 000 letras; Génesis completo en extracto amplio; Éxodo–Deuteronomio como extractos curados).
+Una aplicación web interactiva y estática (deployable en Netlify / GitHub Pages) para explorar las correlaciones de Gematria, el entrelazado místico del alfabeto hebreo, la línea de tiempo del Sionismo y el motor de búsqueda del **Código de la Biblia (ELS - Equidistant Letter Sequences)** sobre un corpus consonántico de los **5 libros de la Torá** (~27 000 letras; Génesis amplio; Éxodo–Deuteronomio como extractos curados, con Decálogo, Shemá y Birkat Kohanim).
 
 ## Características Principales
 
@@ -10,12 +10,12 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Constelación de relación interactiva en HTML5 Canvas.
 
 2. **Descubrimientos en Tiempo Real (Grafo de Conocimiento)**:
-   - Grafo integrado con 50 conceptos clave (Nombres Divinos, Sefirot, Sionismo, Personajes Bíblicos).
+   - Grafo integrado con 57 conceptos clave (Nombres Divinos, Sefirot, Sionismo, Cábala, Personajes Bíblicos).
    - Genera tarjetas de resonancia matemática y puentes narrativos cabalísticos.
 
 3. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:
-   - Motor de búsqueda ELS sobre corpus consonántico embebido (~26k letras, 5 libros).
-   - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y cancelación.
+   - Motor de búsqueda ELS sobre corpus consonántico embebido (~27k letras, 5 libros).
+   - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y **cancelación real** (terminate + `shouldCancel`).
    - Matriz visual responsiva en orientación **RTL** con ajuste dinámico de columnas.
    - **Crossover Density**, p-valor / significancia estadística, historial y sugerencias rápidas.
    - Exportación **PNG** de la matriz y pestaña de **Favoritos** (LocalStorage).
@@ -24,21 +24,22 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Búsqueda de acrósticos de inicio/final de palabra sobre texto hebreo libre.
 
 5. **Línea de Tiempo del Sionismo & Comparador de Dos Palabras**:
-   - Canvas interactivo de sincronías históricas (1882 a 1993).
+   - Canvas interactivo de sincronías históricas (Sinaí → Oslo, 13 hitos).
    - Comparador de órbitas duales que construye un puente espiritual entre dos términos.
 
 ## Tecnologías
 
 - HTML5 / CSS3 (Vanilla CSS con diseño futurista cósmico / glassmorphism)
 - JavaScript ES6+ sin dependencias externas ni backend
-- Corpus consonántico embebido en `torah_text.js` (sin API externa)
+- Corpus consonántico embebido en `torah_text.js` (sanitizado en carga; sin API externa)
 - Node.js (suites de pruebas `test.js` y `adversarial_test.js`)
 
 ## Pruebas Unitarias
 
 ```bash
-node test.js
-node adversarial_test.js
+make check
+# equivalente:
+node test.js && node adversarial_test.js
 ```
 
 ## Despliegue en Netlify

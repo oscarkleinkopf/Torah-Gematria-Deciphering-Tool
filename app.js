@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="discovery-value-bar">
           <span>Cruces: <strong>${crossovers.length}</strong></span>
-          <span style="font-size: 0.75rem; color: var(--purple-accent); font-weight: bold;">Torah (Génesis)</span>
+          <span style="font-size: 0.75rem; color: var(--purple-accent); font-weight: bold;">Torá (5 libros)</span>
         </div>
       `;
 
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
     if (!text) return;
 
     // Buscar coincidencias ELS en un rango estándar rápido de saltos (2 a 120)
@@ -649,12 +649,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const corpusLen = (typeof window.TORAH_TEXT === 'string' && window.TORAH_TEXT.length)
       ? window.TORAH_TEXT.length.toLocaleString('es-ES')
       : '26.371';
+    const kgCount = (DB.KNOWLEDGE_GRAPH && DB.KNOWLEDGE_GRAPH.length) || 50;
     const logs = [
       { text: '> INICIANDO DECODIFICADOR AUTOMÁTICO EN LA TORÁ...', delay: 0 },
       { text: `> Cargando corpus de 5 libros: ${corpusLen} consonantes puras en memoria.`, delay: 200 },
       { text: `> Escaneando secuencias equidistantes para: "${match.word}"...`, delay: 400 },
       { text: `> ¡Palabra hallada! Salto constante = ${match.skip} letras (Letra de inicio: #${match.start}).`, delay: 650, class: 'info' },
-      { text: `> Buscando cruces en el cuadrante con el Grafo de 50 conceptos...`, delay: 850 },
+      { text: `> Buscando cruces en el cuadrante con el Grafo de ${kgCount} conceptos...`, delay: 850 },
       { text: `> ¡Detección de cruces completada! ${crossovers.length} correspondencias identificadas.`, delay: 1050, class: 'success' },
       { text: `> Configurando ancho de columnas de la cuadrícula a ${Math.abs(match.skip)}. Renderizando...`, delay: 1250 }
     ];
@@ -1761,8 +1762,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // Mapear índice global a versículo aproximado de Génesis 1-5
+  // Mapear índice global a libro + posición aproximada en el corpus expandido
   function getVerseContext(globalIdx) {
+    const offsets = window.TORAH_BOOK_OFFSETS;
+    if (Array.isArray(offsets) && offsets.length) {
+      for (const book of offsets) {
+        if (globalIdx >= book.offset && globalIdx < book.offset + book.length) {
+          const local = globalIdx - book.offset;
+          const section = Math.floor(local / 500) + 1;
+          return `${book.label} ~§${section} (letra #${globalIdx})`;
+        }
+      }
+      return `Torá (letra #${globalIdx})`;
+    }
+
+    // Fallback legacy: Génesis 1–5 aproximado
     const boundaries = [
       { ch: 1, limit: 1677, verses: 31, rate: 1677 / 31, offset: 0 },
       { ch: 2, limit: 2912, verses: 25, rate: 1235 / 25, offset: 1677 },
@@ -1770,7 +1784,6 @@ document.addEventListener('DOMContentLoaded', () => {
       { ch: 4, limit: 5452, verses: 26, rate: 1229 / 26, offset: 4223 },
       { ch: 5, limit: 6877, verses: 32, rate: 1425 / 32, offset: 5452 }
     ];
-    
     for (let b of boundaries) {
       if (globalIdx < b.limit) {
         const relativeIdx = globalIdx - b.offset;
@@ -1778,7 +1791,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `Génesis ${b.ch}:${verseNum}`;
       }
     }
-    return "Génesis 5:32";
+    return `Torá (letra #${globalIdx})`;
   }
 
   // --- FASE 5: HISTORIAL Y SUGERENCIAS RÁPIDAS DE BÚSQUEDA ELS ---
@@ -1865,6 +1878,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (msg.action === 'elsResults') {
       hideELSProgressBar();
       renderELSResultsList(msg.matches, msg.searchWord, [msg.searchWord]);
+    } else if (msg.action === 'cancelled') {
+      hideELSProgressBar();
+      activeELSRequestId = null;
+      elsResultsList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:1rem;font-style:italic;">Búsqueda cancelada.</div>';
     } else if (msg.action === 'error') {
       hideELSProgressBar();
       elsResultsList.innerHTML = `<div style="color:#e74c3c;text-align:center;padding:1.5rem;">Error en el worker: ${msg.error}</div>`;
@@ -1893,7 +1910,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancel = document.getElementById('btnCancelELS');
     if (btnCancel) {
       btnCancel.addEventListener('click', () => {
-        if (elsWorkerInstance) elsWorkerInstance.postMessage({ action: 'cancel', requestId: activeELSRequestId });
+        const cancelledId = activeELSRequestId;
+        activeELSRequestId = null;
+        if (elsWorkerInstance) {
+          try {
+            elsWorkerInstance.postMessage({ action: 'cancel', requestId: cancelledId });
+          } catch (e) {}
+          // Hard-stop: terminate worker so FindELS cannot keep burning CPU
+          try {
+            elsWorkerInstance.terminate();
+          } catch (e) {}
+          elsWorkerInstance = null;
+        }
         hideELSProgressBar();
         elsResultsList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:1rem;font-style:italic;">Búsqueda cancelada.</div>';
       });
@@ -1920,7 +1948,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const minSkip = parseInt(numMinSkip.value, 10) || 2;
     const maxSkip = parseInt(numMaxSkip.value, 10) || 120;
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
 
     if (!text) {
       elsResultsList.innerHTML = `
@@ -1955,6 +1983,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         worker.postMessage({
           action: 'searchELS',
+          text: window.TORAH_TEXT || window.TorahText || '',
           searchWord: searchHebrew,
           minSkip,
           maxSkip,
@@ -2062,7 +2091,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bibleCodeState.activeMatch) {
       const match = bibleCodeState.activeMatch;
       const w = bibleCodeState.matrixWidth;
-      const text = window.TorahText || "";
+      const text = window.TORAH_TEXT || window.TorahText || "";
       const minIdx = Math.min(...match.indices);
       const maxIdx = Math.max(...match.indices);
       const startRow = Math.floor(minIdx / w);
@@ -2081,7 +2110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function searchSecondaryMatches(minIdx, maxIdx) {
     const matches = [];
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
     
     DB.KNOWLEDGE_GRAPH.forEach(entry => {
       if (entry.hebrew === bibleCodeState.primaryWord) return;
@@ -2134,7 +2163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const match = bibleCodeState.activeMatch;
     if (!match) return;
 
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
     const w = bibleCodeState.matrixWidth;
 
     const matchIndices = match.indices;

@@ -2,12 +2,12 @@
 
 ## Architecture
 Vanilla JavaScript ES6+ single-page application with modular architecture:
-- `gematria.js`: Core Gematria calculations, Temura ciphers (Atbash, Albam, Avgad), Acrostics (Roshei/Sofei Teivot), ELS search & statistical p-value calculator.
-- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~26k letters across 5 books; post-Genesis books are curated excerpts). Consonants only (U+05D0–U+05EA).
-- `database.js`: Knowledge graph (50+ concepts) & historical timeline data.
-- `elsWorker.js`: Web Worker module for offloading heavy ELS search and matrix computations to background thread.
+- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS` and browser alias `TorahText`.
+- `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
+- `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
 - `export.js`: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
 - `storage.js`: LocalStorage manager for Favorites and Saved Searches.
+- `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
 - `app.js`: UI Controller, DOM event bindings, Cyber-Mystic navigation, visual animations, and Canvas renderers.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
 - `index.html`: Responsive layout with navigation tabs for Calculator, Torah, ELS Code, Zionism, Comparator, Acrostics, Letter Mirror, Favorites.
@@ -48,6 +48,6 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 
 ## Verification
 ```bash
-node test.js
-node adversarial_test.js
+make check
+# or: node test.js && node adversarial_test.js
 ```
