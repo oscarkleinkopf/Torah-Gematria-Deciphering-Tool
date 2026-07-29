@@ -2345,7 +2345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     const favs = Storage.GetFavorites ? Storage.GetFavorites() : [];
     if (favs.length === 0) {
-      container.innerHTML = '<div class="favorites-empty">No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.</div>';
+      container.innerHTML = '<div class="favorites-empty">No hay favoritos guardados. Guarda hallazgos ELS o correlaciones desde Explorar.</div>';
       return;
     }
 
@@ -2353,22 +2353,38 @@ document.addEventListener('DOMContentLoaded', () => {
     favs.forEach((fav, idx) => {
       const card = document.createElement('div');
       card.className = 'glass-card favorite-card';
-      const sigScore = (fav.significanceScore || 0).toFixed(2);
-      const sigClass = fav.significanceScore > 5 ? 'sig-high' : fav.significanceScore > 2 ? 'sig-mid' : 'sig-low';
-      card.innerHTML = `
-        <div class="favorite-card-header">
-          <span class="favorite-word">${fav.word}</span>
-          <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
-        </div>
-        <div class="favorite-meta">
-          Salto: <strong>${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
-        </div>
-        <div class="favorite-sig ${sigClass}">
-          Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
-        </div>
-        <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
-        <button data-idx="${idx}" class="fav-reload-btn">🔍 Volver a buscar</button>
-      `;
+      if (fav.type === 'explore') {
+        const data = fav.data || {};
+        card.innerHTML = `
+          <div class="favorite-card-header">
+            <span class="favorite-word" style="font-family:var(--font-serif);font-size:1.1rem;">🔎 ${fav.title || fav.word}</span>
+            <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
+          </div>
+          <div class="favorite-meta">Correlación · ${fav.verse || data.queryType || 'explore'}</div>
+          <div class="favorite-sig sig-mid">
+            ${(data.events || []).slice(0, 2).join(' · ') || 'Sin eventos'} ${(data.primaryHebrew ? '· ' + data.primaryHebrew : '')}
+          </div>
+          <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+          <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="explore">🔍 Volver a explorar</button>
+        `;
+      } else {
+        const sigScore = (fav.significanceScore || 0).toFixed(2);
+        const sigClass = fav.significanceScore > 5 ? 'sig-high' : fav.significanceScore > 2 ? 'sig-mid' : 'sig-low';
+        card.innerHTML = `
+          <div class="favorite-card-header">
+            <span class="favorite-word">${fav.word}</span>
+            <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
+          </div>
+          <div class="favorite-meta">
+            Salto: <strong>${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
+          </div>
+          <div class="favorite-sig ${sigClass}">
+            Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
+          </div>
+          <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+          <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="els">🔍 Volver a buscar</button>
+        `;
+      }
       container.appendChild(card);
     });
 
@@ -2383,6 +2399,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', () => {
         const fav = (Storage.GetFavorites ? Storage.GetFavorites() : [])[parseInt(btn.dataset.idx, 10)];
         if (!fav) return;
+        if (fav.type === 'explore' || btn.getAttribute('data-fav-type') === 'explore') {
+          switchTab('explore');
+          runExploreSearch(fav.title || fav.word);
+          return;
+        }
         switchTab('biblecode');
         txtSearchELS.value = fav.word;
         handleELSSearch();
@@ -2517,6 +2538,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExploreSearch = document.getElementById('btnExploreSearch');
   const exploreResults = document.getElementById('exploreResults');
   const exploreStatus = document.getElementById('exploreStatus');
+  const exploreHistoryEl = document.getElementById('exploreHistory');
+  let lastExploreData = null;
 
   function escapeHtml(str) {
     return String(str == null ? '' : str)
@@ -2524,6 +2547,30 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function renderExploreHistory() {
+    if (!exploreHistoryEl || !Storage.GetExploreHistory) return;
+    const history = Storage.GetExploreHistory();
+    if (!history.length) {
+      exploreHistoryEl.style.display = 'none';
+      exploreHistoryEl.innerHTML = '';
+      return;
+    }
+    exploreHistoryEl.style.display = 'flex';
+    exploreHistoryEl.innerHTML = '<span class="explore-history-label">Recientes:</span>' +
+      history.map(q => `<button type="button" class="explore-chip explore-history-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('') +
+      '<button type="button" class="explore-chip explore-history-clear" id="btnClearExploreHistory" title="Limpiar historial">✕</button>';
+    exploreHistoryEl.querySelectorAll('.explore-history-chip').forEach(chip => {
+      chip.addEventListener('click', () => runExploreSearch(chip.getAttribute('data-q')));
+    });
+    const clearBtn = document.getElementById('btnClearExploreHistory');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (Storage.ClearExploreHistory) Storage.ClearExploreHistory();
+        renderExploreHistory();
+      });
+    }
   }
 
   function runExploreSearch(rawQuery) {
@@ -2534,12 +2581,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const query = (rawQuery != null ? rawQuery : (txtExploreQuery && txtExploreQuery.value) || '').trim();
     if (txtExploreQuery) txtExploreQuery.value = query;
     if (!query) {
-      if (exploreStatus) exploreStatus.textContent = 'Escribe un apellido, fecha, evento o número.';
+      if (exploreStatus) exploreStatus.textContent = 'Escribe un apellido, fecha, evento o número. También: «Herzl + 1897».';
       if (exploreResults) exploreResults.innerHTML = '';
+      lastExploreData = null;
       return;
     }
 
+    if (Storage.SaveExploreHistory) Storage.SaveExploreHistory(query);
+    renderExploreHistory();
+
     const data = Explore.ExploreCorrelations(query, DB, Engine);
+    lastExploreData = data;
     renderExploreResults(data);
   }
 
@@ -2554,7 +2606,8 @@ document.addEventListener('DOMContentLoaded', () => {
       number: 'Número',
       concept: 'Concepto',
       hebrew: 'Hebreo',
-      text: 'Texto'
+      text: 'Texto',
+      compound: 'Compuesta'
     };
 
     const total =
@@ -2571,14 +2624,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (total === 0 && !(data.suggestedELS && data.suggestedELS.length)) {
-      exploreResults.innerHTML = '<div class="explore-empty">Sin correlaciones directas. Prueba otro apellido, una fecha (ej. 1948) o un evento (ej. Oslo).</div>';
+      exploreResults.innerHTML = '<div class="explore-empty">Sin correlaciones directas. Prueba otro apellido, una fecha (ej. 1948), un evento (ej. Oslo) o una búsqueda compuesta (Herzl + 1897).</div>';
       return;
     }
 
     let html = '';
 
-    if (meta.nameEntry || meta.dateInfo || meta.primaryGematria) {
+    html += `<div class="explore-actions explore-toolbar">
+      <button type="button" class="explore-action-btn" id="btnExportExploreReport">📄 Exportar informe</button>
+      <button type="button" class="explore-action-btn" id="btnSaveExploreFavorite">⭐ Guardar correlación</button>
+    </div>`;
+
+    if (meta.nameEntry || meta.dateInfo || meta.primaryGematria || data.queryType === 'compound') {
       html += '<div class="explore-summary-bar">';
+      if (data.queryType === 'compound' && meta.parts) {
+        html += `<span>Partes: <strong>${escapeHtml(meta.parts.map(p => p.query).join(' + '))}</strong></span>`;
+      }
       if (meta.nameEntry) {
         html += `<span>Diccionario: <strong>${escapeHtml(meta.nameEntry.note || meta.nameEntry.id)}</strong></span>`;
       }
@@ -2680,6 +2741,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     exploreResults.innerHTML = html;
 
+    const btnExport = document.getElementById('btnExportExploreReport');
+    if (btnExport) {
+      btnExport.addEventListener('click', () => {
+        const report = Explore.FormatCorrelationReport
+          ? Explore.FormatCorrelationReport(data)
+          : '';
+        if (!report) return;
+        const safe = String(data.query || 'consulta').replace(/[^\wא-ת\-]+/g, '_').slice(0, 40);
+        if (typeof window.ExportCorrelationReport === 'function') {
+          window.ExportCorrelationReport(report, `correlacion_${safe}.txt`);
+        } else {
+          const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `correlacion_${safe}.txt`;
+          a.click();
+        }
+        btnExport.textContent = '✅ Informe descargado';
+        setTimeout(() => { btnExport.textContent = '📄 Exportar informe'; }, 2000);
+      });
+    }
+
+    const btnSaveExplore = document.getElementById('btnSaveExploreFavorite');
+    if (btnSaveExplore && Storage.SaveFavorite) {
+      btnSaveExplore.addEventListener('click', () => {
+        const summary = {
+          events: (data.events || []).slice(0, 5).map(h => h.event.title),
+          knowledge: (data.knowledge || []).slice(0, 5).map(c => c.entry.spanish),
+          suggestedELS: data.suggestedELS || [],
+          queryType: data.queryType,
+          primaryHebrew: meta.primaryHebrew || '',
+          absolute: meta.primaryGematria ? meta.primaryGematria.absolute : null
+        };
+        const before = Storage.GetFavorites().length;
+        Storage.SaveFavorite({
+          id: `explore|${data.query}`,
+          type: 'explore',
+          title: data.query,
+          word: data.query,
+          skip: '—',
+          start: '—',
+          verse: meta.primaryHebrew || data.queryType,
+          significanceScore: data.events.length + data.knowledge.length,
+          pValue: null,
+          data: summary,
+          savedAt: new Date().toISOString()
+        });
+        const after = Storage.GetFavorites().length;
+        btnSaveExplore.textContent = after === before ? '✅ Ya guardado' : '✅ Guardado';
+        setTimeout(() => { btnSaveExplore.textContent = '⭐ Guardar correlación'; }, 2000);
+      });
+    }
+
     exploreResults.querySelectorAll('[data-els-terms]').forEach(btn => {
       btn.addEventListener('click', () => {
         const terms = btn.getAttribute('data-els-terms') || '';
@@ -2717,11 +2831,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === 'Enter') runExploreSearch();
     });
   }
-  document.querySelectorAll('.explore-chip').forEach(chip => {
+  document.querySelectorAll('#exploreQuickChips .explore-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       runExploreSearch(chip.getAttribute('data-q') || chip.textContent);
     });
   });
+  renderExploreHistory();
 
   // Añadir p-value y significancia estadística al panel de narrativa ELS
   const _origRenderNarrative = renderNarrativePanel;

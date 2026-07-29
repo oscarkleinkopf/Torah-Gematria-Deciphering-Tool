@@ -5,8 +5,10 @@
 
 const FAVORITES_KEY = 'els_favorites';
 const ELS_HISTORY_KEY = 'els_search_history';
+const EXPLORE_HISTORY_KEY = 'explore_search_history';
 const MAX_FAVORITES = 50;
 const MAX_HISTORY = 8;
+const MAX_EXPLORE_HISTORY = 10;
 
 function GetFavorites() {
   try {
@@ -95,6 +97,33 @@ function ClearELSSearchHistory() {
   } catch (e) {}
 }
 
+function GetExploreHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(EXPLORE_HISTORY_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function SaveExploreHistory(query) {
+  if (!query || String(query).trim().length === 0) return GetExploreHistory();
+  let history = GetExploreHistory();
+  const q = String(query).trim();
+  history = history.filter(item => item.toLowerCase() !== q.toLowerCase());
+  history.unshift(q);
+  if (history.length > MAX_EXPLORE_HISTORY) history = history.slice(0, MAX_EXPLORE_HISTORY);
+  try {
+    localStorage.setItem(EXPLORE_HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {}
+  return history;
+}
+
+function ClearExploreHistory() {
+  try {
+    localStorage.removeItem(EXPLORE_HISTORY_KEY);
+  } catch (e) {}
+}
+
 const GematriaStorage = {
   SaveFavorite,
   GetFavorites,
@@ -102,7 +131,10 @@ const GematriaStorage = {
   ClearFavorites,
   GetELSSearchHistory,
   SaveELSSearchHistory,
-  ClearELSSearchHistory
+  ClearELSSearchHistory,
+  GetExploreHistory,
+  SaveExploreHistory,
+  ClearExploreHistory
 };
 
 if (typeof module !== 'undefined' && module.exports) {

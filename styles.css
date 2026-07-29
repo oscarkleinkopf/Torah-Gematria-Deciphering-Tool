@@ -2074,6 +2074,24 @@ footer a:hover {
 .explore-summary-bar strong {
   color: var(--gold-primary);
 }
+.explore-toolbar {
+  margin-bottom: 0.75rem;
+}
+.explore-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+.explore-history-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-right: 0.25rem;
+}
+.explore-history-clear {
+  opacity: 0.7;
+}
 
 
 

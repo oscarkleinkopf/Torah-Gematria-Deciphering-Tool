@@ -349,6 +349,21 @@ async function runAllTests() {
   assert(herzl.queryType === 'surname' && herzl.meta.primaryHebrew === 'הרצל', "Herzl resuelve a הרצל");
   assert(herzl.events.some(e => e.event.year === 1897), "Herzl correlaciona con el Congreso de Basilea");
 
+  // Compound + year-as-date + report
+  assert(Explore.ExploreCorrelations('1948', DB, Engine).queryType === 'date', "1948 se clasifica como fecha (no solo número)");
+  assert(Explore.ExploreCorrelations('Cohen', DB, Engine).suggestedELS.length === 1 && Explore.ExploreCorrelations('Cohen', DB, Engine).suggestedELS[0] === 'כהן', "Cohen sugiere solo ELS del diccionario (sin ruido fonético)");
+
+  const compound = Explore.ExploreCorrelations('Herzl + 1897', DB, Engine);
+  assert(compound.queryType === 'compound', "Herzl + 1897 es consulta compuesta");
+  assert(compound.events.some(e => e.event.year === 1897), "Compuesta Herzl+1897 encuentra Basilea 1897");
+  assert(compound.meta.primaryHebrew === 'הרצל', "Compuesta preserva hebreo de Herzl");
+
+  const report = Explore.FormatCorrelationReport(compound);
+  assert(typeof report === 'string' && report.includes('INFORME DE CORRELACIONES') && report.includes('Herzl + 1897'), "FormatCorrelationReport genera informe de texto");
+
+  const { ExportCorrelationReport } = require('./export.js');
+  assert(typeof ExportCorrelationReport === 'function', "export.js exporta ExportCorrelationReport");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

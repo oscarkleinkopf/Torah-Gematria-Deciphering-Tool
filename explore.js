@@ -45,7 +45,16 @@ const NAME_DICTIONARY = [
   { id: 'jerusalem', spanish: ['jerusalen', 'jerusalem', 'yerushalayim'], hebrew: 'ירושלים', kind: 'concepto', note: 'Jerusalén' },
   { id: 'torah', spanish: ['torah', 'tora'], hebrew: 'תורה', kind: 'concepto', note: 'Torá' },
   { id: 'balfour', spanish: ['balfour', 'declaracion balfour', 'declaración balfour'], hebrew: 'בלפור', kind: 'concepto', note: 'Declaración Balfour 1917' },
-  { id: 'oslo', spanish: ['oslo', 'acuerdos de oslo'], hebrew: 'אוסלו', kind: 'concepto', note: 'Acuerdos de Oslo 1993' }
+  { id: 'oslo', spanish: ['oslo', 'acuerdos de oslo'], hebrew: 'אוסלו', kind: 'concepto', note: 'Acuerdos de Oslo 1993' },
+  { id: 'netanyahu', spanish: ['netanyahu', 'bibi'], hebrew: 'נתניהו', kind: 'apellido', note: 'Apellido político israelí' },
+  { id: 'begin', spanish: ['begin', 'menachem begin'], hebrew: 'בגין', kind: 'apellido', note: 'Menachem Begin — Camp David' },
+  { id: 'sadat', spanish: ['sadat', 'anwar sadat'], hebrew: 'סאדאת', kind: 'apellido', note: 'Anwar Sadat — paz Egipto–Israel' },
+  { id: 'einstein', spanish: ['einstein'], hebrew: 'איינשטיין', kind: 'apellido', note: 'Albert Einstein' },
+  { id: 'spinoza', spanish: ['spinoza', 'espinosa'], hebrew: 'שפינוזה', kind: 'apellido', note: 'Baruch Spinoza' },
+  { id: 'mizrahi', spanish: ['mizrahi', 'mizrachi'], hebrew: 'מזרחי', kind: 'apellido', note: 'Oriental / sefardí' },
+  { id: 'ashkenazi', spanish: ['ashkenazi', 'asquenazi'], hebrew: 'אשכנזי', kind: 'apellido', note: 'Tradición asquenazí' },
+  { id: 'chai', spanish: ['chai', 'jai', 'vida'], hebrew: 'חי', kind: 'concepto', note: 'Vida — valor 18' },
+  { id: 'campdavid', spanish: ['camp david', 'campdavid'], hebrew: 'קמפ דייוויד', kind: 'concepto', note: 'Paz Egipto–Israel 1979' }
 ];
 
 function NormalizeExploreQuery(raw) {
@@ -310,7 +319,30 @@ function ResolveExploreQuery(raw, Engine, options) {
 
   if (!original) return meta;
 
-  // Pure number → inverse lookup
+  // Year-like numbers (plausible historical / modern years) → date
+  if (/^-?\d{3,4}$/.test(original.trim())) {
+    const n = parseInt(original.trim(), 10);
+    const abs = Math.abs(n);
+    const plausibleYear = (n < 0 && abs >= 100) || (n >= 1000 && n <= 2100) || (n >= 70 && n <= 999 && abs >= 70);
+    // Prefer classic gematria shortcuts (13, 18, 26, 48, 156, 325, 582, 708…) as numbers when < 1000
+    // unless it's a known timeline year in HISTORICAL_EVENTS (handled below via number path + events).
+    const knownGematriaShortcuts = [48, 70, 135, 156, 252, 325, 376, 582, 642, 657, 678, 708, 727, 739, 753];
+    if (plausibleYear && !(n > 0 && n < 1000 && knownGematriaShortcuts.includes(n))) {
+      const asDate = ParseDateQuery(original.trim());
+      if (asDate && asDate.year != null) {
+        meta.queryType = 'date';
+        meta.dateInfo = asDate;
+        meta.numbers = asDate.numbers.slice();
+        meta.gematriaValues = [Math.abs(asDate.year)];
+        if (asDate.hebrewYearApprox) {
+          meta.gematriaValues.push(asDate.hebrewYearApprox % 1000);
+        }
+        return meta;
+      }
+    }
+  }
+
+  // Pure small number → inverse lookup (e.g. 13, 18, 708 with 1–3 digits already handled if year-like)
   if (/^-?\d{1,5}$/.test(original.trim())) {
     const n = parseInt(original.trim(), 10);
     meta.queryType = 'number';
@@ -324,8 +356,8 @@ function ResolveExploreQuery(raw, Engine, options) {
     meta.queryType = 'date';
     meta.dateInfo = dateInfo;
     meta.numbers = dateInfo.numbers.slice();
-    // Also treat reductions as soft gematria candidates for small values
-    meta.gematriaValues = dateInfo.reductions.filter(r => r >= 10);
+    meta.gematriaValues = [Math.abs(dateInfo.year)];
+    if (dateInfo.hebrewYearApprox) meta.gematriaValues.push(dateInfo.hebrewYearApprox % 1000);
     return meta;
   }
 
@@ -347,8 +379,8 @@ function ResolveExploreQuery(raw, Engine, options) {
     }
   }
 
-  // Phonetic Spanish → Hebrew
-  if (Engine && typeof Engine.SpanishToHebrew === 'function' && /[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ]/.test(original)) {
+  // Phonetic Spanish → Hebrew (skip when dictionary already resolved the term)
+  if (!nameEntry && Engine && typeof Engine.SpanishToHebrew === 'function' && /[a-zA-ZáéíóúñüÁÉÍÓÚÑÜ]/.test(original)) {
     const phonetic = Engine.SpanishToHebrew(original);
     if (phonetic && phonetic.replace(/[^א-ת]/g, '').length >= 2) {
       meta.hebrewForms.push(phonetic);
@@ -361,7 +393,6 @@ function ResolveExploreQuery(raw, Engine, options) {
   if (Engine && typeof Engine.CalculateGematria === 'function' && meta.primaryHebrew) {
     meta.primaryGematria = Engine.CalculateGematria(meta.primaryHebrew);
     if (meta.primaryGematria && meta.primaryGematria.lettersCount > 0) {
-      // Prefer absolute values for historical matching; keep full set for KG scoring
       meta.gematriaValues = [meta.primaryGematria.absolute];
       if (meta.primaryGematria.absoluteGadol !== meta.primaryGematria.absolute) {
         meta.gematriaValues.push(meta.primaryGematria.absoluteGadol);
@@ -375,8 +406,7 @@ function ResolveExploreQuery(raw, Engine, options) {
     }
   }
 
-  // Event title detection (soft): if query looks like event keywords
-  const eventHints = ['oslo', 'balfour', 'templo', 'aliya', 'aliyá', 'basilea', 'independencia', 'seis dias', 'camp david', 'sinaí', 'sinai', 'betar', 'expulsion', 'españa'];
+  const eventHints = ['oslo', 'balfour', 'templo', 'aliya', 'aliya', 'basilea', 'independencia', 'seis dias', 'camp david', 'sinai', 'betar', 'expulsion', 'espana'];
   if (eventHints.some(h => normalized.includes(h))) {
     meta.queryType = meta.queryType === 'text' ? 'event' : meta.queryType;
   }
@@ -384,11 +414,92 @@ function ResolveExploreQuery(raw, Engine, options) {
   return meta;
 }
 
-/**
- * Main API: ExploreCorrelations(query, db, Engine, options?)
- */
-function ExploreCorrelations(query, db, Engine, options) {
-  const database = db || {};
+function SplitCompoundExploreQuery(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return [];
+  // "Herzl + 1897", "Cohen y 1948", "Oslo; Israel"
+  const parts = text.split(/\s*(?:\+| y |;|\|\|)\s*/i).map(p => p.trim()).filter(p => p.length > 0);
+  if (parts.length <= 1) return [text];
+  return parts;
+}
+
+function MergeExploreResults(parts, originalQuery) {
+  const merged = {
+    query: originalQuery,
+    queryType: 'compound',
+    meta: {
+      original: originalQuery,
+      normalized: NormalizeExploreQuery(originalQuery),
+      queryType: 'compound',
+      parts: parts.map(p => ({ query: p.query, queryType: p.queryType, primaryHebrew: p.meta && p.meta.primaryHebrew })),
+      hebrewForms: [],
+      gematriaValues: [],
+      numbers: [],
+      primaryHebrew: '',
+      primaryGematria: null,
+      nameEntry: null,
+      dateInfo: null
+    },
+    knowledge: [],
+    events: [],
+    zionist: [],
+    verses: [],
+    suggestedELS: [],
+    compoundParts: parts
+  };
+
+  const seenKg = new Set();
+  const seenEv = new Set();
+  const seenZ = new Set();
+  const seenV = new Set();
+
+  parts.forEach(p => {
+    (p.meta.hebrewForms || []).forEach(h => merged.meta.hebrewForms.push(h));
+    (p.meta.gematriaValues || []).forEach(n => merged.meta.gematriaValues.push(n));
+    (p.meta.numbers || []).forEach(n => merged.meta.numbers.push(n));
+    if (!merged.meta.primaryHebrew && p.meta.primaryHebrew) merged.meta.primaryHebrew = p.meta.primaryHebrew;
+    if (!merged.meta.primaryGematria && p.meta.primaryGematria) merged.meta.primaryGematria = p.meta.primaryGematria;
+    if (!merged.meta.nameEntry && p.meta.nameEntry) merged.meta.nameEntry = p.meta.nameEntry;
+    if (!merged.meta.dateInfo && p.meta.dateInfo) merged.meta.dateInfo = p.meta.dateInfo;
+
+    (p.knowledge || []).forEach(c => {
+      const id = c.entry && c.entry.id;
+      if (id && seenKg.has(id)) return;
+      if (id) seenKg.add(id);
+      merged.knowledge.push(c);
+    });
+    (p.events || []).forEach(h => {
+      const key = h.event && (h.event.year + '|' + h.event.title);
+      if (seenEv.has(key)) return;
+      seenEv.add(key);
+      merged.events.push(h);
+    });
+    (p.zionist || []).forEach(h => {
+      const key = h.card && h.card.concept;
+      if (seenZ.has(key)) return;
+      seenZ.add(key);
+      merged.zionist.push(h);
+    });
+    (p.verses || []).forEach(h => {
+      const key = h.verse && h.verse.reference;
+      if (seenV.has(key)) return;
+      seenV.add(key);
+      merged.verses.push(h);
+    });
+    (p.suggestedELS || []).forEach(t => merged.suggestedELS.push(t));
+  });
+
+  merged.meta.hebrewForms = [...new Set(merged.meta.hebrewForms)];
+  merged.meta.gematriaValues = [...new Set(merged.meta.gematriaValues)];
+  merged.meta.numbers = [...new Set(merged.meta.numbers)];
+  merged.knowledge.sort((a, b) => b.score - a.score);
+  merged.events.sort((a, b) => b.score - a.score);
+  merged.zionist.sort((a, b) => b.score - a.score);
+  merged.suggestedELS = [...new Set(merged.suggestedELS)].slice(0, 10);
+  return merged;
+}
+
+function ExploreCorrelationsSingle(query, database, Engine, options) {
   const meta = ResolveExploreQuery(query, Engine, options);
 
   const result = {
@@ -404,7 +515,6 @@ function ExploreCorrelations(query, db, Engine, options) {
 
   if (!meta.original) return result;
 
-  // Knowledge graph via FindCorrelations for each hebrew form
   if (Engine && typeof Engine.FindCorrelations === 'function' && Array.isArray(database.KNOWLEDGE_GRAPH)) {
     const seen = new Set();
     meta.hebrewForms.forEach(he => {
@@ -417,7 +527,6 @@ function ExploreCorrelations(query, db, Engine, options) {
         result.knowledge.push(corr);
       });
     });
-    // Also match KG by gematria value alone (inverse)
     if (meta.gematriaValues.length && meta.hebrewForms.length === 0) {
       database.KNOWLEDGE_GRAPH.forEach(entry => {
         const g = Engine.CalculateGematria(entry.hebrew);
@@ -442,8 +551,7 @@ function ExploreCorrelations(query, db, Engine, options) {
   result.zionist = MatchZionistCards(meta, database.ZIONIST_CORRELATIONS);
   result.verses = MatchTorahVerses(meta, database.TORAH_VERSES);
 
-  // Soft event title search when queryType is event/text
-  if ((meta.queryType === 'event' || meta.queryType === 'text') && database.HISTORICAL_EVENTS) {
+  if ((meta.queryType === 'event' || meta.queryType === 'text' || meta.queryType === 'concept') && database.HISTORICAL_EVENTS) {
     const q = meta.normalized;
     database.HISTORICAL_EVENTS.forEach(ev => {
       const title = NormalizeExploreQuery(ev.title);
@@ -458,11 +566,15 @@ function ExploreCorrelations(query, db, Engine, options) {
     result.events.sort((a, b) => b.score - a.score);
   }
 
-  // Suggested ELS terms
-  meta.hebrewForms.forEach(he => {
-    const clean = he.replace(/[^א-ת]/g, '');
-    if (clean.length >= 2) result.suggestedELS.push(clean);
-  });
+  // Prefer dictionary / primary hebrew for ELS suggestions
+  if (meta.primaryHebrew && meta.primaryHebrew.length >= 2) {
+    result.suggestedELS.push(meta.primaryHebrew);
+  } else {
+    meta.hebrewForms.forEach(he => {
+      const clean = he.replace(/[^א-ת]/g, '');
+      if (clean.length >= 2) result.suggestedELS.push(clean);
+    });
+  }
   result.events.slice(0, 3).forEach(h => {
     (h.event.searchTerms || []).forEach(t => {
       const clean = t.replace(/[^א-ת]/g, '');
@@ -474,6 +586,92 @@ function ExploreCorrelations(query, db, Engine, options) {
   return result;
 }
 
+/**
+ * Main API: ExploreCorrelations(query, db, Engine, options?)
+ * Supports compound queries: "Herzl + 1897", "Cohen y 1948"
+ */
+function ExploreCorrelations(query, db, Engine, options) {
+  const database = db || {};
+  const original = String(query || '').trim();
+  const parts = SplitCompoundExploreQuery(original);
+
+  if (parts.length > 1) {
+    const resolved = parts.map(p => ExploreCorrelationsSingle(p, database, Engine, options));
+    return MergeExploreResults(resolved, original);
+  }
+
+  return ExploreCorrelationsSingle(original, database, Engine, options);
+}
+
+/**
+ * Build a plain-text correlation report for download / sharing.
+ */
+function FormatCorrelationReport(data) {
+  if (!data) return '';
+  const lines = [];
+  lines.push('═══════════════════════════════════════════');
+  lines.push('  INFORME DE CORRELACIONES — GematriaDecipher');
+  lines.push('═══════════════════════════════════════════');
+  lines.push(`Consulta: ${data.query}`);
+  lines.push(`Tipo: ${data.queryType}`);
+  if (data.meta && data.meta.primaryHebrew) lines.push(`Hebreo: ${data.meta.primaryHebrew}`);
+  if (data.meta && data.meta.primaryGematria) {
+    const g = data.meta.primaryGematria;
+    lines.push(`Gematria: Abs ${g.absolute} | Ord ${g.ordinal} | Red ${g.reduced}`);
+  }
+  if (data.meta && data.meta.dateInfo) {
+    lines.push(`Fecha: año ${data.meta.dateInfo.year}` + (data.meta.dateInfo.hebrewYearApprox ? ` ≈ HE ~${data.meta.dateInfo.hebrewYearApprox}` : ''));
+  }
+  lines.push('');
+
+  if (data.events && data.events.length) {
+    lines.push('— LÍNEA DE TIEMPO —');
+    data.events.slice(0, 8).forEach(h => {
+      lines.push(`• ${h.event.title} (${h.event.label})`);
+      lines.push(`  ${h.event.desc}`);
+      lines.push(`  Motivo: ${(h.reasons || []).join(', ')}`);
+    });
+    lines.push('');
+  }
+
+  if (data.knowledge && data.knowledge.length) {
+    lines.push('— GRAFO DE CONOCIMIENTO —');
+    data.knowledge.slice(0, 10).forEach(c => {
+      lines.push(`• ${c.entry.hebrew} — ${c.entry.spanish} (${'★'.repeat(c.stars || 1)})`);
+      const md = (c.matches || []).map(m => m.desc).join('; ');
+      if (md) lines.push(`  ${md}`);
+    });
+    lines.push('');
+  }
+
+  if (data.zionist && data.zionist.length) {
+    lines.push('— CORRELACIONES SIONISTAS —');
+    data.zionist.slice(0, 6).forEach(h => {
+      lines.push(`• ${h.card.concept} (${h.card.hebrew}) = ${h.card.gematria}`);
+    });
+    lines.push('');
+  }
+
+  if (data.verses && data.verses.length) {
+    lines.push('— VERSÍCULOS —');
+    data.verses.forEach(h => {
+      lines.push(`• ${h.verse.reference} [gematria ${h.verse.gematria}]`);
+      lines.push(`  ${h.verse.translation}`);
+    });
+    lines.push('');
+  }
+
+  if (data.suggestedELS && data.suggestedELS.length) {
+    lines.push('— TÉRMINOS ELS SUGERIDOS —');
+    lines.push(data.suggestedELS.join(', '));
+    lines.push('');
+  }
+
+  lines.push(`Generado: ${new Date().toISOString()}`);
+  lines.push('Torah Gematria Deciphering Tool');
+  return lines.join('\n');
+}
+
 const GematriaExplore = {
   NAME_DICTIONARY,
   NormalizeExploreQuery,
@@ -483,7 +681,11 @@ const GematriaExplore = {
   MatchZionistCards,
   MatchTorahVerses,
   ResolveExploreQuery,
-  ExploreCorrelations
+  SplitCompoundExploreQuery,
+  MergeExploreResults,
+  ExploreCorrelations,
+  ExploreCorrelationsSingle,
+  FormatCorrelationReport
 };
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -493,5 +695,6 @@ if (typeof window !== 'undefined') {
   window.GematriaExplore = GematriaExplore;
   window.ExploreCorrelations = ExploreCorrelations;
   window.ParseDateQuery = ParseDateQuery;
+  window.FormatCorrelationReport = FormatCorrelationReport;
   window.NAME_DICTIONARY = NAME_DICTIONARY;
 }

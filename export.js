@@ -97,9 +97,28 @@ function ExportMatrixAsPNG(canvasElementOrContainerId, filename) {
   return true;
 }
 
+/**
+ * Download a plain-text correlation report.
+ * @param {string} reportText
+ * @param {string} [filename]
+ */
+function ExportCorrelationReport(reportText, filename) {
+  if (!reportText) return false;
+  const name = filename || `correlacion_${Date.now()}.txt`;
+  const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = name;
+  link.href = url;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  return true;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ExportMatrixAsPNG };
+  module.exports = { ExportMatrixAsPNG, ExportCorrelationReport };
 }
 if (typeof window !== 'undefined') {
   window.ExportMatrixAsPNG = ExportMatrixAsPNG;
+  window.ExportCorrelationReport = ExportCorrelationReport;
 }
