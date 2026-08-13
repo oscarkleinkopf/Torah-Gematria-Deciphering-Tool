@@ -23,6 +23,36 @@
         <span class="idf-banner-text">DEDICADO A LOS HÉROES DE LAS FUERZAS DE DEFENSA DE ISRAEL</span>
         <span class="idf-banner-icon">🛡️</span>
       </div>
+
+      <!-- Widget Cósmico: Sincronía y Número del Día -->
+      <div class="glass-card daily-synchronicity-widget" id="dailySyncWidget">
+        <div class="daily-sync-left">
+          <div class="daily-sync-badge">
+            <span class="sync-dot"></span>
+            <span id="lblDailyHebrewDate">Cargando fecha hebrea...</span>
+          </div>
+          <div class="daily-sync-numbers">
+            <div class="sync-number-item">
+              <span class="sync-number-lbl">Vibración del Año</span>
+              <span class="sync-number-val" id="lblDailyYearVal">—</span>
+            </div>
+            <div class="sync-number-item">
+              <span class="sync-number-lbl">Energía Cósmica del Día</span>
+              <span class="sync-number-val highlight" id="lblDailyFreqVal">—</span>
+            </div>
+          </div>
+          <div class="daily-sync-sefirah" id="lblDailySefirahInfo">
+            Conectando con la frecuencia celestial del calendario hebreo...
+          </div>
+        </div>
+        <div class="daily-sync-right">
+          <div class="sync-chips-title">✨ Resonancias del Día:</div>
+          <div class="sync-chips-container" id="dailySyncChips">
+            <!-- Chips dinámicos -->
+          </div>
+          <button class="sync-explore-btn" id="btnExploreDailyNumber">🔍 Explorar este número</button>
+        </div>
+      </div>
     </header>
 
     <!-- Navegación Principal -->
@@ -167,21 +197,75 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 2: BUSCADOR EN LA TORÁ -->
+    <!-- SECCIÓN 2: EXPLORADOR NUMÉRICO INVERSO & TORÁ -->
     <div id="torah" class="tab-content">
       <div class="glass-card torah-search-section">
-        <h3 class="input-title">Buscador Gematria en la Torá</h3>
-        <p style="color: var(--text-secondary); margin-top: -1rem; font-size: 0.95rem;">
-          Ingresa un número (ej: 708, 156, 13) o una palabra hebrea para encontrar pasajes bíblicos que coincidan exactamente con esa frecuencia matemática.
-        </p>
-
-        <div class="search-bar-wrapper">
-          <input type="text" id="txtSearchTorah" class="search-input" placeholder="Ingresa un valor numérico o una palabra..." autocomplete="off">
-          <button id="btnSearchTorah" class="search-btn">Buscar Conexiones</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <h3 class="input-title" style="margin: 0;">Explorador Numérico Inverso & Torá</h3>
+          <div class="torah-mode-switch" style="display: flex; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.3rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+            <button class="mode-btn active" id="btnModeReverseNumber" data-mode="number">🔢 Por Número (Inverso)</button>
+            <button class="mode-btn" id="btnModeTorahVerses" data-mode="verses">📜 Pasajes Bíblicos</button>
+          </div>
         </div>
 
+        <p style="color: var(--text-secondary); margin-top: -0.5rem; font-size: 0.92rem;" id="lblTorahSearchDesc">
+          Ingresa cualquier valor numérico (ej: <strong>13</strong>, <strong>26</strong>, <strong>708</strong>, <strong>156</strong>, <strong>541</strong>) para descubrir qué palabras sagradas, conceptos históricos y nombres divinos vibran en esa misma frecuencia.
+        </p>
+
+        <!-- Barra de Búsqueda Principal -->
+        <div class="search-bar-wrapper">
+          <input type="text" id="txtSearchTorah" class="search-input" placeholder="Ingresa un número (ej: 26, 708, 156) o palabra..." autocomplete="off">
+          <button id="btnSearchTorah" class="search-btn">🔍 Explorar Coincidencias</button>
+        </div>
+
+        <!-- Atajos de Números Sagrados Frecuentes -->
+        <div class="quick-numbers-bar" id="quickNumbersBar" style="margin-top: 0.8rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: bold;">
+            ✨ Números Clave de la Tradición (Clic para explorar):
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+            <button class="num-chip" data-num="13"><strong>13</strong> Amor / Unidad</button>
+            <button class="num-chip" data-num="18"><strong>18</strong> Chai (Vida)</button>
+            <button class="num-chip" data-num="26"><strong>26</strong> YHVH (Nombre Divino)</button>
+            <button class="num-chip" data-num="73"><strong>73</strong> Jojmá (Sabiduría)</button>
+            <button class="num-chip" data-num="86"><strong>86</strong> Elohim / Naturaleza</button>
+            <button class="num-chip" data-num="156"><strong>156</strong> Sión / José</button>
+            <button class="num-chip" data-num="358"><strong>358</strong> Mesías / Serpiente</button>
+            <button class="num-chip" data-num="541"><strong>541</strong> Israel</button>
+            <button class="num-chip" data-num="611"><strong>611</strong> Torá</button>
+            <button class="num-chip" data-num="708"><strong>708</strong> Tashach (1948)</button>
+            <button class="num-chip" data-num="913"><strong>913</strong> Bereshit</button>
+          </div>
+        </div>
+
+        <!-- Controles de Tolerancia & Método de Búsqueda Inversa -->
+        <div id="reverseFilterControls" style="background: rgba(0,0,0,0.25); border-radius: 12px; padding: 0.8rem 1rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.2rem; justify-content: space-between;">
+          <div>
+            <span style="font-size: 0.78rem; color: var(--gold-primary); display: block; margin-bottom: 0.3rem; font-weight: bold;">Tolerancia Mística:</span>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="toleranceSelector">
+              <button class="filter-pill active" data-tolerance="0">Exacto (±0)</button>
+              <button class="filter-pill" data-tolerance="1" title="Colel: en la tradición cabalística, la diferencia de ±1 representa la unidad divina conectora.">Colel Místico (±1)</button>
+              <button class="filter-pill" data-tolerance="5">Cercano (±5)</button>
+              <button class="filter-pill" data-tolerance="10">Amplio (±10)</button>
+            </div>
+          </div>
+
+          <div>
+            <span style="font-size: 0.78rem; color: var(--gold-primary); display: block; margin-bottom: 0.3rem; font-weight: bold;">Sistema de Gematria:</span>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="systemSelector">
+              <button class="filter-pill active" data-system="all">Todos</button>
+              <button class="filter-pill" data-system="absolute">Absoluto</button>
+              <button class="filter-pill" data-system="ordinal">Ordinal</button>
+              <button class="filter-pill" data-system="reduced">Reducido (1-9)</button>
+              <button class="filter-pill" data-system="atbash">Atbash</button>
+              <button class="filter-pill" data-system="albam">Albam</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenedor de Resultados -->
         <div class="results-list" id="torahResultsContainer">
-          <!-- Resultados dinámicos -->
+          <!-- Resultados dinámicos de búsqueda inversa o versículos -->
         </div>
       </div>
     </div>
@@ -222,29 +306,39 @@
       <div class="comparison-grid">
         <!-- Panel Izquierdo: Inputs de comparación -->
         <div class="glass-card comparison-inputs-panel">
-          <h3 class="input-title">Comparador Místico</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-            Ingresa dos términos (en hebreo o español fonético) para buscar conexiones ocultas y construir su puente cabalístico.
+          <h3 class="input-title">Comparador Místico Inteligente</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.2rem;">
+            Analiza dos conceptos para descubrir sus resonancias, calcular su <strong>diferencia cabalística (&Delta;)</strong> y revelar su puente espiritual.
           </p>
+
+          <!-- Selector de Pares Legendarios -->
+          <div style="margin-bottom: 1.2rem;">
+            <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: bold;">
+              🌟 Pares Legendarios Arquetípicos (Clic para cargar):
+            </div>
+            <div class="legendary-pairs-chips" id="legendaryPairsContainer" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
           
           <div class="compare-inputs-flex">
             <div class="compare-input-box">
-              <label for="txtCompareA" class="compare-label">Palabra A (Hebreo o Español)</label>
-              <input type="text" id="txtCompareA" class="compare-text-input" placeholder="Término A..." autocomplete="off">
+              <label for="txtCompareA" class="compare-label">Palabra / Evento A</label>
+              <input type="text" id="txtCompareA" class="compare-text-input" placeholder="Término A (ej: Amor, Sión)..." autocomplete="off">
               <div class="compare-hebrew-hint" id="hintCompareA">—</div>
             </div>
             
             <div class="compare-divider-vs">VS</div>
             
             <div class="compare-input-box">
-              <label for="txtCompareB" class="compare-label">Palabra B (Hebreo o Español)</label>
-              <input type="text" id="txtCompareB" class="compare-text-input" placeholder="Término B..." autocomplete="off">
+              <label for="txtCompareB" class="compare-label">Palabra / Evento B</label>
+              <input type="text" id="txtCompareB" class="compare-text-input" placeholder="Término B (ej: Unidad, José)..." autocomplete="off">
               <div class="compare-hebrew-hint" id="hintCompareB">—</div>
             </div>
           </div>
           
           <div class="compare-action-container" style="margin-top: 1.5rem;">
-            <button id="btnCompare" class="search-btn" style="width: 100%; height: auto; padding: 0.9rem;">Encontrar Puentes Gematria</button>
+            <button id="btnCompare" class="search-btn" style="width: 100%; height: auto; padding: 0.9rem;">⚡ Encontrar Puentes & Delta Gematria</button>
           </div>
         </div>
 
@@ -253,14 +347,14 @@
           <h3 class="results-header">Puente y Relaciones Místicas</h3>
           
           <!-- Canvas Dual Orbitas -->
-          <div class="canvas-wrapper" style="height: 220px; margin-bottom: 1.5rem; background: rgba(5,4,10,0.6);">
+          <div class="canvas-wrapper" style="height: 200px; margin-bottom: 1.2rem; background: rgba(5,4,10,0.6);">
             <canvas id="comparisonCanvas"></canvas>
             <div class="canvas-instructions">Intersección orbital de frecuencias</div>
           </div>
           
           <div class="comparison-bridge-content" id="comparisonBridge">
             <div class="empty-bridge-msg" style="text-align: center; padding: 2rem 0;">
-              <span style="color: var(--text-secondary); font-style: italic;">Ingresa dos palabras y haz clic en Buscar para revelar las conexiones de su puente espiritual.</span>
+              <span style="color: var(--text-secondary); font-style: italic;">Ingresa dos palabras o selecciona un par legendario para revelar las conexiones de su puente espiritual.</span>
             </div>
           </div>
         </div>

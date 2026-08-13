@@ -739,16 +739,245 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- 6. BUSCADOR DE LA TORÁ ---
-  btnSearchTorah.addEventListener('click', executeTorahSearch);
-  txtSearchTorah.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') executeTorahSearch();
+  // --- 6. BUSCADOR & EXPLORADOR NUMÉRICO INVERSO ---
+  let reverseSearchState = {
+    mode: 'number', // 'number' o 'verses'
+    tolerance: 0,
+    system: 'all'
+  };
+
+  const btnModeReverseNumber = document.getElementById('btnModeReverseNumber');
+  const btnModeTorahVerses = document.getElementById('btnModeTorahVerses');
+  const quickNumbersBar = document.getElementById('quickNumbersBar');
+  const reverseFilterControls = document.getElementById('reverseFilterControls');
+  const lblTorahSearchDesc = document.getElementById('lblTorahSearchDesc');
+
+  if (btnModeReverseNumber && btnModeTorahVerses) {
+    btnModeReverseNumber.addEventListener('click', () => setTorahSearchMode('number'));
+    btnModeTorahVerses.addEventListener('click', () => setTorahSearchMode('verses'));
+  }
+
+  function setTorahSearchMode(mode) {
+    reverseSearchState.mode = mode;
+    if (mode === 'number') {
+      if (btnModeReverseNumber) btnModeReverseNumber.classList.add('active');
+      if (btnModeTorahVerses) btnModeTorahVerses.classList.remove('active');
+      if (quickNumbersBar) quickNumbersBar.style.display = 'block';
+      if (reverseFilterControls) reverseFilterControls.style.display = 'flex';
+      if (lblTorahSearchDesc) {
+        lblTorahSearchDesc.innerHTML = 'Ingresa cualquier valor numérico (ej: <strong>13</strong>, <strong>26</strong>, <strong>708</strong>, <strong>156</strong>, <strong>541</strong>) para descubrir qué palabras sagradas, conceptos históricos y nombres divinos vibran en esa misma frecuencia.';
+      }
+      txtSearchTorah.placeholder = 'Ingresa un número (ej: 26, 708, 156) o palabra...';
+    } else {
+      if (btnModeReverseNumber) btnModeReverseNumber.classList.remove('active');
+      if (btnModeTorahVerses) btnModeTorahVerses.classList.add('active');
+      if (quickNumbersBar) quickNumbersBar.style.display = 'none';
+      if (reverseFilterControls) reverseFilterControls.style.display = 'none';
+      if (lblTorahSearchDesc) {
+        lblTorahSearchDesc.innerHTML = 'Ingresa un número o palabra hebrea para encontrar pasajes bíblicos de la Torá que coincidan exactamente con esa frecuencia matemática.';
+      }
+      txtSearchTorah.placeholder = 'Ingresa un valor de versículo (ej: 708, 2701, 13)...';
+    }
+  }
+
+  // Listeners de Atajos de Números
+  document.querySelectorAll('.num-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const num = chip.getAttribute('data-num');
+      setTorahSearchMode('number');
+      txtSearchTorah.value = num;
+      executeTorahOrReverseSearch();
+    });
   });
 
-  function executeTorahSearch() {
+  // Listeners de Tolerancia
+  const tolerancePills = document.querySelectorAll('#toleranceSelector .filter-pill');
+  tolerancePills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      tolerancePills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      reverseSearchState.tolerance = parseInt(pill.getAttribute('data-tolerance'), 10) || 0;
+      if (txtSearchTorah.value.trim()) executeTorahOrReverseSearch();
+    });
+  });
+
+  // Listeners de Sistema de Gematria
+  const systemPills = document.querySelectorAll('#systemSelector .filter-pill');
+  systemPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      systemPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      reverseSearchState.system = pill.getAttribute('data-system') || 'all';
+      if (txtSearchTorah.value.trim()) executeTorahOrReverseSearch();
+    });
+  });
+
+  btnSearchTorah.addEventListener('click', executeTorahOrReverseSearch);
+  txtSearchTorah.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') executeTorahOrReverseSearch();
+  });
+
+  function executeTorahOrReverseSearch() {
     const query = txtSearchTorah.value.trim();
     if (!query) return;
-    
+
+    if (reverseSearchState.mode === 'verses') {
+      executeTorahVersesSearch(query);
+      return;
+    }
+
+    // Modo Número Inverso
+    let targetNum = parseInt(query, 10);
+    if (isNaN(targetNum)) {
+      let hebrew = query;
+      if (/[a-zA-Z]/.test(query)) hebrew = Engine.SpanishToHebrew(query);
+      const calc = Engine.CalculateGematria(hebrew);
+      targetNum = calc.absolute;
+    }
+
+    if (isNaN(targetNum) || targetNum <= 0) return;
+
+    // Base de datos combinada
+    const combinedDB = [
+      ...DB.KNOWLEDGE_GRAPH,
+      ...DB.ZIONIST_CORRELATIONS.map(z => ({
+        id: 'zion_' + z.hebrew,
+        hebrew: z.hebrew,
+        spanish: z.concept,
+        category: 'sionismo',
+        mysticalNote: z.mysticalConnection,
+        historicalContext: z.historicalContext,
+        gematria: Engine.CalculateGematria(z.hebrew)
+      }))
+    ];
+
+    const results = Engine.FindReverseGematria(targetNum, {
+      tolerance: reverseSearchState.tolerance,
+      system: reverseSearchState.system
+    }, combinedDB);
+
+    renderReverseGematriaResults(results, targetNum, query);
+  }
+
+  function renderReverseGematriaResults(results, targetNum, originalQuery) {
+    torahResultsContainer.innerHTML = '';
+
+    const resultsHeader = document.createElement('div');
+    resultsHeader.style.marginBottom = '1.2rem';
+    resultsHeader.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <h4 style="color: var(--gold-primary); font-family: var(--font-serif); margin: 0; font-size: 1.1rem;">
+          ${results.length} Coincidencia(s) para Frecuencia ${targetNum} ${reverseSearchState.tolerance > 0 ? `(Tolerancia ±${reverseSearchState.tolerance})` : ''}:
+        </h4>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Consulta: "${originalQuery}"</span>
+      </div>
+    `;
+    torahResultsContainer.appendChild(resultsHeader);
+
+    if (results.length === 0) {
+      const tipBox = document.createElement('div');
+      tipBox.className = 'glass-card';
+      tipBox.style.padding = '2rem';
+      tipBox.style.textAlign = 'center';
+      tipBox.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+        <div style="color: var(--gold-primary); font-weight: bold; margin-bottom: 0.5rem;">No se encontraron palabras con valor exacto ${targetNum}</div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 500px; margin: 0 auto 1.2rem auto;">
+          Prueba activando el <strong>Colel Místico (±1)</strong> o la tolerancia <strong>Cercano (±5)</strong> arriba para descubrir términos conectados por resonancia de proximidad.
+        </p>
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+          <button class="num-chip" data-num="13">Explorar 13 (Amor)</button>
+          <button class="num-chip" data-num="26">Explorar 26 (YHVH)</button>
+          <button class="num-chip" data-num="708">Explorar 708 (1948)</button>
+          <button class="num-chip" data-num="156">Explorar 156 (Sión)</button>
+        </div>
+      `;
+      tipBox.querySelectorAll('.num-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          txtSearchTorah.value = btn.dataset.num;
+          executeTorahOrReverseSearch();
+        });
+      });
+      torahResultsContainer.appendChild(tipBox);
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'reverse-results-grid';
+
+    results.forEach(res => {
+      const entry = res.entry;
+      const calc = res.gematria;
+      const best = res.bestMatch;
+
+      const card = document.createElement('div');
+      let matchClass = 'reverse-match-card';
+      let badgeClass = 'badge-approx';
+
+      if (best.type === 'exact') {
+        matchClass += ' exact-match';
+        badgeClass = 'badge-exact';
+      } else if (best.type === 'colel') {
+        matchClass += ' colel-match';
+        badgeClass = 'badge-colel';
+      } else if (best.system === 'atbash' || best.system === 'albam') {
+        matchClass += ' cipher-match';
+        badgeClass = 'badge-cipher';
+      }
+
+      card.className = matchClass;
+
+      card.innerHTML = `
+        <div class="reverse-card-top">
+          <div>
+            <div class="reverse-card-hebrew">${entry.hebrew}</div>
+            <div class="reverse-card-title">${entry.spanish || entry.concept}</div>
+          </div>
+          <span class="reverse-card-badge ${badgeClass}">${best.desc}</span>
+        </div>
+
+        <div class="reverse-card-values">
+          <span>Absoluto: <strong style="color:var(--gold-primary);">${calc.absolute}</strong></span>
+          <span>Ordinal: <strong>${calc.ordinal}</strong></span>
+          <span>Reducido: <strong>${calc.reduced}</strong></span>
+        </div>
+
+        <div class="reverse-card-note">
+          ${entry.mysticalNote || entry.historicalContext || 'Concepto sagrado de la tradición hebrea.'}
+        </div>
+
+        <div class="reverse-card-actions">
+          <button class="rev-action-btn btn-load-calc" title="Ver cálculo completo en la calculadora">🧮 Calculadora</button>
+          <button class="rev-action-btn btn-cross-compare" title="Cruzar y comparar con otra palabra">🔗 Cruzar</button>
+          <button class="rev-action-btn btn-find-els" title="Buscar en la matriz del Código de la Biblia">📜 Código ELS</button>
+        </div>
+      `;
+
+      // Eventos de botones de acción rápida
+      card.querySelector('.btn-load-calc').addEventListener('click', () => {
+        switchTab('calculator');
+        txtInput.value = entry.hebrew;
+        setLanguage('hebrew');
+        processInputText(entry.hebrew);
+      });
+
+      card.querySelector('.btn-cross-compare').addEventListener('click', () => {
+        crossCompareWith(entry.hebrew);
+      });
+
+      card.querySelector('.btn-find-els').addEventListener('click', () => {
+        switchTab('biblecode');
+        txtSearchELS.value = entry.hebrew;
+        handleELSSearch();
+      });
+
+      grid.appendChild(card);
+    });
+
+    torahResultsContainer.appendChild(grid);
+  }
+
+  function executeTorahVersesSearch(query) {
     let searchVal = parseInt(query, 10);
     let isNumeric = !isNaN(searchVal);
     
@@ -782,14 +1011,14 @@ document.addEventListener('DOMContentLoaded', () => {
       tipBox.className = 'verse-item';
       tipBox.innerHTML = `
         <p style="color: var(--text-secondary);">
-          Tip: Intenta buscar números como <strong>708</strong> (Año de la independencia de Israel), <strong>2701</strong> (Génesis 1:1), <strong>156</strong> (Sión / José), o <strong>13</strong> (Amor / Unidad).
+          Tip: Intenta buscar números como <strong>708</strong> (Deuteronomio 32:3 / 1948), <strong>2701</strong> (Génesis 1:1), <strong>1047</strong> (Isaías 2:5 / BILU), o <strong>13</strong> (Amor / Unidad).
         </p>
       `;
       torahResultsContainer.appendChild(tipBox);
       return;
     }
     
-    resultsHeader.textContent = `${results.length} Coincidencia(s) encontrada(s) para Gematria ${searchVal}:`;
+    resultsHeader.textContent = `${results.length} Pasaje(s) de la Torá para Gematria ${searchVal}:`;
     torahResultsContainer.appendChild(resultsHeader);
     
     results.forEach(verse => {
@@ -807,8 +1036,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <strong style="color: var(--gold-primary);">Reflexión:</strong> 
           <span>${verse.commentary}</span>
         </div>
+        <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+          <button class="rev-action-btn btn-verse-compare" style="max-width: 140px;">🔗 Cruzar Versículo</button>
+        </div>
       `;
       
+      item.querySelector('.btn-verse-compare').addEventListener('click', () => {
+        crossCompareWith(verse.hebrew.split(' ')[0] || verse.hebrew);
+      });
+
       torahResultsContainer.appendChild(item);
     });
   }
@@ -1491,11 +1727,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- FASE 2: COMPARADOR DE DOS VÍAS ---
   let comparisonCtx = comparisonCanvas ? comparisonCanvas.getContext('2d') : null;
 
+  // --- FASE 2: COMPARADOR DE DOS VÍAS & PARES LEGENDARIOS ---
+  let comparisonCtx = comparisonCanvas ? comparisonCanvas.getContext('2d') : null;
+
   function resizeComparisonCanvas() {
     if (!comparisonCanvas) return;
     const rect = comparisonCanvas.parentElement.getBoundingClientRect();
     comparisonCanvas.width = rect.width;
-    comparisonCanvas.height = rect.height || 220;
+    comparisonCanvas.height = rect.height || 200;
+  }
+
+  function renderLegendaryPairs() {
+    const container = document.getElementById('legendaryPairsContainer');
+    if (!container || !DB.LEGENDARY_PAIRS) return;
+    container.innerHTML = '';
+
+    DB.LEGENDARY_PAIRS.forEach(pair => {
+      const btn = document.createElement('button');
+      btn.className = 'legendary-pair-chip';
+      btn.innerHTML = `<strong>${pair.title}</strong> (${pair.wordA} & ${pair.wordB})`;
+      btn.title = pair.synopsis;
+      btn.addEventListener('click', () => {
+        txtCompareA.value = pair.wordA;
+        txtCompareB.value = pair.wordB;
+        handleComparison();
+      });
+      container.appendChild(btn);
+    });
   }
 
   if (btnCompare) {
@@ -1522,14 +1780,16 @@ document.addEventListener('DOMContentLoaded', () => {
     compState.calcA = calcA;
     compState.calcB = calcB;
 
-    const scoreResult = Engine.ScoreCorrelation(calcA, calcB);
-    renderComparisonBridge(calcA, calcB, scoreResult, inputA, inputB);
+    const crossAnalysis = Engine.AnalyzeCrossConnection(calcA, calcB, DB.KNOWLEDGE_GRAPH);
+    renderComparisonBridge(calcA, calcB, crossAnalysis, inputA, inputB);
   }
 
-  function renderComparisonBridge(calcA, calcB, scoreResult, rawA, rawB) {
+  function renderComparisonBridge(calcA, calcB, crossAnalysis, rawA, rawB) {
     if (!comparisonBridge) return;
 
+    const scoreResult = crossAnalysis.scoreResult;
     let dimensionsHtml = '';
+    
     scoreResult.matches.forEach(match => {
       let icon = '🔮';
       if (match.type === 'exact') icon = '⚡';
@@ -1546,64 +1806,68 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     });
 
-    if (scoreResult.matches.length === 0) {
-      dimensionsHtml = `
-        <div class="bridge-dim-item" style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05);">
+    if (crossAnalysis.isAnagram) {
+      dimensionsHtml += `
+        <div class="bridge-dim-item" style="border-color: #00ced1;">
           <span class="bridge-dim-icon">🌀</span>
-          <span class="bridge-dim-text" style="color: var(--text-secondary);">No se detectaron correspondencias directas en las 5 dimensiones.</span>
+          <span class="bridge-dim-text" style="color: #00ced1;"><strong>Anagrama Sagrado (Tzeruf Otiot): Mismas letras en diferente orden</strong></span>
         </div>
       `;
     }
 
-    let bridgeNarrativeHtml = '';
-    if (scoreResult.matches.length > 0) {
-      let explanation = `La relación entre "${rawA}" (${calcA.cleanText}) y "${rawB}" (${calcB.cleanText}) revela una sincronía de nivel ${scoreResult.stars} estrellas. `;
-      
-      const exactMatch = scoreResult.matches.find(m => m.type === 'exact');
-      const reducedMatch = scoreResult.matches.find(m => m.type === 'reduced');
-      const rootMatch = scoreResult.matches.find(m => m.type === 'root');
-      const factorMatch = scoreResult.matches.find(m => m.type === 'factor');
-      const atbashMatch = scoreResult.matches.find(m => m.type === 'atbash');
-
-      if (exactMatch) {
-        explanation += `Ambas comparten el valor numérico absoluto exacto de <strong>${calcA.absolute}</strong>. En la Cábala, esto denota "Equivalencia de Forma" (Jashav), sugiriendo que a nivel espiritual expresan la misma fuerza divina bajo diferentes ropajes. `;
-      }
-      
-      if (reducedMatch && !exactMatch) {
-        explanation += `Comparten el valor reducido o "esencia" (Mispar Katan) de <strong>${calcA.reduced}</strong>. Esto implica que, aunque operan en planos materiales diferentes, su núcleo espiritual y propósito último resuena con la misma frecuencia energética del 1 al 9. `;
-      }
-
-      if (atbashMatch) {
-        explanation += `Están conectadas a través del cifrado <strong>Atbash</strong>. Esto representa una correspondencia oculta de reflejo, una revelación que solo es visible cuando se invierte la estructura de las letras. `;
-      }
-
-      if (rootMatch) {
-        explanation += `Lingüísticamente comparten letras en común (<strong>${rootMatch.details}</strong>), sugiriendo una proximidad en su origen raíz hebreo (Shoresh). `;
-      }
-
-      if (factorMatch) {
-        const factor = factorMatch.details.factor;
-        const type = factorMatch.details.type;
-        if (type === 'multiple') {
-          explanation += `El valor de "${rawA}" (${calcA.absolute}) es exactamente <strong>${factor} veces</strong> el valor de "${rawB}" (${calcB.absolute}). Esto enseña que la primera palabra "contiene" o amplifica la frecuencia de la segunda. `;
-        } else {
-          explanation += `El valor de "${rawB}" (${calcB.absolute}) es exactamente <strong>${factor} veces</strong> el valor de "${rawA}" (${calcA.absolute}). Esto indica que la segunda palabra es un contenedor amplificado de la energía de la primera. `;
-        }
-      }
-
-      bridgeNarrativeHtml = `
-        <div class="bridge-narrative" style="margin-top: 1.5rem;">
-          <div class="bridge-narrative-title">Interpretación Cabalística</div>
-          <div class="bridge-narrative-text">"${explanation}"</div>
+    if (crossAnalysis.isAtbashCross) {
+      dimensionsHtml += `
+        <div class="bridge-dim-item" style="border-color: var(--gold-primary);">
+          <span class="bridge-dim-icon">🔄</span>
+          <span class="bridge-dim-text" style="color: var(--gold-primary);"><strong>Cifrado Atbash Cruzado: Reflejo en el espejo del alfabeto</strong></span>
         </div>
       `;
-    } else {
-      bridgeNarrativeHtml = `
-        <div class="bridge-narrative" style="margin-top: 1.5rem; border-left-color: var(--text-secondary); background: rgba(255,255,255,0.02);">
-          <div class="bridge-narrative-title" style="color: var(--text-secondary);">Meditación Reflexiva</div>
-          <div class="bridge-narrative-text" style="color: var(--text-secondary);">
-            Ambos conceptos poseen valores numéricos independientes (A=${calcA.absolute}, B=${calcB.absolute}). Esto indica que representan canales y virtudes divinas diferenciadas en el árbol de la vida, invitando a la mente a contemplar cómo cada uno sostiene la creación desde su propia frecuencia.
+    }
+
+    if (scoreResult.matches.length === 0 && !crossAnalysis.isAnagram && !crossAnalysis.isAtbashCross) {
+      dimensionsHtml = `
+        <div class="bridge-dim-item" style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05);">
+          <span class="bridge-dim-icon">🌌</span>
+          <span class="bridge-dim-text" style="color: var(--text-secondary);">Frecuencias diferenciadas e independientes en el plano manifestado.</span>
+        </div>
+      `;
+    }
+
+    // Análisis de Delta (Diferencia Numérica)
+    let deltaHtml = '';
+    if (crossAnalysis.delta > 0) {
+      let matchConceptHtml = '';
+      if (crossAnalysis.deltaMatches && crossAnalysis.deltaMatches.length > 0) {
+        const topDelta = crossAnalysis.deltaMatches[0];
+        matchConceptHtml = `
+          <div class="delta-concept-match">
+            ✨ <strong>Puente de Conexión:</strong> El delta ${crossAnalysis.delta} equivale exactamente a <strong style="color:var(--gold-primary); font-family:var(--font-hebrew); font-size:1.1rem;">${topDelta.entry.hebrew}</strong> (${topDelta.entry.spanish || topDelta.entry.concept}). 
+            <span style="font-size:0.78rem; color:var(--text-secondary); display:block; margin-top:0.2rem;">${topDelta.entry.mysticalNote || ''}</span>
           </div>
+        `;
+      }
+
+      deltaHtml = `
+        <div class="delta-analysis-box">
+          <div class="delta-header">
+            <span class="delta-title">📐 Distancia Cabalística (Delta &Delta;)</span>
+            <span class="delta-value-badge">&Delta; = ${crossAnalysis.delta}</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-secondary);">
+            Diferencia entre |${calcA.absolute} - ${calcB.absolute}| = <strong>${crossAnalysis.delta}</strong>
+          </div>
+          ${matchConceptHtml}
+        </div>
+      `;
+    }
+
+    // Suma de energías cósmicas
+    let sumHtml = '';
+    if (crossAnalysis.sumMatches && crossAnalysis.sumMatches.length > 0) {
+      const topSum = crossAnalysis.sumMatches[0];
+      sumHtml = `
+        <div style="margin-top: 0.8rem; background: rgba(0,206,209,0.05); border: 1px solid rgba(0,206,209,0.2); border-radius: 10px; padding: 0.6rem 0.9rem; font-size: 0.82rem;">
+          🌟 <strong>Suma de Fuerzas (A + B = ${crossAnalysis.sum}):</strong> Resuena con <strong style="color:#00ced1; font-family:var(--font-hebrew); font-size:1.05rem;">${topSum.entry.hebrew}</strong> (${topSum.entry.spanish || topSum.entry.concept}).
         </div>
       `;
     }
@@ -1614,13 +1878,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="bridge-val-title">${rawA}</div>
           <div class="bridge-val-hebrew">${calcA.cleanText}</div>
           <div class="bridge-val-number">${calcA.absolute}</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">Esencia: ${calcA.reduced}</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">Esencia: ${calcA.reduced} | Ordinal: ${calcA.ordinal}</div>
         </div>
         <div class="bridge-val-card ${calcA.absolute === calcB.absolute ? 'match' : ''}">
           <div class="bridge-val-title">${rawB}</div>
           <div class="bridge-val-hebrew">${calcB.cleanText}</div>
           <div class="bridge-val-number">${calcB.absolute}</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">Esencia: ${calcB.reduced}</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">Esencia: ${calcB.reduced} | Ordinal: ${calcB.ordinal}</div>
         </div>
       </div>
 
@@ -1629,7 +1893,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ${dimensionsHtml}
       </div>
 
-      ${bridgeNarrativeHtml}
+      ${deltaHtml}
+      ${sumHtml}
+
+      <div class="bridge-narrative" style="margin-top: 1.2rem;">
+        <div class="bridge-narrative-title">Interpretación Cabalística del Puente</div>
+        <div class="bridge-narrative-text">"${crossAnalysis.narrative}"</div>
+      </div>
     `;
   }
 
@@ -2626,9 +2896,80 @@ document.addEventListener('DOMContentLoaded', () => {
     textContainer.insertAdjacentHTML('beforeend', statsHtml);
   };
 
+  // --- NAVEGACIÓN Y ACCIONES CRUZADAS GLOBALES ---
+  function crossCompareWith(hebrewWord) {
+    if (!hebrewWord) return;
+    switchTab('comparison');
+    txtCompareA.value = hebrewWord;
+    txtCompareB.value = '';
+    hintCompareA.textContent = hebrewWord;
+    hintCompareB.textContent = 'Selecciona o escribe el término B...';
+    txtCompareB.focus();
+  }
+
+  // --- WIDGET CÓSMICO: NÚMERO Y SINCRONÍA DEL DÍA ---
+  function initDailySynchronicity() {
+    const todayInfo = Engine.GregorianToHebrew(new Date());
+    const lblDailyHebrewDate = document.getElementById('lblDailyHebrewDate');
+    const lblDailyYearVal = document.getElementById('lblDailyYearVal');
+    const lblDailyFreqVal = document.getElementById('lblDailyFreqVal');
+    const lblDailySefirahInfo = document.getElementById('lblDailySefirahInfo');
+    const dailySyncChips = document.getElementById('dailySyncChips');
+    const btnExploreDailyNumber = document.getElementById('btnExploreDailyNumber');
+
+    if (lblDailyHebrewDate) {
+      lblDailyHebrewDate.textContent = `📅 ${todayInfo.fullHebrewString} • ${todayInfo.day} de ${todayInfo.monthSpanish} (${todayInfo.year})`;
+    }
+    if (lblDailyYearVal) {
+      lblDailyYearVal.textContent = `${todayInfo.yearHebrew} (${todayInfo.yearShortNumber})`;
+    }
+    if (lblDailyFreqVal) {
+      lblDailyFreqVal.textContent = `${todayInfo.fullDailyFrequency} Hz`;
+    }
+    if (lblDailySefirahInfo) {
+      lblDailySefirahInfo.textContent = `Sefirá & Energía: ${todayInfo.monthInfo.sefirah} • Signo Zodiacal: ${todayInfo.monthInfo.zodiac}`;
+    }
+
+    if (dailySyncChips) {
+      dailySyncChips.innerHTML = '';
+      
+      // Buscar palabras en el grafo con resonancia para el año o la frecuencia del día
+      let resonating = Engine.FindReverseGematria(todayInfo.yearShortNumber, { tolerance: 10, system: 'absolute' }, DB.KNOWLEDGE_GRAPH);
+      if (resonating.length === 0) {
+        resonating = DB.KNOWLEDGE_GRAPH.slice(0, 4).map(e => ({ 
+          entry: e, 
+          bestMatch: { val: e.gematria ? e.gematria.absolute : 0, desc: 'Concepto Sagrado' } 
+        }));
+      }
+
+      resonating.slice(0, 4).forEach(r => {
+        const chip = document.createElement('button');
+        chip.className = 'sync-chip';
+        chip.innerHTML = `<span style="font-family:var(--font-hebrew); font-weight:bold;">${r.entry.hebrew}</span> <span style="font-size:0.7rem; color:var(--gold-primary);">(${r.entry.spanish || r.entry.concept})</span>`;
+        chip.title = `Gematria: ${r.gematria ? r.gematria.absolute : ''} - Clic para calcular`;
+        chip.addEventListener('click', () => {
+          switchTab('calculator');
+          txtInput.value = r.entry.hebrew;
+          setLanguage('hebrew');
+          processInputText(r.entry.hebrew);
+        });
+        dailySyncChips.appendChild(chip);
+      });
+    }
+
+    if (btnExploreDailyNumber) {
+      btnExploreDailyNumber.addEventListener('click', () => {
+        switchTab('torah');
+        setTorahSearchMode('number');
+        txtSearchTorah.value = todayInfo.yearShortNumber;
+        executeTorahOrReverseSearch();
+      });
+    }
+  }
+
   // --- 11. INICIALIZACIÓN COMPLETA DE LA APP ---
   function init() {
-    // FASE 2: Pre-calcular la gematria para todas las entradas de Grafo de Conocimiento
+    // Pre-calcular la gematria para todas las entradas del Grafo de Conocimiento
     DB.KNOWLEDGE_GRAPH.forEach(entry => {
       entry.gematria = Engine.CalculateGematria(entry.hebrew);
     });
@@ -2638,6 +2979,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderZionismGrid();
     renderReflectionTab();
     renderELSSearchHistory();
+    renderLegendaryPairs();
+    initDailySynchronicity();
     
     processInputText('');
     

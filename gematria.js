@@ -805,48 +805,396 @@ function FindELS(text, searchWord, minSkip, maxSkip, options = {}) {
   return results;
 }
 
+// === MÓDULO DE FECHA Y CALENDARIO HEBREO ===
+
+/**
+ * Convierte un número en su representación tradicional de letras hebreas con gershayim.
+ * Ej: 5786 -> תשפ״ו, 708 -> תש״ח, 15 -> ט״ו, 16 -> ט״ז, 13 -> י״ג
+ */
+function NumberToHebrewLetters(num) {
+  if (!num || isNaN(num) || num <= 0) return '';
+  let n = parseInt(num, 10);
+  if (n >= 1000) {
+    n = n % 1000;
+  }
+
+  const hundreds = [
+    { val: 400, char: 'ת' },
+    { val: 300, char: 'ש' },
+    { val: 200, char: 'ר' },
+    { val: 100, char: 'ק' }
+  ];
+
+  const tens = [
+    { val: 90, char: 'צ' },
+    { val: 80, char: 'פ' },
+    { val: 70, char: 'ע' },
+    { val: 60, char: 'ס' },
+    { val: 50, char: 'נ' },
+    { val: 40, char: 'מ' },
+    { val: 30, char: 'ל' },
+    { val: 20, char: 'כ' },
+    { val: 10, char: 'י' }
+  ];
+
+  const units = [
+    { val: 9, char: 'ט' },
+    { val: 8, char: 'ח' },
+    { val: 7, char: 'ז' },
+    { val: 6, char: 'ו' },
+    { val: 5, char: 'ה' },
+    { val: 4, char: 'ד' },
+    { val: 3, char: 'ג' },
+    { val: 2, char: 'ב' },
+    { val: 1, char: 'א' }
+  ];
+
+  let str = '';
+
+  for (const h of hundreds) {
+    while (n >= h.val) {
+      str += h.char;
+      n -= h.val;
+    }
+  }
+
+  if (n === 15) {
+    str += 'טו';
+    n = 0;
+  } else if (n === 16) {
+    str += 'טז';
+    n = 0;
+  } else {
+    for (const t of tens) {
+      if (n >= t.val) {
+        str += t.char;
+        n -= t.val;
+        break;
+      }
+    }
+    for (const u of units) {
+      if (n >= u.val) {
+        str += u.char;
+        n -= u.val;
+        break;
+      }
+    }
+  }
+
+  if (str.length === 1) return str + '׳';
+  if (str.length > 1) return str.slice(0, -1) + '״' + str.slice(-1);
+  return str;
+}
+
+const HEBREW_MONTHS_MAP = {
+  'Tishrei': { hebrew: 'תשרי', spanish: 'Tishrei', sefirah: 'Juicio / Creación', zodiac: 'Libra (Moznayim)' },
+  'Cheshvan': { hebrew: 'חשוון', spanish: 'Jeshván', sefirah: 'Agua / Silencio', zodiac: 'Escorpio (Akrav)' },
+  'Marcheshvan': { hebrew: 'מרחשוון', spanish: 'Marjeshván', sefirah: 'Agua / Silencio', zodiac: 'Escorpio (Akrav)' },
+  'Kislev': { hebrew: 'כסלו', spanish: 'Kislev', sefirah: 'Luz / Milagros', zodiac: 'Sagitario (Kashat)' },
+  'Tevet': { hebrew: 'טבת', spanish: 'Tevet', sefirah: 'Firmeza / Visión', zodiac: 'Capricornio (Gedi)' },
+  'Shevat': { hebrew: 'שבט', spanish: 'Shevat', sefirah: 'Renovación de Árboles', zodiac: 'Acuario (Dli)' },
+  'Adar': { hebrew: 'אדר', spanish: 'Adar', sefirah: 'Alegría / Ocultamiento', zodiac: 'Piscis (Dagim)' },
+  'Adar I': { hebrew: 'אדר א׳', spanish: 'Adar I', sefirah: 'Alegría Primordial', zodiac: 'Piscis (Dagim)' },
+  'Adar II': { hebrew: 'אדר ב׳', spanish: 'Adar II', sefirah: 'Alegría y Redención', zodiac: 'Piscis (Dagim)' },
+  'Nisan': { hebrew: 'ניסן', spanish: 'Nisán', sefirah: 'Milagros y Primavera', zodiac: 'Aries (Taleh)' },
+  'Iyyar': { hebrew: 'אייר', spanish: 'Iyar', sefirah: 'Sanación (Ani YHVH Rofeja)', zodiac: 'Tauro (Shor)' },
+  'Sivan': { hebrew: 'סיוון', spanish: 'Siván', sefirah: 'Entrega de la Torá', zodiac: 'Géminis (Teomim)' },
+  'Tammuz': { hebrew: 'תמוז', spanish: 'Tamuz', sefirah: 'Visión y Rectificación', zodiac: 'Cáncer (Sartan)' },
+  'Av': { hebrew: 'אב', spanish: 'Av', sefirah: 'Consuelo y Fuego', zodiac: 'Leo (Arieh)' },
+  'Elul': { hebrew: 'אלול', spanish: 'Elul', sefirah: 'Retorno y Amor (Ani Ledodi Vedodi Li)', zodiac: 'Virgo (Betulah)' }
+};
+
+/**
+ * Convierte una fecha gregoriana a fecha del calendario hebreo con sus correspondencias numéricas y espirituales.
+ */
+function GregorianToHebrew(date = new Date()) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US-u-ca-hebrew', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    const parts = formatter.formatToParts(date);
+    let day = 1;
+    let monthName = 'Tishrei';
+    let year = 5786;
+
+    for (const part of parts) {
+      if (part.type === 'day') day = parseInt(part.value, 10);
+      if (part.type === 'month') monthName = part.value;
+      if (part.type === 'year') year = parseInt(part.value, 10);
+    }
+
+    const monthInfo = HEBREW_MONTHS_MAP[monthName] || { hebrew: monthName, spanish: monthName, sefirah: 'Mística', zodiac: 'Cosmos' };
+    const dayHebrewLetters = NumberToHebrewLetters(day);
+    const yearHebrewLetters = NumberToHebrewLetters(year);
+    const yearShortNumber = year % 1000;
+
+    const monthGematria = CalculateGematria(monthInfo.hebrew).absolute;
+    const dayGematria = day;
+    const dailyCosmicNumber = yearShortNumber;
+    const fullDailyFrequency = dayGematria + monthGematria + yearShortNumber;
+
+    return {
+      gregorianDate: date,
+      day,
+      dayHebrew: dayHebrewLetters,
+      monthName,
+      monthHebrew: monthInfo.hebrew,
+      monthSpanish: monthInfo.spanish,
+      monthInfo,
+      year,
+      yearHebrew: yearHebrewLetters,
+      yearShortNumber,
+      fullHebrewString: `${dayHebrewLetters} ב${monthInfo.hebrew} ${yearHebrewLetters}`,
+      dailyCosmicNumber,
+      fullDailyFrequency
+    };
+  } catch (e) {
+    return {
+      gregorianDate: date,
+      day: 1,
+      dayHebrew: 'א׳',
+      monthName: 'Tishrei',
+      monthHebrew: 'תשרי',
+      monthSpanish: 'Tishrei',
+      monthInfo: { hebrew: 'תשרי', spanish: 'Tishrei', sefirah: 'Creación', zodiac: 'Libra' },
+      year: 5786,
+      yearHebrew: 'תשפ״ו',
+      yearShortNumber: 786,
+      fullHebrewString: 'א׳ בתשרי תשפ״ו',
+      dailyCosmicNumber: 786,
+      fullDailyFrequency: 786
+    };
+  }
+}
+
+// === MÓDULO DE BÚSQUEDA INVERSA POR NÚMERO / VALOR ===
+
+/**
+ * Búsqueda Inversa de Gematria: Encuentra qué palabras, conceptos o versículos
+ * coinciden con un número objetivo (en valor absoluto, con Colel, reducido, ordinal o cifrado).
+ */
+function FindReverseGematria(targetNumber, options = {}, database = []) {
+  if (!targetNumber || isNaN(targetNumber) || targetNumber <= 0) return [];
+  const target = parseInt(targetNumber, 10);
+  const tolerance = parseInt(options.tolerance, 10) || 0;
+  const system = options.system || 'all';
+
+  const matches = [];
+  const seenKeys = new Set();
+
+  database.forEach(entry => {
+    const hebrew = entry.hebrew;
+    if (!hebrew) return;
+
+    const calc = entry.gematria || CalculateGematria(hebrew);
+    if (!calc || calc.lettersCount === 0) return;
+
+    const checkDimensions = [];
+
+    if (system === 'all' || system === 'absolute') {
+      const deltaAbs = Math.abs(calc.absolute - target);
+      if (deltaAbs <= tolerance) {
+        let type = 'exact';
+        let desc = 'Valor Absoluto Exacto';
+        let score = 100 - deltaAbs * 5;
+        if (deltaAbs === 1) {
+          type = 'colel';
+          desc = 'Colel Místico (±1)';
+          score = 90;
+        } else if (deltaAbs > 1) {
+          type = 'approx';
+          desc = `Aproximación (Δ = ${deltaAbs})`;
+          score = Math.max(10, 80 - deltaAbs * 4);
+        }
+        checkDimensions.push({
+          type,
+          system: 'absolute',
+          systemName: 'Valor Estándar',
+          val: calc.absolute,
+          target,
+          delta: deltaAbs,
+          desc,
+          score
+        });
+      }
+    }
+
+    if (system === 'all' || system === 'ordinal') {
+      const deltaOrd = Math.abs(calc.ordinal - target);
+      if (deltaOrd <= (tolerance > 1 ? 2 : 0)) {
+        checkDimensions.push({
+          type: deltaOrd === 0 ? 'exact_ordinal' : 'approx_ordinal',
+          system: 'ordinal',
+          systemName: 'Valor Ordinal (Mispar Sidri)',
+          val: calc.ordinal,
+          target,
+          delta: deltaOrd,
+          desc: deltaOrd === 0 ? 'Ordinal Exacto' : `Ordinal Cercano (Δ = ${deltaOrd})`,
+          score: 60 - deltaOrd * 10
+        });
+      }
+    }
+
+    if (system === 'all' || system === 'reduced') {
+      if (calc.reduced === target) {
+        checkDimensions.push({
+          type: 'exact_reduced',
+          system: 'reduced',
+          systemName: 'Valor Reducido (Esencia)',
+          val: calc.reduced,
+          target,
+          delta: 0,
+          desc: 'Esencia Reducida (1-9)',
+          score: 40
+        });
+      }
+    }
+
+    if (system === 'all' || system === 'atbash') {
+      const deltaAtbash = Math.abs(calc.atbashValue - target);
+      if (deltaAtbash <= tolerance) {
+        checkDimensions.push({
+          type: deltaAtbash === 0 ? 'exact_atbash' : 'approx_atbash',
+          system: 'atbash',
+          systemName: 'Cifrado Atbash',
+          val: calc.atbashValue,
+          target,
+          delta: deltaAtbash,
+          desc: deltaAtbash === 0 ? 'Atbash Exacto' : `Atbash Cercano (Δ = ${deltaAtbash})`,
+          score: 75 - deltaAtbash * 5
+        });
+      }
+    }
+
+    if (system === 'all' || system === 'albam') {
+      const deltaAlbam = Math.abs((calc.albamValue || 0) - target);
+      if (deltaAlbam <= tolerance) {
+        checkDimensions.push({
+          type: deltaAlbam === 0 ? 'exact_albam' : 'approx_albam',
+          system: 'albam',
+          systemName: 'Cifrado Albam',
+          val: calc.albamValue,
+          target,
+          delta: deltaAlbam,
+          desc: deltaAlbam === 0 ? 'Albam Exacto' : `Albam Cercano (Δ = ${deltaAlbam})`,
+          score: 70 - deltaAlbam * 5
+        });
+      }
+    }
+
+    if (checkDimensions.length > 0) {
+      checkDimensions.sort((a, b) => b.score - a.score);
+      const best = checkDimensions[0];
+      const uniqueKey = `${entry.id || entry.hebrew}_${best.system}_${best.val}`;
+
+      if (!seenKeys.has(uniqueKey)) {
+        seenKeys.add(uniqueKey);
+        matches.push({
+          entry,
+          gematria: calc,
+          bestMatch: best,
+          allMatches: checkDimensions,
+          score: best.score
+        });
+      }
+    }
+  });
+
+  matches.sort((a, b) => b.score - a.score);
+  return matches;
+}
+
+// === MÓDULO DE ANÁLISIS DE COINCIDENCIAS CRUZADAS & DELTA ===
+
+/**
+ * Realiza un análisis exhaustivo de coincidencia cruzada entre dos palabras/conceptos,
+ * calculando la diferencia (Delta), la suma cabalística, anagramas, raíces y la narrativa de puente.
+ */
+function AnalyzeCrossConnection(calcA, calcB, database = []) {
+  if (!calcA || !calcB) return null;
+
+  const scoreResult = ScoreCorrelation(calcA, calcB);
+  const delta = Math.abs(calcA.absolute - calcB.absolute);
+  const sum = calcA.absolute + calcB.absolute;
+
+  // Anagrama
+  const normA = NormalizeHebrewString(calcA.cleanText).split('').sort().join('');
+  const normB = NormalizeHebrewString(calcB.cleanText).split('').sort().join('');
+  const isAnagram = (normA === normB && calcA.cleanText !== calcB.cleanText);
+
+  // Buscar si el Delta o la Suma coinciden con conceptos conocidos en la base de datos
+  const deltaMatches = delta > 0 ? FindReverseGematria(delta, { tolerance: 0, system: 'absolute' }, database) : [];
+  const sumMatches = FindReverseGematria(sum, { tolerance: 0, system: 'absolute' }, database);
+
+  // Cifrados cruzados
+  const isAtbashCross = (calcA.absolute === calcB.atbashValue || calcB.absolute === calcA.atbashValue);
+  const isAlbamCross = (calcA.absolute === (calcB.albamValue || 0) || calcB.absolute === (calcA.albamValue || 0));
+
+  let narrative = '';
+  if (calcA.absolute === calcB.absolute) {
+    narrative = `"${calcA.cleanText}" y "${calcB.cleanText}" comparten el mismo valor absoluto exacto (${calcA.absolute}). En la Cábala, esto se denomina "Equivalencia de Forma" (Mispar Shaveh), revelando que ambas expresiones vehiculan la misma emanación divina en niveles complementarios de la realidad.`;
+  } else if (isAnagram) {
+    narrative = `"${calcA.cleanText}" y "${calcB.cleanText}" son Anagramas Cabalísticos (Tzeruf Otiot). Están construidas con las mismas letras sagradas reorganizadas, mostrando dos aspectos de una misma fuerza creadora primordial.`;
+  } else if (delta === 1) {
+    narrative = `La diferencia entre ambos conceptos es exactamente de 1 unidad (Colel). En la exégesis rabínica, el Colel representa el principio de la Unidad Divina (Ejad) que enlaza y unifica ambos términos.`;
+  } else if (deltaMatches.length > 0) {
+    const bridgeConcept = deltaMatches[0].entry.spanish || deltaMatches[0].entry.concept || deltaMatches[0].entry.hebrew;
+    narrative = `La distancia numérica entre ambos términos es de ${delta}. Este delta corresponde exactamente al valor de "${bridgeConcept}" (${deltaMatches[0].entry.hebrew}), actuando como el puente espiritual y catalizador que une a "${calcA.cleanText}" con "${calcB.cleanText}".`;
+  } else if (isAtbashCross) {
+    narrative = `Existe un puente por Cifrado Atbash: el valor de una palabra es idéntico a la contraparte cifrada de la otra, revelando una conexión de espejo y complementariedad mística.`;
+  } else {
+    narrative = `Ambos términos representan frecuencias diferenciadas (A=${calcA.absolute}, B=${calcB.absolute}) con una suma de ${sum}${sumMatches.length > 0 ? ` (equivalente a "${sumMatches[0].entry.spanish || sumMatches[0].entry.hebrew}")` : ''}, invitando a la contemplación de cómo interactúan en el orden cósmico.`;
+  }
+
+  return {
+    calcA,
+    calcB,
+    scoreResult,
+    delta,
+    deltaMatches,
+    sum,
+    sumMatches,
+    isAnagram,
+    isAtbashCross,
+    isAlbamCross,
+    narrative
+  };
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
+const _exportedEngine = { 
+  SpanishToHebrew, 
+  CalculateGematria, 
+  HEBREW_MAP, 
+  ATBASH_PAIRS,
+  ALBAM_PAIRS,
+  AVGAD_PAIRS,
+  FindSharedRoot,
+  GetFactorRelation,
+  ScoreCorrelation,
+  FindCorrelations,
+  FindELS,
+  NormalizeHebrewLetter,
+  NormalizeHebrewString,
+  FindAcrostics,
+  CalculateLetterFrequencies,
+  CalculateELSPValue,
+  NumberToHebrewLetters,
+  GregorianToHebrew,
+  FindReverseGematria,
+  AnalyzeCrossConnection
+};
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { 
-    SpanishToHebrew, 
-    CalculateGematria, 
-    HEBREW_MAP, 
-    ATBASH_PAIRS,
-    ALBAM_PAIRS,
-    AVGAD_PAIRS,
-    FindSharedRoot,
-    GetFactorRelation,
-    ScoreCorrelation,
-    FindCorrelations,
-    FindELS,
-    NormalizeHebrewLetter,
-    NormalizeHebrewString,
-    FindAcrostics,
-    CalculateLetterFrequencies,
-    CalculateELSPValue
-  };
+  module.exports = _exportedEngine;
 }
 
 if (_globalScope) {
-  _globalScope.GematriaEngine = { 
-    SpanishToHebrew, 
-    CalculateGematria, 
-    HEBREW_MAP, 
-    ATBASH_PAIRS,
-    ALBAM_PAIRS,
-    AVGAD_PAIRS,
-    FindSharedRoot,
-    GetFactorRelation,
-    ScoreCorrelation,
-    FindCorrelations,
-    FindELS,
-    NormalizeHebrewLetter,
-    NormalizeHebrewString,
-    FindAcrostics,
-    CalculateLetterFrequencies,
-    CalculateELSPValue
-  };
+  _globalScope.GematriaEngine = _exportedEngine;
 }
+
 

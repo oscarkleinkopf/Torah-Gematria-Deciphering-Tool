@@ -499,6 +499,114 @@ const KNOWLEDGE_GRAPH = [
     mysticalNote: 'La primera matriarca, madre de Isaac y co-fundadora de la fe monoteísta. Su valor es 505.',
     relatedVerses: ['Génesis 17:15']
   },
+  {
+    id: 'hateva',
+    hebrew: 'הטבע',
+    spanish: 'La Naturaleza',
+    category: 'concepto',
+    tags: ['naturaleza', 'ley física', 'cosmos'],
+    mysticalNote: 'La Naturaleza. Su valor numérico es exactamente 86, idéntico al del Nombre Divino "Elohim" (אלהים). La Cábala enseña que la naturaleza es el ropaje físico visible de las leyes divinas.',
+    relatedVerses: ['Génesis 1:1']
+  },
+  {
+    id: 'nachash',
+    hebrew: 'נחש',
+    spanish: 'Serpiente',
+    category: 'concepto',
+    tags: ['transmutación', 'prueba', 'sanación'],
+    mysticalNote: 'La Serpiente primordial. Su gematria es 358, idéntica a la de "Mashiach" (משיח - Mesías). Esto revela que la energía que causó la caída es la misma que, al ser transmutada y elevada, produce la redención.',
+    relatedVerses: ['Génesis 3:1', 'Números 21:9']
+  },
+  {
+    id: 'chai',
+    hebrew: 'חי',
+    spanish: 'Chai (Vida)',
+    category: 'concepto',
+    tags: ['vida', 'vitalidad', 'bendición'],
+    mysticalNote: 'Vida. El número 18 es un símbolo universal de buena fortuna, salud y energía vital en la tradición judía.',
+    relatedVerses: ['Deuteronomio 30:19']
+  },
+  {
+    id: 'chaim',
+    hebrew: 'חיים',
+    spanish: 'Chaim (Vidas)',
+    category: 'concepto',
+    tags: ['vida plural', 'eternidad', 'alma'],
+    mysticalNote: 'La forma plural de vida, indicando que la vida humana abarca simultáneamente el mundo presente (Olam Hazeh) y el venidero (Olam Haba). Su valor es 68.',
+    relatedVerses: ['Proverbios 3:18']
+  },
+  {
+    id: 'lev',
+    hebrew: 'לב',
+    spanish: 'Corazón',
+    category: 'concepto',
+    tags: ['corazón', 'emoción', 'sabiduría'],
+    mysticalNote: 'Corazón. Su valor es 32, aludiendo a los "32 Senderos de la Sabiduría" (Lamed-Bet Netivot Jojmá) del Sefer Yetzirá con los que fue creado el cosmos.',
+    relatedVerses: ['Deuteronomio 6:5']
+  },
+  {
+    id: 'or',
+    hebrew: 'אור',
+    spanish: 'Luz',
+    category: 'concepto',
+    tags: ['luz primordial', 'iluminación', 'revelación'],
+    mysticalNote: 'Luz primordial. Su valor es 207, idéntico al de "Raz" (רז - Misterio) e "Ein Sof" (אין סוף - Infinito). La luz divina contiene todos los misterios del infinito.',
+    relatedVerses: ['Génesis 1:3']
+  },
+  {
+    id: 'tzadik',
+    hebrew: 'צדיק',
+    spanish: 'Tzadik (El Justo)',
+    category: 'concepto',
+    tags: ['justicia', 'fundamento', 'santidad'],
+    mysticalNote: 'El Justo. "Tzadik Yesod Olam" (El Justo es el fundamento del mundo). Su valor es 204.',
+    relatedVerses: ['Proverbios 10:25']
+  },
+  {
+    id: 'tikkun',
+    hebrew: 'תיקון',
+    spanish: 'Tikún (Rectificación)',
+    category: 'concepto',
+    tags: ['reparación', 'propósito', 'evolución'],
+    mysticalNote: 'Rectificación o Reparación del Mundo (Tikún Olam). El propósito ético y espiritual de la humanidad. Su valor es 566.',
+    relatedVerses: []
+  },
+  {
+    id: 'rachamim',
+    hebrew: 'רחמים',
+    spanish: 'Rajamim (Compasión)',
+    category: 'concepto',
+    tags: ['misericordia', 'equilibrio', 'matriz'],
+    mysticalNote: 'Misericordia o Compasión. Deriva de "Réjem" (matriz). Representa el amor protector incondicional. Su valor es 298.',
+    relatedVerses: ['Éxodo 34:6']
+  },
+  {
+    id: 'bereshit',
+    hebrew: 'בראשית',
+    spanish: 'Bereshit (En el Principio)',
+    category: 'concepto',
+    tags: ['origen', 'génesis', 'creación'],
+    mysticalNote: 'La primera palabra de la Torá. Su valor es 913, equivalente a "BeRov Jojmá" (ברוב חכמה - Con Gran Sabiduría) y "Brit Shalom" (ברית שלום - Pacto de Paz).',
+    relatedVerses: ['Génesis 1:1']
+  },
+  {
+    id: 'kadosh',
+    hebrew: 'קדוש',
+    spanish: 'Kadosh (Santo)',
+    category: 'concepto',
+    tags: ['santidad', 'separación', 'elevación'],
+    mysticalNote: 'Santo o Sagrado. Separado para un propósito trascendente. Su valor es 410, coincidiendo con los 410 años que duró el Primer Templo de Jerusalén.',
+    relatedVerses: ['Levítico 19:2', 'Isaías 6:3']
+  },
+  {
+    id: 'tashach',
+    hebrew: 'תשח',
+    spanish: 'Tashach (1948 / Año del Retorno)',
+    category: 'historia',
+    tags: ['1948', 'independencia', 'retorno', 'sionismo'],
+    mysticalNote: 'Año hebreo 5708 (1948), año de la fundación del Estado moderno de Israel. Su valor numérico es 708, coincidiendo con el número de palabras en el Cantar de Haázinu.',
+    relatedVerses: ['Deuteronomio 32:3']
+  },
 
   // --- Sionismo Moderno e Hitos Históricos ---
   {
@@ -613,6 +721,63 @@ const HISTORICAL_EVENTS = [
   { year: 1993, label: '1993', title: 'Acuerdos de Oslo', desc: 'Primer acuerdo cara a cara entre el Estado de Israel y la OLP para buscar una paz regional.', hebrewYear: 'תשנ"ג', gematriaMatches: [1993, 753], searchTerms: ['שלום', 'ישראל', 'ברית'] }
 ];
 
+const LEGENDARY_PAIRS = [
+  {
+    title: 'Amor y Unidad',
+    wordA: 'אהבה',
+    labelA: 'Ahavá (Amor)',
+    wordB: 'אחד',
+    labelB: 'Ejad (Unidad)',
+    synopsis: 'Ambas palabras valen 13. Su suma es 26, el valor exacto del Nombre Inefable YHVH (יהוה). Enseña que la presencia divina se manifiesta cuando el amor culmina en unidad.',
+    theme: 'espiritual'
+  },
+  {
+    title: 'Sión y José',
+    wordA: 'ציון',
+    labelA: 'Tzion (Sión)',
+    wordB: 'יוסף',
+    labelB: 'Yosef (José)',
+    synopsis: 'Ambas comparten el valor exacto de 156. Muestra que el retorno a Sión es la materialización del arquetipo de José (la reconstrucción económica, agrícola y física de la nación).',
+    theme: 'sionismo'
+  },
+  {
+    title: 'Mesías y Serpiente',
+    wordA: 'משיח',
+    labelA: 'Mashiach (Mesías)',
+    wordB: 'נחש',
+    labelB: 'Najash (Serpiente)',
+    synopsis: 'Ambas poseen el valor idéntico de 358. La Cábala enseña que la fuerza que originó el error es la misma que, transmutada por la sabiduría, engendra la redención.',
+    theme: 'mistica'
+  },
+  {
+    title: 'Elohim y La Naturaleza',
+    wordA: 'אלהים',
+    labelA: 'Elohim (Dios Creador)',
+    wordB: 'הטבע',
+    labelB: 'HaTeva (La Naturaleza)',
+    synopsis: 'Ambas valen 86. Revela que el orden cósmico y las leyes de la física son la manifestación visible del juicio y diseño divino en el universo.',
+    theme: 'filosofia'
+  },
+  {
+    title: 'Israel y Torá',
+    wordA: 'ישראל',
+    labelA: 'Yisrael (541)',
+    wordB: 'תורה',
+    labelB: 'Torah (611)',
+    synopsis: 'La diferencia entre Torá (611) e Israel (541) es exactamente 70 (la letra Ayin - ojo / visión), aludiendo a las 70 facetas de la Torá y las 70 naciones del mundo.',
+    theme: 'estudio'
+  },
+  {
+    title: 'Salomón y Shalom (Paz)',
+    wordA: 'שלמה',
+    labelA: 'Shlomo (Salomón)',
+    wordB: 'שלום',
+    labelB: 'Shalom (Paz)',
+    synopsis: 'Ambas valen 376. Salomón recibió ese nombre profético porque su reinado fue una era de integración armónica y paz duradera.',
+    theme: 'historia'
+  }
+];
+
 // Exportación compatible tanto con módulos ES6 como con scripts convencionales del navegador
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
@@ -621,7 +786,8 @@ if (typeof module !== 'undefined' && module.exports) {
     ZIONIST_CORRELATIONS, 
     DAILY_REFLECTIONS,
     KNOWLEDGE_GRAPH,
-    HISTORICAL_EVENTS
+    HISTORICAL_EVENTS,
+    LEGENDARY_PAIRS
   };
 } else {
   window.GematriaDB = { 
@@ -630,7 +796,9 @@ if (typeof module !== 'undefined' && module.exports) {
     ZIONIST_CORRELATIONS, 
     DAILY_REFLECTIONS,
     KNOWLEDGE_GRAPH,
-    HISTORICAL_EVENTS
+    HISTORICAL_EVENTS,
+    LEGENDARY_PAIRS
   };
 }
+
 
