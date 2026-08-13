@@ -276,6 +276,9 @@ document.addEventListener('DOMContentLoaded', () => {
       appState.hebrewProcessedText = text;
     }
     
+    // Sugerencias Semánticas en Español (Mejora 4)
+    updateSemanticSuggestions(text);
+
     // Calcular Gematria
     const result = Engine.CalculateGematria(appState.hebrewProcessedText);
     appState.gematriaResult = result;
@@ -296,6 +299,45 @@ document.addEventListener('DOMContentLoaded', () => {
         runAutoELSScan(appState.hebrewProcessedText);
       }, 400);
     }
+  }
+
+  function updateSemanticSuggestions(text) {
+    const bar = document.getElementById('semanticSuggestionsBar');
+    const container = document.getElementById('semanticChipsContainer');
+    if (!bar || !container) return;
+
+    if (!text || text.trim().length < 2 || !/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(text)) {
+      bar.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    const suggestions = Engine.SearchSpanishSemantic(text, DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH, 6);
+    if (suggestions.length === 0) {
+      bar.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = '';
+    suggestions.forEach(item => {
+      const chip = document.createElement('button');
+      chip.className = 'semantic-chip';
+      chip.innerHTML = `
+        <span class="semantic-chip-hebrew">${item.hebrew}</span>
+        <span>${item.spanish}</span>
+        <span class="semantic-chip-val">${item.gematria}</span>
+      `;
+      chip.title = `Cargar "${item.spanish}" (${item.hebrew}) en la calculadora`;
+      chip.addEventListener('click', () => {
+        txtInput.value = item.hebrew;
+        setLanguage('hebrew');
+        processInputText(item.hebrew);
+      });
+      container.appendChild(chip);
+    });
+
+    bar.style.display = 'block';
   }
 
   function updateResultsUI(result) {
@@ -830,7 +872,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let targetNum = parseInt(query, 10);
     if (isNaN(targetNum)) {
       let hebrew = query;
-      if (/[a-zA-Z]/.test(query)) hebrew = Engine.SpanishToHebrew(query);
+      if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(query)) {
+        // Búsqueda semántica prioritaria
+        const semanticHits = Engine.SearchSpanishSemantic(query, DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH, 1);
+        if (semanticHits.length > 0) {
+          hebrew = semanticHits[0].hebrew;
+        } else {
+          hebrew = Engine.SpanishToHebrew(query);
+        }
+      }
       const calc = Engine.CalculateGematria(hebrew);
       targetNum = calc.absolute;
     }
@@ -1164,24 +1214,105 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
       
-      reflectionContent.style.transition = 'all 0.3s ease';
-      reflectionContent.style.opacity = '1';
-      reflectionContent.style.transform = 'translateY(0)';
-    }, 150);
-  }
-
-  // --- 10. GRÁFICO INTERACTIVO DE RELACIONES (CANVAS) ---
+   // --- 10. GRÁFICO INTERACTIVO DE RELACIONES: GALAXY VIEW (MEJORA 5) ---
   let canvasCtx = relationCanvas.getContext('2d');
   let nodes = [];
   let particles = [];
   let mouse = { x: null, y: null };
   let selectedNode = null;
 
+  let galaxyState = {
+    zoom: 1.0,
+    panX: 0,
+    panY: 0,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    constellation: 'all'
+  };
+
   function resizeCanvas() {
     const rect = relationCanvas.parentElement.getBoundingClientRect();
     relationCanvas.width = rect.width;
     relationCanvas.height = rect.height || 380;
   }
+
+  // Filtros de Constelaciones
+  const constellationPills = document.querySelectorAll('#galaxyConstellationFilter .constellation-pill');
+  constellationPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      constellationPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      galaxyState.constellation = pill.getAttribute('data-constellation') || 'all';
+      updateRelationGraph();
+    });
+  });
+
+  // Botones de Zoom
+  const btnGalaxyZoomIn = document.getElementById('btnGalaxyZoomIn');
+  const btnGalaxyZoomOut = document.getElementById('btnGalaxyZoomOut');
+  const btnGalaxyReset = document.getElementById('btnGalaxyReset');
+
+  if (btnGalaxyZoomIn) {
+    btnGalaxyZoomIn.addEventListener('click', () => {
+      galaxyState.zoom = Math.min(2.5, galaxyState.zoom + 0.2);
+    });
+  }
+  if (btnGalaxyZoomOut) {
+    btnGalaxyZoomOut.addEventListener('click', () => {
+      galaxyState.zoom = Math.max(0.4, galaxyState.zoom - 0.2);
+    });
+  }
+  if (btnGalaxyReset) {
+    btnGalaxyReset.addEventListener('click', () => {
+      galaxyState.zoom = 1.0;
+      galaxyState.panX = 0;
+      galaxyState.panY = 0;
+    });
+  }
+
+  // Zoom con la rueda del ratón
+  relationCanvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    galaxyState.zoom = Math.min(2.5, Math.max(0.4, galaxyState.zoom * zoomFactor));
+  }, { passive: false });
+
+  // Paneo con arrastre
+  relationCanvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { // Clic izquierdo
+      galaxyState.isDragging = true;
+      galaxyState.dragStartX = e.clientX - galaxyState.panX;
+      galaxyState.dragStartY = e.clientY - galaxyState.panY;
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    galaxyState.isDragging = false;
+  });
+
+  relationCanvas.addEventListener('mousemove', (e) => {
+    const rect = relationCanvas.getBoundingClientRect();
+    
+    if (galaxyState.isDragging) {
+      galaxyState.panX = e.clientX - galaxyState.dragStartX;
+      galaxyState.panY = e.clientY - galaxyState.dragStartY;
+    }
+
+    // Convertir coordenadas del ratón considerando zoom y pan
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+    const centerX = relationCanvas.width / 2;
+    const centerY = relationCanvas.height / 2;
+
+    mouse.x = (rawX - centerX - galaxyState.panX) / galaxyState.zoom + centerX;
+    mouse.y = (rawY - centerY - galaxyState.panY) / galaxyState.zoom + centerY;
+  });
+
+  relationCanvas.addEventListener('mouseleave', () => {
+    mouse.x = null;
+    mouse.y = null;
+  });
 
   window.addEventListener('resize', () => {
     if (appState.currentTab === 'calculator') {
@@ -1194,35 +1325,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  relationCanvas.addEventListener('mousemove', (e) => {
-    const rect = relationCanvas.getBoundingClientRect();
-    mouse.x = e.clientX - rect.left;
-    mouse.y = e.clientY - rect.top;
-  });
-
-  relationCanvas.addEventListener('mouseleave', () => {
-    mouse.x = null;
-    mouse.y = null;
-  });
-
   relationCanvas.addEventListener('click', () => {
     if (selectedNode) {
       if (selectedNode.type === 'letter') {
         openLetterDetails(selectedNode.label);
       } else if (selectedNode.type === 'concept') {
-        if (selectedNode.category === 'sefirah') {
-          const reflectionTabBtn = document.querySelector('[data-tab="reflection"]');
-          if (reflectionTabBtn) reflectionTabBtn.click();
-        } else {
-          const zionTabBtn = document.querySelector('[data-tab="zionism"]');
-          if (zionTabBtn) zionTabBtn.click();
-        }
+        // Cargar en comparador o calculadora
+        crossCompareWith(selectedNode.rawEntry ? selectedNode.rawEntry.hebrew : selectedNode.label);
       } else if (selectedNode.type === 'verse') {
         const torahTabBtn = document.querySelector('[data-tab="torah"]');
         if (torahTabBtn) {
           torahTabBtn.click();
+          setTorahSearchMode('number');
           txtSearchTorah.value = selectedNode.value;
-          executeTorahSearch();
+          executeTorahOrReverseSearch();
         }
       }
     }
@@ -1243,118 +1359,92 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const res = appState.gematriaResult;
 
-    // 1. Nodo central (La Palabra)
+    // 1. Nodo central (La Estrella Central)
     const centerNode = {
       x: centerX,
       y: centerY,
       targetX: centerX,
       targetY: centerY,
-      radius: 40,
+      radius: 36,
       label: res.cleanText,
       value: res.absolute,
       type: 'center',
-      desc: 'Tu Palabra',
+      desc: `Frecuencia Central: ${res.absolute}`,
       color: '#d4af37',
-      glowColor: 'rgba(212, 175, 55, 0.4)'
+      glowColor: 'rgba(212, 175, 55, 0.5)'
     };
     nodes.push(centerNode);
 
-    // 2. Nodo de Valor (Suma Gematria)
-    const valNode = {
-      x: centerX,
-      y: centerY,
-      targetX: centerX - 130,
-      targetY: centerY - 80,
-      radius: 25,
-      label: `Gematria: ${res.absolute}`,
-      value: res.absolute,
-      type: 'value',
-      desc: 'Valor estándar absoluto',
-      color: '#ffd700',
-      glowColor: 'rgba(255, 215, 0, 0.3)'
-    };
-    nodes.push(valNode);
+    // 2. Filtrar conceptos según constelación activa
+    let conceptsPool = [...DB.KNOWLEDGE_GRAPH];
+    if (galaxyState.constellation !== 'all') {
+      conceptsPool = conceptsPool.filter(c => {
+        if (galaxyState.constellation === 'divino') return c.category === 'divino';
+        if (galaxyState.constellation === 'sefirah') return c.category === 'sefirah';
+        if (galaxyState.constellation === 'sionismo') return c.category === 'sionismo' || c.category === 'historia';
+        if (galaxyState.constellation === 'patriarcas') return c.category === 'patriarcas' || c.category === 'liderazgo';
+        if (galaxyState.constellation === 'concepto') return c.category === 'concepto' || c.category === 'virtud' || c.category === 'sagrado';
+        return true;
+      });
+    }
 
-    // 3. Nodo de Reducido (Esencia)
-    const redNode = {
-      x: centerX,
-      y: centerY,
-      targetX: centerX + 130,
-      targetY: centerY + 80,
-      radius: 20,
-      label: `Reducido: ${res.reduced}`,
-      value: res.reduced,
-      type: 'value',
-      desc: 'Esencia primordial (1-9)',
-      color: '#8e44ad',
-      glowColor: 'rgba(142, 68, 173, 0.3)'
-    };
-    nodes.push(redNode);
+    // Buscar correlaciones entre la palabra central y los conceptos
+    const correlations = Engine.FindCorrelations(res.cleanText, conceptsPool);
+    const displayedCount = Math.min(12, Math.max(6, correlations.length));
 
-    // 4. Conexiones encontradas en el Grafo de Conocimiento (KNOWLEDGE_GRAPH)
-    const correlations = Engine.FindCorrelations(res.cleanText, DB.KNOWLEDGE_GRAPH);
-    let angle = -Math.PI / 4;
-    
-    correlations.slice(0, 4).forEach((corr, idx) => {
-      const dist = 180;
-      const xOffset = Math.cos(angle) * dist;
-      const yOffset = Math.sin(angle) * dist;
-      angle += (Math.PI * 2) / 6;
+    for (let i = 0; i < displayedCount; i++) {
+      const corr = correlations[i] || (conceptsPool[i] ? {
+        entry: conceptsPool[i],
+        gematria: Engine.CalculateGematria(conceptsPool[i].hebrew),
+        scoreResult: { stars: 1, matches: [] }
+      } : null);
 
-      let color = '#3498db';
-      let glowColor = 'rgba(52, 152, 219, 0.3)';
+      if (!corr) break;
+
+      const angle = (i * Math.PI * 2) / displayedCount - Math.PI / 2;
+      const orbitDist = 130 + (i % 3) * 35;
+      const targetX = centerX + Math.cos(angle) * orbitDist;
+      const targetY = centerY + Math.sin(angle) * orbitDist;
+
+      let color = '#00ced1';
+      let glowColor = 'rgba(0, 206, 209, 0.3)';
+
       if (corr.entry.category === 'divino') {
-        color = '#f1c40f';
-        glowColor = 'rgba(241, 196, 15, 0.3)';
+        color = '#ffd700';
+        glowColor = 'rgba(255, 215, 0, 0.4)';
       } else if (corr.entry.category === 'sefirah') {
         color = '#9b59b6';
-        glowColor = 'rgba(155, 89, 182, 0.3)';
+        glowColor = 'rgba(155, 89, 182, 0.4)';
+      } else if (corr.entry.category === 'sionismo' || corr.entry.category === 'historia') {
+        color = '#2ecc71';
+        glowColor = 'rgba(46, 204, 113, 0.4)';
+      } else if (corr.entry.category === 'patriarcas' || corr.entry.category === 'liderazgo') {
+        color = '#3498db';
+        glowColor = 'rgba(52, 152, 219, 0.4)';
       }
 
       nodes.push({
         x: centerX,
         y: centerY,
-        targetX: centerX + xOffset,
-        targetY: centerY + yOffset,
-        radius: 24,
+        targetX,
+        targetY,
+        radius: corr.scoreResult && corr.scoreResult.stars >= 4 ? 22 : 16,
         label: corr.entry.hebrew,
         value: corr.gematria.absolute,
         type: 'concept',
         category: corr.entry.category,
-        desc: `${corr.entry.spanish} (${corr.entry.hebrew})`,
-        color: color,
-        glowColor: glowColor
+        desc: `${corr.entry.spanish || corr.entry.concept} (${corr.gematria.absolute})`,
+        color,
+        glowColor,
+        rawEntry: corr.entry
       });
-    });
+    }
 
-    // 5. Conexiones con versículos de la Torá
-    const matchesVerses = DB.TORAH_VERSES.filter(v => v.gematria === res.absolute);
-    matchesVerses.slice(0, 2).forEach((verse) => {
-      const dist = 240;
-      const xOffset = Math.cos(angle) * dist;
-      const yOffset = Math.sin(angle) * dist;
-      angle += (Math.PI * 2) / 6;
-
-      nodes.push({
-        x: centerX,
-        y: centerY,
-        targetX: centerX + xOffset,
-        targetY: centerY + yOffset,
-        radius: 22,
-        label: verse.reference.split(' ')[0],
-        value: verse.gematria,
-        type: 'verse',
-        desc: `Versículo: ${verse.reference}`,
-        color: '#e74c3c',
-        glowColor: 'rgba(231, 76, 60, 0.3)'
-      });
-    });
-
-    // 6. Nodos de letras individuales del desglose (alrededor de la palabra)
-    const breakdownLetters = res.breakdown.slice(0, 6);
+    // Nodos de letras individuales del desglose (en órbita cercana)
+    const breakdownLetters = res.breakdown.slice(0, 8);
     breakdownLetters.forEach((item, idx) => {
       const subAngle = (idx * Math.PI * 2) / breakdownLetters.length;
-      const dist = 70;
+      const dist = 65;
       const x = centerX + Math.cos(subAngle) * dist;
       const y = centerY + Math.sin(subAngle) * dist;
 
@@ -1363,13 +1453,13 @@ document.addEventListener('DOMContentLoaded', () => {
         y: centerY,
         targetX: x,
         targetY: y,
-        radius: 14,
+        radius: 12,
         label: item.letter,
         value: item.absolute,
         type: 'letter',
         desc: `${item.name} (${item.absolute})`,
-        color: '#2ecc71',
-        glowColor: 'rgba(46, 204, 113, 0.3)'
+        color: '#e67e22',
+        glowColor: 'rgba(230, 126, 34, 0.3)'
       });
     });
 
@@ -1377,21 +1467,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function createSimbologyNodes(centerX, centerY) {
-    const radius = 90;
-    const numNodes = 6;
-    const labels = ['א', 'ש', 'מ', 'ת', 'י', 'ה'];
-    const desc = ['Aire / Líder', 'Fuego / Transformación', 'Agua / Misterio', 'Verdad / Sello', 'Espiritualidad', 'Revelación'];
+    const radius = 95;
+    const numNodes = 7;
+    const labels = ['א', 'ש', 'מ', 'ת', 'י', 'ה', 'ו'];
+    const desc = ['Aire / Unidad (1)', 'Fuego / Juicio (300)', 'Agua / Misterio (40)', 'Verdad / Sello (400)', 'Sabiduría (10)', 'Revelación (5)', 'Conexión (6)'];
     
     nodes.push({
       x: centerX,
       y: centerY,
       targetX: centerX,
       targetY: centerY,
-      radius: 25,
+      radius: 28,
       label: 'Torá',
       value: 611,
       type: 'center',
-      desc: 'Base de Sabiduría',
+      desc: 'Luz Central de la Torá (611)',
       color: '#d4af37',
       glowColor: 'rgba(212, 175, 55, 0.4)'
     });
@@ -1403,7 +1493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         y: centerY,
         targetX: centerX + Math.cos(angle) * radius,
         targetY: centerY + Math.sin(angle) * radius,
-        radius: 16,
+        radius: 15,
         label: labels[i],
         value: labels[i] === 'Torá' ? 611 : (DB.HEBREW_LETTERS.find(l => l.char === labels[i])?.value || 1),
         type: 'letter',
@@ -1417,34 +1507,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function createCosmicDust(width, height) {
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: (Math.random() - 0.5) * 0.2,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
         radius: Math.random() * 1.5,
-        alpha: Math.random() * 0.5 + 0.2
+        alpha: Math.random() * 0.6 + 0.2
       });
     }
   }
 
-  // Loop de renderizado del Canvas
+  // Loop de renderizado del Canvas: Galaxy View Transform
   function drawCanvas() {
     if (appState.currentTab !== 'calculator') {
       requestAnimationFrame(drawCanvas);
       return;
     }
 
-    canvasCtx.clearRect(0, 0, relationCanvas.width, relationCanvas.height);
+    const width = relationCanvas.width;
+    const height = relationCanvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
 
-    // Dibujar polvo cósmico
+    canvasCtx.clearRect(0, 0, width, height);
+
+    // Dibujar fondo estelar / polvo cósmico
     particles.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
       
-      if (p.x < 0 || p.x > relationCanvas.width) p.vx *= -1;
-      if (p.y < 0 || p.y > relationCanvas.height) p.vy *= -1;
+      if (p.x < 0 || p.x > width) p.vx *= -1;
+      if (p.y < 0 || p.y > height) p.vy *= -1;
 
       canvasCtx.beginPath();
       canvasCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -1452,44 +1547,37 @@ document.addEventListener('DOMContentLoaded', () => {
       canvasCtx.fill();
     });
 
-    // Dibujar conexiones entre nodos
-    canvasCtx.lineWidth = 1;
-    
+    // Guardar contexto y aplicar transformaciones de Paneo y Zoom
+    canvasCtx.save();
+    canvasCtx.translate(centerX + galaxyState.panX, centerY + galaxyState.panY);
+    canvasCtx.scale(galaxyState.zoom, galaxyState.zoom);
+    canvasCtx.translate(-centerX, -centerY);
+
+    // Dibujar órbitas concéntricas de la galaxia
+    [65, 130, 165, 200].forEach(r => {
+      canvasCtx.beginPath();
+      canvasCtx.arc(centerX, centerY, r, 0, Math.PI * 2);
+      canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      canvasCtx.lineWidth = 1;
+      canvasCtx.stroke();
+    });
+
+    // Dibujar rayos y conexiones entre nodos
     const center = nodes[0];
     if (center) {
       for (let i = 1; i < nodes.length; i++) {
         const target = nodes[i];
         
         const grad = canvasCtx.createLinearGradient(center.x, center.y, target.x, target.y);
-        grad.addColorStop(0, 'rgba(212, 175, 55, 0.15)');
-        grad.addColorStop(1, target.glowColor);
+        grad.addColorStop(0, 'rgba(212, 175, 55, 0.25)');
+        grad.addColorStop(1, target.glowColor || 'rgba(0, 206, 209, 0.2)');
         
         canvasCtx.strokeStyle = grad;
+        canvasCtx.lineWidth = target.type === 'concept' ? 1.5 : 0.8;
         canvasCtx.beginPath();
         canvasCtx.moveTo(center.x, center.y);
         canvasCtx.lineTo(target.x, target.y);
         canvasCtx.stroke();
-      }
-
-      if (center.label === 'Torá' && nodes.length === 7) {
-        canvasCtx.strokeStyle = 'rgba(142, 68, 173, 0.1)';
-        for (let i = 1; i < nodes.length; i++) {
-          const nodeA = nodes[i];
-          const nextIdx = (i % 6) + 1;
-          const nodeB = nodes[nextIdx];
-          
-          canvasCtx.beginPath();
-          canvasCtx.moveTo(nodeA.x, nodeA.y);
-          canvasCtx.lineTo(nodeB.x, nodeB.y);
-          canvasCtx.stroke();
-          
-          const crossIdx = ((i + 1) % 6) + 1;
-          const nodeC = nodes[crossIdx];
-          canvasCtx.beginPath();
-          canvasCtx.moveTo(nodeA.x, nodeA.y);
-          canvasCtx.lineTo(nodeC.x, nodeC.y);
-          canvasCtx.stroke();
-        }
       }
     }
 
@@ -1505,44 +1593,46 @@ document.addEventListener('DOMContentLoaded', () => {
       let isHovered = false;
       if (mouse.x !== null && mouse.y !== null) {
         const dist = Math.hypot(node.x - mouse.x, node.y - mouse.y);
-        if (dist < node.radius) {
+        if (dist < node.radius + 6) {
           isHovered = true;
           selectedNode = node;
         }
       }
 
+      // Halo estelar exterior
       canvasCtx.beginPath();
-      canvasCtx.arc(node.x, node.y, node.radius + (isHovered ? 8 : 4), 0, Math.PI * 2);
-      canvasCtx.fillStyle = isHovered ? node.glowColor.replace('0.3', '0.5').replace('0.2', '0.4') : node.glowColor;
+      canvasCtx.arc(node.x, node.y, node.radius + (isHovered ? 10 : 5), 0, Math.PI * 2);
+      canvasCtx.fillStyle = isHovered ? node.glowColor.replace('0.3', '0.6').replace('0.4', '0.7') : node.glowColor;
       canvasCtx.fill();
 
+      // Núcleo de la estrella
       canvasCtx.beginPath();
       canvasCtx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
       canvasCtx.fillStyle = node.color;
       canvasCtx.fill();
       
-      canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      canvasCtx.lineWidth = 1;
+      canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      canvasCtx.lineWidth = 1.5;
       canvasCtx.stroke();
 
       canvasCtx.fillStyle = (node.color === '#d4af37' || node.color === '#ffd700' || node.color === '#f1c40f') ? '#05060c' : '#f5f6fa';
       
       const isHebrewLabel = /[\u0590-\u05FF]/.test(node.label);
-      
       if (isHebrewLabel) {
-        canvasCtx.font = `bold ${node.radius * 0.9}px var(--font-hebrew)`;
+        canvasCtx.font = `bold ${node.radius * 0.95}px var(--font-hebrew)`;
       } else {
-        canvasCtx.font = `${node.radius * 0.35}px var(--font-sans)`;
+        canvasCtx.font = `bold ${node.radius * 0.4}px var(--font-sans)`;
       }
       canvasCtx.fillText(node.label, node.x, node.y);
 
+      // Tooltip informativo
       if (isHovered) {
-        canvasCtx.fillStyle = 'rgba(10, 8, 20, 0.95)';
-        canvasCtx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+        canvasCtx.fillStyle = 'rgba(10, 8, 22, 0.95)';
+        canvasCtx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
         canvasCtx.lineWidth = 1;
         
-        const tooltipW = 170;
-        const tooltipH = 50;
+        const tooltipW = 180;
+        const tooltipH = 48;
         const tx = node.x - tooltipW / 2;
         const ty = node.y - node.radius - tooltipH - 8;
         
@@ -1550,11 +1640,9 @@ document.addEventListener('DOMContentLoaded', () => {
         canvasCtx.roundRect(tx, ty, tooltipW, tooltipH, 8);
         canvasCtx.fill();
         canvasCtx.stroke();
-        
-        canvasCtx.fillStyle = '#f5f6fa';
+
+        canvasCtx.fillStyle = 'var(--gold-primary)';
         canvasCtx.font = 'bold 11px var(--font-sans)';
-        canvasCtx.textAlign = 'left';
-        
         // Truncar descripción larga si es necesario
         let textToShow = node.desc;
         if (textToShow.length > 25) textToShow = textToShow.substring(0, 22) + '...';
@@ -1567,6 +1655,8 @@ document.addEventListener('DOMContentLoaded', () => {
         canvasCtx.textAlign = 'center';
       }
     });
+
+    canvasCtx.restore();
 
     requestAnimationFrame(drawCanvas);
   }
@@ -2051,6 +2141,122 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- FASE 5: HISTORIAL Y SUGERENCIAS RÁPIDAS DE BÚSQUEDA ELS ---
+  // --- FASE 5: HISTORIAL, SELECTOR DE LIBROS Y MODO TOPOGRÁFICO ELS ---
+  let elsSelectedBook = 'all';
+
+  function getActiveTorahText(book = elsSelectedBook) {
+    if (window.TORAH_BOOKS && book && book !== 'all' && window.TORAH_BOOKS[book]) {
+      return window.TORAH_BOOKS[book];
+    }
+    return window.TorahText || "";
+  }
+
+  // Selector de Libros de la Torá (Mejora 7)
+  const bookPills = document.querySelectorAll('#elsBookSelector .book-pill');
+  bookPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      bookPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      elsSelectedBook = pill.getAttribute('data-book') || 'all';
+      if (txtSearchELS.value.trim()) handleELSSearch();
+    });
+  });
+
+  // Botón Modo Topográfico (Mejora 6)
+  const btnToggleTopographicELS = document.getElementById('btnToggleTopographicELS');
+  if (btnToggleTopographicELS) {
+    btnToggleTopographicELS.addEventListener('click', handleTopographicELSSearch);
+  }
+
+  function handleTopographicELSSearch() {
+    const skip = bibleCodeState.activeMatch ? Math.abs(bibleCodeState.activeMatch.skip) : (parseInt(numMinSkip.value, 10) || 50);
+    const text = getActiveTorahText();
+    const worker = getELSWorker();
+
+    showELSProgressBar(`Topografía (Frecuencia ${skip})`);
+    if (worker) {
+      activeELSRequestId = `req_topo_${Date.now()}`;
+      worker.postMessage({
+        action: 'scanTopographic',
+        skip,
+        book: elsSelectedBook,
+        wordsList: DB.KNOWLEDGE_GRAPH,
+        requestId: activeELSRequestId
+      });
+    } else {
+      const foundWords = Engine.ScanTopographicELS(text, skip, DB.KNOWLEDGE_GRAPH);
+      hideELSProgressBar();
+      renderTopographicResults(foundWords, skip);
+    }
+  }
+
+  function renderTopographicResults(foundWords, skip) {
+    const legendBox = document.getElementById('elsTopographicLegend');
+    const chipsContainer = document.getElementById('elsTopographicChips');
+    const lblSkip = document.getElementById('lblTopographicSkip');
+    const lblCount = document.getElementById('lblTopographicCount');
+
+    if (!legendBox || !chipsContainer) return;
+
+    if (!foundWords || foundWords.length === 0) {
+      legendBox.style.display = 'block';
+      if (lblSkip) lblSkip.textContent = skip;
+      if (lblCount) lblCount.textContent = '0 términos en esta frecuencia';
+      chipsContainer.innerHTML = '<span style="color:var(--text-secondary);font-size:0.8rem;font-style:italic;">No se encontraron cohabitaciones para los conceptos del grafo en salto ' + skip + '.</span>';
+      return;
+    }
+
+    legendBox.style.display = 'block';
+    if (lblSkip) lblSkip.textContent = skip;
+    if (lblCount) lblCount.textContent = `${foundWords.length} cohabitación(es) encontrada(s)`;
+    chipsContainer.innerHTML = '';
+
+    foundWords.forEach(fw => {
+      const chip = document.createElement('button');
+      chip.className = 'topographic-chip';
+      chip.style.borderColor = fw.color;
+      chip.style.backgroundColor = fw.color + '20';
+      chip.style.color = fw.color;
+      chip.innerHTML = `<span>●</span> <span style="font-family:var(--font-hebrew);">${fw.word}</span> <span style="font-size:0.7rem;opacity:0.85;">(${fw.title})</span>`;
+      chip.title = `Clic para enfocar "${fw.title}" (Inicio: #${fw.start})`;
+      
+      chip.addEventListener('click', () => {
+        bibleCodeState.activeMatch = {
+          word: fw.word,
+          skip: fw.skip,
+          start: fw.start,
+          end: fw.end,
+          indices: fw.indices,
+          rawQuery: fw.title
+        };
+        bibleCodeState.primaryWord = fw.word;
+        renderBibleCodeMatrix();
+      });
+
+      chipsContainer.appendChild(chip);
+    });
+
+    bibleCodeState.isTopographic = true;
+    bibleCodeState.topographicWords = foundWords;
+
+    if (foundWords.length > 0) {
+      const first = foundWords[0];
+      bibleCodeState.activeMatch = {
+        word: first.word,
+        skip: first.skip,
+        start: first.start,
+        end: first.end,
+        indices: first.indices,
+        rawQuery: first.title
+      };
+      bibleCodeState.primaryWord = first.word;
+      bibleCodeState.matrixWidth = Math.min(150, Math.max(10, Math.abs(skip)));
+      rangeMatrixWidth.value = bibleCodeState.matrixWidth;
+      lblMatrixWidth.textContent = bibleCodeState.matrixWidth;
+      renderBibleCodeMatrix();
+    }
+  }
+
   function getELSSearchHistory() {
     try {
       return JSON.parse(localStorage.getItem('els_search_history') || '[]');
@@ -2149,6 +2355,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (msg.action === 'elsResults') {
       hideELSProgressBar();
       renderELSResultsList(msg.matches, msg.searchWord, [msg.searchWord]);
+    } else if (msg.action === 'topographicResults') {
+      hideELSProgressBar();
+      renderTopographicResults(msg.foundWords, msg.skip);
     } else if (msg.action === 'error') {
       hideELSProgressBar();
       elsResultsList.innerHTML = `<div style="color:#e74c3c;text-align:center;padding:1.5rem;">Error en el worker: ${msg.error}</div>`;
@@ -2204,7 +2413,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const minSkip = parseInt(numMinSkip.value, 10) || 2;
     const maxSkip = parseInt(numMaxSkip.value, 10) || 120;
-    const text = window.TorahText || "";
+    const text = getActiveTorahText();
 
     if (!text) {
       elsResultsList.innerHTML = `
@@ -2223,7 +2432,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (useWorker && termsRaw.length === 1) {
       let searchHebrew = termsRaw[0];
-      if (/[a-zA-Z]/.test(searchHebrew)) searchHebrew = Engine.SpanishToHebrew(searchHebrew);
+      if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(searchHebrew)) {
+        const semHit = Engine.SearchSpanishSemantic(searchHebrew, DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH, 1);
+        if (semHit.length > 0) searchHebrew = semHit[0].hebrew;
+        else searchHebrew = Engine.SpanishToHebrew(searchHebrew);
+      }
       searchHebrew = searchHebrew.replace(/[^א-ת]/g, '');
 
       if (searchHebrew.length < 2) {
@@ -2240,6 +2453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         worker.postMessage({
           action: 'searchELS',
           searchWord: searchHebrew,
+          book: elsSelectedBook,
           minSkip,
           maxSkip,
           requestId: activeELSRequestId
@@ -2252,8 +2466,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let allMatches = [];
     termsRaw.forEach((termStr, termIdx) => {
       let searchHebrew = termStr;
-      if (/[a-zA-Z]/.test(termStr)) {
-        searchHebrew = Engine.SpanishToHebrew(termStr);
+      if (/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(termStr)) {
+        const semHit = Engine.SearchSpanishSemantic(termStr, DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH, 1);
+        if (semHit.length > 0) searchHebrew = semHit[0].hebrew;
+        else searchHebrew = Engine.SpanishToHebrew(termStr);
       }
       searchHebrew = searchHebrew.replace(/[^א-ת]/g, '');
 
@@ -2280,7 +2496,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (matches.length === 0) {
       elsResultsList.innerHTML = `
         <div style="color: var(--text-secondary); text-align: center; padding: 2rem 0; font-size: 0.9rem;">
-          No se encontraron secuencias ELS para "${searchedQuery}" en el rango de saltos especificado.
+          No se encontraron secuencias ELS para "${searchedQuery}" en el libro seleccionado (${elsSelectedBook.toUpperCase()}) y rango de saltos.
         </div>
       `;
       
@@ -2346,7 +2562,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bibleCodeState.activeMatch) {
       const match = bibleCodeState.activeMatch;
       const w = bibleCodeState.matrixWidth;
-      const text = window.TorahText || "";
+      const text = getActiveTorahText();
       const minIdx = Math.min(...match.indices);
       const maxIdx = Math.max(...match.indices);
       const startRow = Math.floor(minIdx / w);
@@ -2365,7 +2581,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function searchSecondaryMatches(minIdx, maxIdx) {
     const matches = [];
-    const text = window.TorahText || "";
+    const text = getActiveTorahText();
     
     DB.KNOWLEDGE_GRAPH.forEach(entry => {
       if (entry.hebrew === bibleCodeState.primaryWord) return;
@@ -2400,7 +2616,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let crossoverNarrative = '';
     if (crossovers && crossovers.length > 0) {
-      const crossoverNames = crossovers.map(c => `<strong>${c.entry.spanish}</strong> (${c.entry.hebrew})`).join(', ');
+      const crossoverNames = crossovers.map(c => `<strong>${c.entry.spanish || c.entry.concept}</strong> (${c.entry.hebrew})`).join(', ');
       crossoverNarrative = ` En esta misma cuadrícula se cruzan los conceptos del grafo místico: ${crossoverNames}. La proximidad espacial de estos términos en el código sugiere una densidad conceptual compartida.`;
     } else {
       crossoverNarrative = ' No se detectaron cruces de conceptos del grafo secundario en este cuadrante específico.';
@@ -2409,7 +2625,7 @@ document.addEventListener('DOMContentLoaded', () => {
     textContainer.innerHTML = `
       La palabra <span class="term-badge ${termColorClass}" style="font-family: var(--font-hebrew); font-size: 0.95rem;">${match.word}</span> 
       ${match.rawQuery ? `(búsqueda: "${match.rawQuery}")` : ''} 
-      aparece codificada en la Torá con un salto de <strong>${match.skip} letras</strong> ${skipDirection}, iniciando en la letra <strong>#${match.start}</strong> (correspondiente a <strong>${verseCtx}</strong>). 
+      aparece codificada en el segmento <strong>${elsSelectedBook.toUpperCase()}</strong> con un salto de <strong>${match.skip} letras</strong> ${skipDirection}, iniciando en la letra <strong>#${match.start}</strong> (correspondiente a <strong>${verseCtx}</strong>). 
       ${crossoverNarrative}
     `;
   }
@@ -2418,12 +2634,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const match = bibleCodeState.activeMatch;
     if (!match) return;
 
-    const text = window.TorahText || "";
+    const text = getActiveTorahText();
     const w = bibleCodeState.matrixWidth;
 
-    const matchIndices = match.indices;
-    const minIdx = Math.min(...matchIndices);
-    const maxIdx = Math.max(...matchIndices);
+    const matchIndices = match.indices || [];
+    const minIdx = matchIndices.length > 0 ? Math.min(...matchIndices) : 0;
+    const maxIdx = matchIndices.length > 0 ? Math.max(...matchIndices) : 100;
 
     const startRow = Math.floor(minIdx / w);
     const endRow = Math.floor(maxIdx / w);
@@ -2450,6 +2666,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const termHighlightClass = `highlight-term-${(match.termIndex || 0) % 4}`;
 
+    // Mapa de palabras topográficas
+    const topoWordMap = new Map();
+    if (bibleCodeState.isTopographic && bibleCodeState.topographicWords) {
+      bibleCodeState.topographicWords.forEach(tw => {
+        tw.indices.forEach(idx => {
+          topoWordMap.set(idx, tw);
+        });
+      });
+    }
+
     for (let r = minRow; r <= maxRow; r++) {
       const tr = document.createElement('tr');
       
@@ -2470,12 +2696,21 @@ document.addEventListener('DOMContentLoaded', () => {
             td.classList.add(termHighlightClass);
           }
 
+          // Resaltado topográfico
+          if (topoWordMap.has(globalIdx)) {
+            const tw = topoWordMap.get(globalIdx);
+            td.style.backgroundColor = tw.color + '40';
+            td.style.borderColor = tw.color;
+            td.style.color = tw.color;
+            td.title += ` | Topografía: ${tw.title} (${tw.word})`;
+          }
+
           let isSecondary = false;
           bibleCodeState.secondaryMatches.forEach(sm => {
             if (sm.match.indices.includes(globalIdx)) {
               td.classList.add('highlight-secondary');
               isSecondary = true;
-              td.title += ` | Cruce con: ${sm.entry.spanish} (${sm.entry.hebrew})`;
+              td.title += ` | Cruce con: ${sm.entry.spanish || sm.entry.concept} (${sm.entry.hebrew})`;
             }
           });
 
@@ -2508,7 +2743,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bibleCodeState.secondaryMatches.forEach(sm => {
       const badge = document.createElement('span');
       badge.className = 'secondary-badge';
-      badge.innerHTML = `🔮 ${sm.entry.spanish} (${sm.entry.hebrew}) [Salto: ${sm.match.skip}]`;
+      badge.innerHTML = `🔮 ${sm.entry.spanish || sm.entry.concept} (${sm.entry.hebrew}) [Salto: ${sm.match.skip}]`;
       
       badge.addEventListener('click', () => {
         const secondarySkip = Math.abs(sm.match.skip);

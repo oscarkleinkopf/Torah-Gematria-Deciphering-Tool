@@ -90,6 +90,17 @@
             <span class="translit-output" id="lblTranslitHebrew"></span>
           </div>
 
+          <!-- Sugerencias Semánticas en Español en Tiempo Real (Mejora 4) -->
+          <div class="semantic-suggestions-bar" id="semanticSuggestionsBar" style="display: none;">
+            <div class="semantic-bar-header">
+              <span>💡 Sugerencias Conceptuales en Español:</span>
+              <span style="font-size: 0.7rem; color: var(--text-secondary);">Haz clic para cargar el término sagrado auténtico</span>
+            </div>
+            <div class="semantic-chips-flex" id="semanticChipsContainer">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
           <!-- Teclado Virtual Hebreo -->
           <div class="hebrew-keyboard" id="virtualKeyboard">
             <!-- Las teclas se generarán dinámicamente con JavaScript -->
@@ -169,15 +180,37 @@
           </div>
         </div>
 
-        <!-- Fila Inferior del Calculador: Visualizador de Relaciones -->
+        <!-- Fila Inferior del Calculador: Visualizador Galáctico de Relaciones (Mejora 5) -->
         <div class="glass-card relation-section">
-          <h3 class="relation-title">Nodos de Relación Cósmica</h3>
-          <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary); margin-top: -0.8rem;">
-            Visualiza las coincidencias matemáticas entre tu palabra e hitos históricos o textos sagrados.
-          </p>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 0.8rem;">
+            <div>
+              <h3 class="relation-title" style="margin: 0; text-align: left;">🌌 Mapa Estelar Galáctico & Grafo Cósmico</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">
+                Explora constelaciones temáticas interconectadas por gravedad y afinidad gemátrica.
+              </p>
+            </div>
+            
+            <!-- Controles de Zoom Galáctico -->
+            <div class="galaxy-zoom-controls" id="galaxyZoomControls">
+              <button class="galaxy-btn" id="btnGalaxyZoomIn" title="Acercar mapa">+</button>
+              <button class="galaxy-btn" id="btnGalaxyZoomOut" title="Alejar mapa">−</button>
+              <button class="galaxy-btn" id="btnGalaxyReset" title="Restablecer vista">⟲ Reset</button>
+            </div>
+          </div>
+
+          <!-- Filtro de Constelaciones Temáticas -->
+          <div class="constellation-filters" id="galaxyConstellationFilter">
+            <button class="constellation-pill active" data-constellation="all">🌌 Toda la Galaxia</button>
+            <button class="constellation-pill" data-constellation="divino">👑 Nombres Divinos</button>
+            <button class="constellation-pill" data-constellation="sefirah">🌳 Sefirot</button>
+            <button class="constellation-pill" data-constellation="sionismo">🇮🇱 Sionismo & FDI</button>
+            <button class="constellation-pill" data-constellation="patriarcas">📜 Patriarcas</button>
+            <button class="constellation-pill" data-constellation="concepto">💎 Conceptos Clave</button>
+          </div>
+
           <div class="canvas-wrapper">
             <canvas id="relationCanvas"></canvas>
-            <div class="canvas-instructions">Haz clic en los nodos para ver sus detalles</div>
+            <div class="canvas-instructions">Arrastra para mover la galaxia • Rueda para zoom • Clic en estrellas para explorar</div>
           </div>
         </div>
 
@@ -385,8 +418,27 @@
       <div class="biblecode-grid">
         <!-- Panel Izquierdo: Formulario de Búsqueda ELS -->
         <div class="glass-card biblecode-inputs-panel">
-          <h3 class="input-title">Código de la Biblia (ELS)</h3>
-          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 class="input-title" style="margin: 0;">Código de la Biblia (ELS)</h3>
+            <button id="btnToggleTopographicELS" class="rev-action-btn" style="background: rgba(0,206,209,0.15); border-color: #00ced1; color: #00ced1; font-weight: bold;" title="Escanear múltiples términos del grafo simultáneamente en la frecuencia activa">🌐 Modo Topográfico</button>
+          </div>
+
+          <!-- Selector de Libro de la Torá (Mejora 7) -->
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: bold;">
+              📖 Segmento / Libro de la Torá:
+            </div>
+            <div class="els-book-selector" id="elsBookSelector">
+              <button class="book-pill active" data-book="all">📜 Toda la Torá</button>
+              <button class="book-pill" data-book="genesis">1. Génesis</button>
+              <button class="book-pill" data-book="exodus">2. Éxodo</button>
+              <button class="book-pill" data-book="leviticus">3. Levítico</button>
+              <button class="book-pill" data-book="numbers">4. Números</button>
+              <button class="book-pill" data-book="deuteronomy">5. Deuteronomio</button>
+            </div>
+          </div>
+
+          <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 0.8rem;">
             Ingresa palabras en español o hebreo (separadas por coma para multi-búsqueda):
           </p>
 
@@ -464,6 +516,17 @@
               <button id="btnExportMatrixPNG" title="Exportar matriz como imagen PNG" style="display: none; background: rgba(0,206,209,0.1); border: 1px solid rgba(0,206,209,0.3); color: #00ced1; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📷 Exportar PNG</button>
               <!-- Botón Guardar Favorito -->
               <button id="btnSaveELSFavorite" title="Guardar este hallazgo en Favoritos" style="display: none; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">⭐ Guardar</button>
+            </div>
+          </div>
+
+          <!-- Leyenda Topográfica Multipalabra (Mejora 6) -->
+          <div id="elsTopographicLegend" class="topographic-legend-box" style="display: none;">
+            <div class="legend-header">
+              <span class="legend-title">🌐 Cohabitaciones Topográficas en Salto <strong id="lblTopographicSkip" style="color:var(--gold-primary);">50</strong></span>
+              <span id="lblTopographicCount" style="font-size:0.75rem; color:var(--text-secondary);">0 términos encontrados</span>
+            </div>
+            <div class="legend-chips-container" id="elsTopographicChips">
+              <!-- Chips de palabras encontradas con su color asignado -->
             </div>
           </div>
 

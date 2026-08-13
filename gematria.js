@@ -1163,6 +1163,130 @@ function AnalyzeCrossConnection(calcA, calcB, database = []) {
   };
 }
 
+// === MÓDULO DE BÚSQUEDA SEMÁNTICA EN ESPAÑOL ===
+
+/**
+ * Busca conceptos hebreos auténticos por coincidencia semántica en español,
+ * usando el diccionario conceptual y el grafo de conocimiento.
+ */
+function SearchSpanishSemantic(query, dictionary = [], knowledgeGraph = [], limit = 8) {
+  if (!query || typeof query !== 'string') return [];
+  const rawQ = query.trim().toLowerCase();
+  if (!rawQ) return [];
+
+  const cleanQ = rawQ.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const results = [];
+  const seenHebrew = new Set();
+
+  // 1. Buscar en SPANISH_HEBREW_DICT
+  dictionary.forEach(item => {
+    const sp = item.spanish.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const translit = (item.transliteration || '').toLowerCase();
+    let score = 0;
+
+    if (sp === cleanQ) score = 100;
+    else if (sp.startsWith(cleanQ)) score = 80;
+    else if (sp.includes(cleanQ)) score = 60;
+    else if (translit.includes(cleanQ)) score = 50;
+    else if (item.tags && item.tags.some(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(cleanQ))) score = 40;
+
+    if (score > 0 && !seenHebrew.has(item.hebrew)) {
+      seenHebrew.add(item.hebrew);
+      results.push({
+        hebrew: item.hebrew,
+        spanish: item.spanish,
+        transliteration: item.transliteration || item.hebrew,
+        gematria: item.gematria || CalculateGematria(item.hebrew).absolute,
+        category: item.category || 'concepto',
+        score
+      });
+    }
+  });
+
+  // 2. Buscar en KNOWLEDGE_GRAPH
+  knowledgeGraph.forEach(item => {
+    if (seenHebrew.has(item.hebrew)) return;
+    const sp = (item.spanish || item.concept || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let score = 0;
+
+    if (sp === cleanQ) score = 95;
+    else if (sp.startsWith(cleanQ)) score = 75;
+    else if (sp.includes(cleanQ)) score = 55;
+    else if (item.tags && item.tags.some(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(cleanQ))) score = 35;
+    else if (item.mysticalNote && item.mysticalNote.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(cleanQ)) score = 25;
+
+    if (score > 0) {
+      seenHebrew.add(item.hebrew);
+      const calc = item.gematria || CalculateGematria(item.hebrew);
+      results.push({
+        hebrew: item.hebrew,
+        spanish: item.spanish || item.concept,
+        transliteration: item.spanish || item.hebrew,
+        gematria: calc.absolute,
+        category: item.category || 'concepto',
+        mysticalNote: item.mysticalNote,
+        score
+      });
+    }
+  });
+
+  results.sort((a, b) => b.score - a.score);
+  return results.slice(0, limit);
+}
+
+// === MÓDULO TOPOGRÁFICO MULTIPALABRA ELS ===
+
+/**
+ * Escanea simultáneamente una lista de palabras sagradas en una frecuencia/salto fijo
+ * para revelar cohabitaciones de patrones en la misma matriz de la Torá.
+ */
+function ScanTopographicELS(corpusText, skip, wordsList = [], options = {}) {
+  if (!corpusText || !skip || !wordsList || wordsList.length === 0) return [];
+  const maxMatchesPerWord = options.maxMatchesPerWord || 3;
+  const palette = [
+    '#ffd700', // Oro
+    '#00ced1', // Cian
+    '#2ecc71', // Esmeralda / Verde
+    '#9b59b6', // Amatista / Púrpura
+    '#e74c3c', // Coral / Rojo
+    '#e67e22', // Naranja
+    '#1abc9c', // Turquesa
+    '#fd79a8', // Rosa
+    '#a29bfe', // Lavanda
+    '#74b9ff'  // Azul cielo
+  ];
+
+  const foundWords = [];
+  let colorIdx = 0;
+
+  wordsList.forEach(wEntry => {
+    const hebrewWord = typeof wEntry === 'string' ? wEntry : wEntry.hebrew;
+    if (!hebrewWord || hebrewWord.length < 2) return;
+
+    const matches = FindELS(corpusText, hebrewWord, Math.abs(skip), Math.abs(skip));
+    if (matches.length > 0) {
+      const selectedColor = palette[colorIdx % palette.length];
+      colorIdx++;
+
+      matches.slice(0, maxMatchesPerWord).forEach(m => {
+        foundWords.push({
+          word: hebrewWord,
+          title: typeof wEntry === 'object' ? (wEntry.spanish || wEntry.concept || hebrewWord) : hebrewWord,
+          category: typeof wEntry === 'object' ? (wEntry.category || 'concepto') : 'palabra',
+          skip: m.skip,
+          start: m.start,
+          end: m.end,
+          indices: m.indices,
+          color: selectedColor,
+          entry: typeof wEntry === 'object' ? wEntry : { hebrew: hebrewWord }
+        });
+      });
+    }
+  });
+
+  return foundWords;
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -1186,7 +1310,9 @@ const _exportedEngine = {
   NumberToHebrewLetters,
   GregorianToHebrew,
   FindReverseGematria,
-  AnalyzeCrossConnection
+  AnalyzeCrossConnection,
+  SearchSpanishSemantic,
+  ScanTopographicELS
 };
 
 if (typeof module !== 'undefined' && module.exports) {

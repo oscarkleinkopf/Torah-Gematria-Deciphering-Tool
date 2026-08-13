@@ -330,7 +330,53 @@ async function runAllTests() {
   assert(typeof sampleMatch.pValue === 'number' && sampleMatch.pValue >= 0 && sampleMatch.pValue <= 1, `Coincidencia ELS incluye pValue acotado [0, 1] (${sampleMatch.pValue.toFixed(4)})`);
   assert(typeof sampleMatch.significanceScore === 'number' && sampleMatch.significanceScore >= 0, `Coincidencia ELS incluye significanceScore >= 0 (${sampleMatch.significanceScore.toFixed(3)})`);
 
-  assert(mainThreadTicks >= 0, `Demostración de no-bloqueo: hilo principal ejecutó ${mainThreadTicks} ticks de event loop mientras worker procesaba`);
+  console.log("\n=== SECCIÓN 17: BÚSQUEDA SEMÁNTICA EN ESPAÑOL (MEJORA 4) ===");
+  const semPaz = Engine.SearchSpanishSemantic("paz", DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH);
+  assert(semPaz.length > 0 && semPaz[0].hebrew === "שלום", `Búsqueda semántica para 'paz' retorna 'שלום' (376) en primera posición`);
+
+  const semRedencion = Engine.SearchSpanishSemantic("redención", DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH);
+  assert(semRedencion.length > 0 && semRedencion.some(s => s.hebrew === "גאולה"), `Búsqueda semántica con tilde 'redención' encuentra 'גאולה'`);
+
+  const semAmor = Engine.SearchSpanishSemantic("amor", DB.SPANISH_HEBREW_DICT, DB.KNOWLEDGE_GRAPH);
+  assert(semAmor.length > 0 && semAmor[0].hebrew === "אהבה", `Búsqueda semántica para 'amor' retorna 'אהבה' (13)`);
+
+  console.log("\n=== SECCIÓN 18: SEGMENTACIÓN POR LIBROS DE LA TORÁ (MEJORA 7) ===");
+  assert(TORAH_BOOKS && typeof TORAH_BOOKS === 'object', "TORAH_BOOKS está definido y estructurado");
+  const totalBooksLen = TORAH_BOOKS.genesis.length + TORAH_BOOKS.exodus.length + TORAH_BOOKS.leviticus.length + TORAH_BOOKS.numbers.length + TORAH_BOOKS.deuteronomy.length;
+  assert(totalBooksLen === TORAH_TEXT.length, `La suma de caracteres de los 5 libros (${totalBooksLen}) coincide con TORAH_TEXT (${TORAH_TEXT.length})`);
+
+  const genesisTorahELS = Engine.FindELS(TORAH_BOOKS.genesis, 'תורה', 50, 50);
+  assert(genesisTorahELS.length > 0 && genesisTorahELS[0].skip === 50, "Búsqueda ELS en Génesis individual encuentra el código 'תורה' en salto 50");
+
+  console.log("\n=== SECCIÓN 19: ESCANEO TOPOGRÁFICO MULTIPALABRA (MEJORA 6) ===");
+  const topoResults = Engine.ScanTopographicELS(TORAH_BOOKS.genesis, 50, DB.KNOWLEDGE_GRAPH, { maxMatches: 10 });
+  assert(Array.isArray(topoResults), "ScanTopographicELS devuelve un arreglo de resultados");
+  assert(topoResults.length > 0, `ScanTopographicELS encontró ${topoResults.length} cohabitaciones en Génesis con salto 50`);
+  assert(topoResults.some(r => r.word === 'תורה'), "ScanTopographicELS incluye 'תורה' entre las palabras detectadas");
+  assert(typeof topoResults[0].color === 'string' && topoResults[0].color.startsWith('#'), "Los resultados topográficos tienen paleta de color asignada");
+
+  console.log("\n=== SECCIÓN 20: WORKER CON FILTRO DE LIBRO Y ESCANEO TOPOGRÁFICO ===");
+  const topoWorker = new WorkerAdapter('./elsWorker.js');
+  const topoWorkerPromise = new Promise((resolve) => {
+    topoWorker.onmessage = (e) => {
+      if (e.data && (e.data.action === 'topographicResults' || e.data.action === 'error')) {
+        resolve(e.data);
+      }
+    };
+  });
+
+  topoWorker.postMessage({
+    action: 'scanTopographic',
+    skip: 50,
+    book: 'genesis',
+    wordsList: DB.KNOWLEDGE_GRAPH,
+    requestId: 'test_topo_1'
+  });
+
+  const topoWorkerRes = await topoWorkerPromise;
+  await topoWorker.terminate();
+  assert(topoWorkerRes.action === 'topographicResults', "Worker responde con 'topographicResults'");
+  assert(Array.isArray(topoWorkerRes.foundWords) && topoWorkerRes.foundWords.length > 0, `Worker topográfico encontró ${topoWorkerRes.foundWords.length} términos`);
 
   console.log("\n=== RESUMEN ===");
   if (success) {

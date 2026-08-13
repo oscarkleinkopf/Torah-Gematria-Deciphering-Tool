@@ -69,11 +69,24 @@ function getFindELS() {
   return null;
 }
 
-function getTorahText() {
+function getTorahText(book = 'all') {
+  if (TorahModule && TorahModule.TORAH_BOOKS && book && book !== 'all' && TorahModule.TORAH_BOOKS[book]) {
+    return TorahModule.TORAH_BOOKS[book];
+  }
+  if (_global.TORAH_BOOKS && book && book !== 'all' && _global.TORAH_BOOKS[book]) {
+    return _global.TORAH_BOOKS[book];
+  }
   if (TorahModule && TorahModule.TORAH_TEXT) return TorahModule.TORAH_TEXT;
   if (_global.TORAH_TEXT) return _global.TORAH_TEXT;
   if (_global.TorahText) return _global.TorahText;
   return '';
+}
+
+function getScanTopographicELS() {
+  if (Engine && typeof Engine.ScanTopographicELS === 'function') return Engine.ScanTopographicELS;
+  if (_global.GematriaEngine && typeof _global.GematriaEngine.ScanTopographicELS === 'function') return _global.GematriaEngine.ScanTopographicELS;
+  if (typeof _global.ScanTopographicELS === 'function') return _global.ScanTopographicELS;
+  return null;
 }
 
 // Message helper
@@ -111,11 +124,48 @@ function handleWorkerMessage(data) {
       });
       break;
 
+    case 'scanTopographic': {
+      activeCancellation = false;
+      const startTime = Date.now();
+      const ScanTopographic = getScanTopographicELS();
+      const book = data.book || 'all';
+      const text = data.text || getTorahText(book);
+      const skip = data.skip || 50;
+      const wordsList = data.wordsList || [];
+      const options = data.options || {};
+
+      if (typeof ScanTopographic !== 'function') {
+        sendWorkerMessage({
+          action: 'error',
+          error: 'ScanTopographicELS function is not available in worker context',
+          requestId
+        });
+        return;
+      }
+
+      const foundWords = ScanTopographic(text, skip, wordsList, options);
+      const totalTimeMs = Date.now() - startTime;
+
+      if (!activeCancellation) {
+        sendWorkerMessage({
+          action: 'topographicResults',
+          foundWords,
+          skip,
+          book,
+          status: 'complete',
+          totalTimeMs,
+          requestId
+        });
+      }
+      break;
+    }
+
     case 'searchELS': {
       activeCancellation = false;
       const startTime = Date.now();
       const FindELS = getFindELS();
-      const defaultText = getTorahText();
+      const book = data.book || 'all';
+      const defaultText = getTorahText(book);
       const text = data.text || defaultText;
       const searchWord = data.searchWord;
       const minSkip = data.minSkip || 2;
@@ -145,6 +195,7 @@ function handleWorkerMessage(data) {
             totalSkips: progressInfo.totalSkips,
             processedSkips: progressInfo.processedSkips,
             searchWord,
+            book,
             requestId
           });
         }
@@ -161,6 +212,7 @@ function handleWorkerMessage(data) {
         sendWorkerMessage({
           action: 'elsResults',
           matches,
+          book,
           status: 'complete',
           progress: 100,
           totalTimeMs,

@@ -2270,6 +2270,207 @@ footer a:hover {
   }
 }
 
+/* ==========================================================================
+   FASE 6 EXTENDIDA: MEJORAS 4, 5, 6 Y 7 (SEMÁNTICA, GALAXIA, TOPOGRAFÍA, LIBROS)
+   ========================================================================== */
+
+/* 4. BARRA DE SUGERENCIAS SEMÁNTICAS (CALCULADORA) */
+.semantic-suggestions-bar {
+  background: rgba(15, 12, 28, 0.95);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-top: 0.8rem;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.semantic-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--gold-primary);
+  font-weight: bold;
+}
+
+.semantic-chips-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.semantic-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 20px;
+  padding: 0.35rem 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.82rem;
+}
+
+.semantic-chip:hover {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: var(--gold-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.semantic-chip-hebrew {
+  font-family: var(--font-hebrew);
+  font-size: 1.05rem;
+  color: var(--gold-primary);
+  font-weight: bold;
+}
+
+.semantic-chip-val {
+  background: rgba(0, 206, 209, 0.15);
+  color: #00ced1;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: bold;
+}
+
+/* 5. GALAXY VIEW & CONSTELACIONES */
+.constellation-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.constellation-pill {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  padding: 0.35rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.constellation-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.constellation-pill.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.galaxy-zoom-controls {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.galaxy-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.galaxy-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
+}
+
+/* 6. LEYENDA TOPOGRÁFICA MULTIPALABRA */
+.topographic-legend-box {
+  background: linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(10, 8, 20, 0.95) 100%);
+  border: 1px solid rgba(0, 206, 209, 0.3);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.legend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.legend-title {
+  font-size: 0.85rem;
+  color: #00ced1;
+  font-weight: bold;
+}
+
+.legend-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.topographic-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topographic-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* 7. SELECTOR DE LIBROS DE LA TORÁ */
+.els-book-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.book-pill {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 14px;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.book-pill:hover {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.3);
+  color: var(--text-primary);
+}
+
+.book-pill.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(142, 68, 173, 0.25) 100%);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+}
+
+
 
 
 

@@ -778,6 +778,90 @@ const LEGENDARY_PAIRS = [
   }
 ];
 
+// --- 4. DICCIONARIO SEMÁNTICO CONCEPTUAL ESPAÑOL - HEBREO ---
+const SPANISH_HEBREW_DICT = [
+  { spanish: 'amor', hebrew: 'אהבה', transliteration: 'Ahava', gematria: 13, category: 'virtud', tags: ['sentimiento', 'cariño', 'afecto', 'union'] },
+  { spanish: 'uno', hebrew: 'אחד', transliteration: 'Echad', gematria: 13, category: 'divino', tags: ['unidad', 'unico', 'monoteismo', 'dios'] },
+  { spanish: 'unidad', hebrew: 'אחדות', transliteration: 'Achdut', gematria: 419, category: 'concepto', tags: ['uno', 'cohesion', 'hermandad'] },
+  { spanish: 'paz', hebrew: 'שלום', transliteration: 'Shalom', gematria: 376, category: 'virtud', tags: ['tranquilidad', 'armonia', 'saludo', 'completitud'] },
+  { spanish: 'verdad', hebrew: 'אמת', transliteration: 'Emet', gematria: 441, category: 'virtud', tags: ['sinceridad', 'certeza', 'realidad', 'sello'] },
+  { spanish: 'vida', hebrew: 'חיים', transliteration: 'Chayim', gematria: 68, category: 'concepto', tags: ['vitalidad', 'existencia', 'vivir'] },
+  { spanish: 'vivo', hebrew: 'חי', transliteration: 'Chai', gematria: 18, category: 'concepto', tags: ['vida', 'existente', '18', 'suerte'] },
+  { spanish: 'luz', hebrew: 'אור', transliteration: 'Or', gematria: 207, category: 'mística', tags: ['iluminacion', 'claridad', 'brillo', 'creacion'] },
+  { spanish: 'fuego', hebrew: 'אש', transliteration: 'Esh', gematria: 301, category: 'naturaleza', tags: ['llama', 'pasion', 'ardor', 'elemento'] },
+  { spanish: 'agua', hebrew: 'מים', transliteration: 'Mayim', gematria: 90, category: 'naturaleza', tags: ['torah', 'pureza', 'vida', 'fluir'] },
+  { spanish: 'tierra', hebrew: 'ארץ', transliteration: 'Eretz', gematria: 291, category: 'naturaleza', tags: ['mundo', 'israel', 'suelo', 'pais'] },
+  { spanish: 'cielo', hebrew: 'שמים', transliteration: 'Shamayim', gematria: 390, category: 'naturaleza', tags: ['firmamento', 'elevacion', 'astros'] },
+  { spanish: 'dios', hebrew: 'אלהים', transliteration: 'Elohim', gematria: 86, category: 'divino', tags: ['creador', 'senor', 'todopoderoso', 'juez'] },
+  { spanish: 'tetragramaton', hebrew: 'יהוה', transliteration: 'YHVH', gematria: 26, category: 'divino', tags: ['nombre inefable', 'dios', 'eterno', 'misericordia'] },
+  { spanish: 'todopoderoso', hebrew: 'שדי', transliteration: 'Shaddai', gematria: 314, category: 'divino', tags: ['dios', 'guardian', 'protector'] },
+  { spanish: 'rey', hebrew: 'מלך', transliteration: 'Melech', gematria: 90, category: 'liderazgo', tags: ['soberano', 'gobernante', 'majestad'] },
+  { spanish: 'reino', hebrew: 'מלכות', transliteration: 'Maljut', gematria: 496, category: 'sefirah', tags: ['realeza', 'manifestacion', 'mundo fisico'] },
+  { spanish: 'sabiduria', hebrew: 'חכמה', transliteration: 'Jojmah', gematria: 73, category: 'sefirah', tags: ['entendimiento', 'mente', 'destello', 'luz'] },
+  { spanish: 'entendimiento', hebrew: 'בינה', transliteration: 'Binah', gematria: 67, category: 'sefirah', tags: ['discernimiento', 'intuicion', 'madre'] },
+  { spanish: 'corona', hebrew: 'כתר', transliteration: 'Keter', gematria: 620, category: 'sefirah', tags: ['voluntad suprema', 'origen', 'cima'] },
+  { spanish: 'bondad', hebrew: 'חסד', transliteration: 'Chesed', gematria: 72, category: 'sefirah', tags: ['misericordia', 'gracia', 'amor infinito', 'dar'] },
+  { spanish: 'misericordia', hebrew: 'רחמים', transliteration: 'Rachamim', gematria: 298, category: 'virtud', tags: ['compasion', 'perdon', 'piedad'] },
+  { spanish: 'fuerza', hebrew: 'גבורה', transliteration: 'Gevurah', gematria: 216, category: 'sefirah', tags: ['poder', 'justicia', 'limite', 'rigor', 'valentia'] },
+  { spanish: 'poder', hebrew: 'כח', transliteration: 'Koach', gematria: 28, category: 'concepto', tags: ['fuerza', 'energia', 'capacidad'] },
+  { spanish: 'belleza', hebrew: 'תפארת', transliteration: 'Tiferet', gematria: 1081, category: 'sefirah', tags: ['armonia', 'equilibrio', 'esplendor', 'verdad'] },
+  { spanish: 'victoria', hebrew: 'נצח', transliteration: 'Netzach', gematria: 148, category: 'sefirah', tags: ['eternidad', 'triunfo', 'persistencia'] },
+  { spanish: 'gloria', hebrew: 'הוד', transliteration: 'Hod', gematria: 15, category: 'sefirah', tags: ['esplendor', 'reconocimiento', 'majestad'] },
+  { spanish: 'fundamento', hebrew: 'יסוד', transliteration: 'Yesod', gematria: 80, category: 'sefirah', tags: ['canal', 'conexion', 'conexion divina'] },
+  { spanish: 'alma', hebrew: 'נשמה', transliteration: 'Neshamah', gematria: 395, category: 'espiritual', tags: ['espiritu', 'aliento', 'conciencia', 'mente'] },
+  { spanish: 'espiritu', hebrew: 'רוח', transliteration: 'Ruach', gematria: 214, category: 'espiritual', tags: ['viento', 'soplo', 'fuerza vital'] },
+  { spanish: 'corazon', hebrew: 'לב', transliteration: 'Lev', gematria: 32, category: 'cuerpo', tags: ['32 senderos', 'emocion', 'centro', 'sabiduria'] },
+  { spanish: 'hombre', hebrew: 'אדם', transliteration: 'Adam', gematria: 45, category: 'humanidad', tags: ['ser humano', 'persona', 'primer hombre'] },
+  { spanish: 'mujer', hebrew: 'אשה', transliteration: 'Ishah', gematria: 306, category: 'humanidad', tags: ['femenino', 'esposa', 'matriz'] },
+  { spanish: 'pueblo', hebrew: 'עם', transliteration: 'Am', gematria: 110, category: 'colectivo', tags: ['nacion', 'gente', 'comunidad'] },
+  { spanish: 'israel', hebrew: 'ישראל', transliteration: 'Yisrael', gematria: 541, category: 'colectivo', tags: ['pueblo de dios', 'tierra santa', 'jacob'] },
+  { spanish: 'jerusalen', hebrew: 'ירושלים', transliteration: 'Yerushalayim', gematria: 586, category: 'lugar', tags: ['capital', 'ciudad santa', 'sion', 'paz'] },
+  { spanish: 'sion', hebrew: 'ציון', transliteration: 'Tzion', gematria: 156, category: 'lugar', tags: ['jerusalen', 'monte', 'retorno', 'sionismo'] },
+  { spanish: 'redencion', hebrew: 'גאולה', transliteration: 'Geulah', gematria: 45, category: 'mística', tags: ['salvacion', 'liberacion', 'era mesianica'] },
+  { spanish: 'salvacion', hebrew: 'ישועה', transliteration: 'Yeshuah', gematria: 391, category: 'mística', tags: ['socorro', 'ayuda divina', 'liberacion'] },
+  { spanish: 'mesias', hebrew: 'משיח', transliteration: 'Mashiach', gematria: 358, category: 'mística', tags: ['ungido', 'libertador', 'redentor', 'rey david'] },
+  { spanish: 'tora', hebrew: 'תורה', transliteration: 'Torah', gematria: 611, category: 'sagrado', tags: ['ley', 'ensenanza', 'biblia', 'pentateuco'] },
+  { spanish: 'mandamiento', hebrew: 'מצוה', transliteration: 'Mitzvah', gematria: 513, category: 'sagrado', tags: ['precepto', 'buena accion', 'conexion'] },
+  { spanish: 'pacto', hebrew: 'ברית', transliteration: 'Brit', gematria: 612, category: 'sagrado', tags: ['alianza', 'circuncision', 'compromiso'] },
+  { spanish: 'sabado', hebrew: 'שבת', transliteration: 'Shabbat', gematria: 702, category: 'sagrado', tags: ['descanso', 'septimo dia', 'santidad', 'paz'] },
+  { spanish: 'arrepentimiento', hebrew: 'תשובה', transliteration: 'Teshuvah', gematria: 713, category: 'virtud', tags: ['retorno', 'correccion', 'perdon'] },
+  { spanish: 'rectificacion', hebrew: 'תיקון', transliteration: 'Tikkun', gematria: 516, category: 'mística', tags: ['reparacion', 'tikkun olam', 'orden'] },
+  { spanish: 'santo', hebrew: 'קדוש', transliteration: 'Kadosh', gematria: 410, category: 'sagrado', tags: ['santidad', 'elevado', 'sagrado', 'puro'] },
+  { spanish: 'santidad', hebrew: 'קדושה', transliteration: 'Kedushah', gematria: 415, category: 'sagrado', tags: ['pureza', 'elevacion', 'espiritualidad'] },
+  { spanish: 'justo', hebrew: 'צדיק', transliteration: 'Tzadik', gematria: 204, category: 'virtud', tags: ['hombre justo', 'pilar del mundo', 'recto'] },
+  { spanish: 'justicia', hebrew: 'צדק', transliteration: 'Tzedek', gematria: 194, category: 'virtud', tags: ['rectitud', 'equidad', 'ley'] },
+  { spanish: 'caridad', hebrew: 'צדקה', transliteration: 'Tzedakah', gematria: 199, category: 'virtud', tags: ['justicia social', 'donacion', 'ayuda'] },
+  { spanish: 'profeta', hebrew: 'נביא', transliteration: 'Navi', gematria: 63, category: 'liderazgo', tags: ['visionario', 'mensajero divino'] },
+  { spanish: 'profecia', hebrew: 'נבואה', transliteration: 'Nevuah', gematria: 68, category: 'espiritual', tags: ['vision', 'revelacion', 'mensaje'] },
+  { spanish: 'bendicion', hebrew: 'ברכה', transliteration: 'Berajah', gematria: 232, category: 'sagrado', tags: ['prosperidad', 'bien', 'abundancia'] },
+  { spanish: 'oracion', hebrew: 'תפלה', transliteration: 'Tefilah', gematria: 515, category: 'sagrado', tags: ['rezo', 'conexion', 'suplica'] },
+  { spanish: 'esperanza', hebrew: 'תקוה', transliteration: 'Tikvah', gematria: 511, category: 'virtud', tags: ['hatikvah', 'fe', 'anhelo'] },
+  { spanish: 'fe', hebrew: 'אמונה', transliteration: 'Emunah', gematria: 102, category: 'virtud', tags: ['confianza', 'creencia', 'fidelidad'] },
+  { spanish: 'gracia', hebrew: 'חן', transliteration: 'Chen', gematria: 58, category: 'virtud', tags: ['favor', 'simpatia', 'belleza interior'] },
+  { spanish: 'alegria', hebrew: 'שמחה', transliteration: 'Simchah', gematria: 353, category: 'virtud', tags: ['felicidad', 'gozo', 'celebracion'] },
+  { spanish: 'secreto', hebrew: 'סוד', transliteration: 'Sod', gematria: 70, category: 'mística', tags: ['misterio', 'cabala', 'oculto'] },
+  { spanish: 'arbol', hebrew: 'עץ', transliteration: 'Etz', gematria: 160, category: 'naturaleza', tags: ['arbol de la vida', 'planta', 'madera'] },
+  { spanish: 'sol', hebrew: 'שמש', transliteration: 'Shemesh', gematria: 640, category: 'astros', tags: ['astro rey', 'dia', 'calor'] },
+  { spanish: 'luna', hebrew: 'ירח', transliteration: 'Yareach', gematria: 218, category: 'astros', tags: ['noche', 'mes', 'calendario'] },
+  { spanish: 'estrella', hebrew: 'כוכב', transliteration: 'Kojav', gematria: 48, category: 'astros', tags: ['firmamento', 'guia', 'luz nocturna'] },
+  { spanish: 'camino', hebrew: 'דרך', transliteration: 'Derech', gematria: 234, category: 'concepto', tags: ['sendero', 'via', 'conducta'] },
+  { spanish: 'puerta', hebrew: 'שער', transliteration: 'Shaar', gematria: 570, category: 'concepto', tags: ['porton', 'acceso', 'portal'] },
+  { spanish: 'heroe', hebrew: 'גבור', transliteration: 'Gibor', gematria: 211, category: 'fuerza', tags: ['valiente', 'soldado', 'defensor', 'fdi'] },
+  { spanish: 'defensa', hebrew: 'הגנה', transliteration: 'Haganah', gematria: 63, category: 'fuerza', tags: ['proteccion', 'fuerzas de defensa', 'escudo'] },
+  { spanish: 'escudo', hebrew: 'מגן', transliteration: 'Magen', gematria: 93, category: 'fuerza', tags: ['magen david', 'amparo', 'proteccion'] },
+  { spanish: 'ejercito', hebrew: 'צבא', transliteration: 'Tzava', gematria: 93, category: 'fuerza', tags: ['tzahal', 'tropas', 'huestes'] },
+  { spanish: 'espada', hebrew: 'חרב', transliteration: 'Cherev', gematria: 218, category: 'fuerza', tags: ['arma', 'filo', 'combate'] },
+  { spanish: 'milagro', hebrew: 'נס', transliteration: 'Nes', gematria: 110, category: 'mística', tags: ['prodigio', 'maravilla', 'intervencion divina'] },
+  { spanish: 'desierto', hebrew: 'מדבר', transliteration: 'Midbar', gematria: 246, category: 'lugar', tags: ['sinai', 'exodo', 'purificacion'] },
+  { spanish: 'templo', hebrew: 'מקדש', transliteration: 'Mikdash', gematria: 444, category: 'sagrado', tags: ['santuario', 'casa de dios', 'jerusalen'] },
+  { spanish: 'angel', hebrew: 'מלאך', transliteration: 'Malaj', gematria: 91, category: 'espiritual', tags: ['mensajero celestial', 'guia'] },
+  { spanish: 'padre', hebrew: 'אב', transliteration: 'Av', gematria: 3, category: 'familia', tags: ['patriarca', 'origen', 'progenitor'] },
+  { spanish: 'madre', hebrew: 'אם', transliteration: 'Em', gematria: 41, category: 'familia', tags: ['matriarca', 'origen', 'vida'] },
+  { spanish: 'hijo', hebrew: 'בן', transliteration: 'Ben', gematria: 52, category: 'familia', tags: ['descendiente', 'heredero'] },
+  { spanish: 'hija', hebrew: 'בת', transliteration: 'Bat', gematria: 402, category: 'familia', tags: ['descendiente', 'mujer'] },
+  { spanish: 'hermano', hebrew: 'אח', transliteration: 'Ach', gematria: 9, category: 'familia', tags: ['fraternidad', 'companero'] }
+];
+
 // Exportación compatible tanto con módulos ES6 como con scripts convencionales del navegador
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
@@ -787,7 +871,8 @@ if (typeof module !== 'undefined' && module.exports) {
     DAILY_REFLECTIONS,
     KNOWLEDGE_GRAPH,
     HISTORICAL_EVENTS,
-    LEGENDARY_PAIRS
+    LEGENDARY_PAIRS,
+    SPANISH_HEBREW_DICT
   };
 } else {
   window.GematriaDB = { 
@@ -797,7 +882,8 @@ if (typeof module !== 'undefined' && module.exports) {
     DAILY_REFLECTIONS,
     KNOWLEDGE_GRAPH,
     HISTORICAL_EVENTS,
-    LEGENDARY_PAIRS
+    LEGENDARY_PAIRS,
+    SPANISH_HEBREW_DICT
   };
 }
 
