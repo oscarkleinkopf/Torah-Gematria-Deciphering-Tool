@@ -2515,16 +2515,18 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const verseContext = getVerseContext(match.start);
       const termBadgeClass = `term-badge-${match.termIndex % 4}`;
+      const sig = Engine.FormatSignificanceMetrics(match);
 
       item.innerHTML = `
         <div class="els-result-header-row">
-          <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
             <span class="els-result-word">${match.word}</span>
             ${termsArray && termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${match.rawQuery}</span>` : ''}
+            ${sig ? `<span class="significance-badge ${sig.level}" title="${sig.explanation} (${sig.probabilityDesc})">${sig.badgeText}</span>` : ''}
           </div>
           <span class="els-result-skip">Salto: ${match.skip}</span>
         </div>
-        <div class="els-result-context" style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+        <div class="els-result-context" style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.3rem;">
           <span>Inicio: Letra #${match.start}</span>
           <span>${verseContext}</span>
         </div>
@@ -3200,6 +3202,465 @@ document.addEventListener('DOMContentLoaded', () => {
         executeTorahOrReverseSearch();
       });
     }
+  }
+
+  // --- FASE 7: SUITE DE EDUCACIÓN, ONBOARDING Y DIFUSIÓN (MEJORAS 8, 9 Y 10) ---
+
+  // 8. TOOLTIPS EDUCATIVOS Y SISTEMAS
+  function openEducationalModal(key) {
+    const modal = document.getElementById('educationalTooltipModal');
+    const title = document.getElementById('eduModalTitle');
+    const body = document.getElementById('eduModalBody');
+    if (!modal || !title || !body) return;
+
+    const info = Engine.EDUCATIONAL_TOOLTIPS[key] || {
+      title: 'Información Mística',
+      text: 'Concepto cabalístico para el descifrado e interpretación espiritual.'
+    };
+
+    title.textContent = info.title;
+    body.innerHTML = `<p>${info.text}</p>`;
+    modal.style.display = 'flex';
+  }
+
+  const btnEduModalClose = document.getElementById('btnEduModalClose');
+  if (btnEduModalClose) {
+    btnEduModalClose.addEventListener('click', () => {
+      const modal = document.getElementById('educationalTooltipModal');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+
+  // Conectar clics en result-cards de la calculadora para abrir información educativa
+  const cardAbsolute = document.querySelector('.result-card.primary');
+  if (cardAbsolute) cardAbsolute.addEventListener('click', () => openEducationalModal('absolute'));
+
+  const resultCards = document.querySelectorAll('.results-grid .result-card');
+  resultCards.forEach(card => {
+    const label = card.querySelector('.result-card-label');
+    if (label) {
+      const text = label.textContent.toLowerCase();
+      if (text.includes('ordinal')) card.addEventListener('click', () => openEducationalModal('ordinal'));
+      else if (text.includes('reducido')) card.addEventListener('click', () => openEducationalModal('reduced'));
+      else if (text.includes('atbash')) card.addEventListener('click', () => openEducationalModal('atbash'));
+      else if (text.includes('albam')) card.addEventListener('click', () => openEducationalModal('albam'));
+      else if (text.includes('avgad')) card.addEventListener('click', () => openEducationalModal('avgad'));
+    }
+  });
+
+  // 9. TOUR GUIADO INTERACTIVO (ONBOARDING)
+  const tourSteps = [
+    {
+      step: 1,
+      badge: 'PASO 1 DE 3 • INICIACIÓN',
+      title: 'El Poder de las Letras Sagradas (Otiot)',
+      desc: 'Cada consonante hebrea es un canal de energía primordial. Puedes escribir directamente con el teclado virtual, o escribir en español para descubrir automáticamente los términos sagrados correspondientes.',
+      interactiveHtml: `
+        <div class="tour-interactive-card">
+          <p style="margin-bottom:0.5rem; color:var(--gold-primary); font-weight:bold;">💡 Prueba estos conceptos clásicos:</p>
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+            <button class="sync-chip" id="btnTourTryShalom">Paz (שלום - 376)</button>
+            <button class="sync-chip" id="btnTourTryAhava">Amor (אהבה - 13)</button>
+            <button class="sync-chip" id="btnTourTryIsrael">Israel (ישראל - 541)</button>
+          </div>
+        </div>
+      `,
+      targetTab: 'calculator'
+    },
+    {
+      step: 2,
+      badge: 'PASO 2 DE 3 • LA MATRIZ NUMÉRICA',
+      title: 'Los 4 Sistemas & El Mapa Cósmico',
+      desc: 'La calculadora evalúa simultáneamente los 4 sistemas (Absoluto, Ordinal, Reducido y Atbash). Además, el Mapa Estelar Galáctico revela en tiempo real cómo tu palabra orbita con las 10 Sefirot y los nombres sagrados.',
+      interactiveHtml: `
+        <div class="tour-interactive-card">
+          <p><strong>🔭 Exploración Galáctica:</strong> Haz zoom con la rueda del ratón y arrastra el mapa estelar para explorar constelaciones divinas y sionistas.</p>
+        </div>
+      `,
+      targetTab: 'calculator'
+    },
+    {
+      step: 3,
+      badge: 'PASO 3 DE 3 • EL CÓDIGO BÍBLICO',
+      title: 'Código de la Torá (ELS) & Sionismo',
+      desc: 'Descubre secuencias de letras equidistantes en los 5 libros de la Torá con cálculo de significancia estadística, o explora la línea de tiempo del renacimiento de Israel y los héroes de las FDI.',
+      interactiveHtml: `
+        <div class="tour-interactive-card">
+          <p><strong>📜 Todo listo:</strong> ¡Comienza tu viaje de descifrado o comparte tus descubrimientos con tarjetas místicas!</p>
+        </div>
+      `,
+      targetTab: 'biblecode'
+    }
+  ];
+
+  let currentTourIdx = 0;
+
+  function startGuidedTour() {
+    currentTourIdx = 0;
+    renderTourStep();
+    const modal = document.getElementById('guidedTourModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function renderTourStep() {
+    const step = tourSteps[currentTourIdx];
+    const body = document.getElementById('tourStepBody');
+    const dotsContainer = document.getElementById('tourProgressDots');
+    const btnPrev = document.getElementById('btnTourPrev');
+    const btnNext = document.getElementById('btnTourNext');
+
+    if (!step || !body) return;
+
+    if (step.targetTab) {
+      switchTab(step.targetTab);
+    }
+
+    body.innerHTML = `
+      <div class="tour-step-title">${step.title}</div>
+      <div class="tour-step-desc">${step.desc}</div>
+      ${step.interactiveHtml || ''}
+    `;
+
+    // Listeners interactivos del tour
+    const btnTryShalom = document.getElementById('btnTourTryShalom');
+    const btnTryAhava = document.getElementById('btnTourTryAhava');
+    const btnTryIsrael = document.getElementById('btnTourTryIsrael');
+
+    if (btnTryShalom) btnTryShalom.addEventListener('click', () => { txtInput.value = 'שלום'; setLanguage('hebrew'); processInputText('שלום'); });
+    if (btnTryAhava) btnTryAhava.addEventListener('click', () => { txtInput.value = 'אהבה'; setLanguage('hebrew'); processInputText('אהבה'); });
+    if (btnTryIsrael) btnTryIsrael.addEventListener('click', () => { txtInput.value = 'ישראל'; setLanguage('hebrew'); processInputText('ישראל'); });
+
+    if (dotsContainer) {
+      dotsContainer.innerHTML = tourSteps.map((_, i) => 
+        `<span class="tour-dot ${i === currentTourIdx ? 'active' : ''}"></span>`
+      ).join('');
+    }
+
+    if (btnPrev) {
+      btnPrev.style.display = currentTourIdx > 0 ? 'inline-block' : 'none';
+    }
+
+    if (btnNext) {
+      btnNext.textContent = currentTourIdx === tourSteps.length - 1 ? '✨ ¡Comenzar!' : 'Siguiente →';
+    }
+  }
+
+  const btnStartTour = document.getElementById('btnStartTour');
+  if (btnStartTour) btnStartTour.addEventListener('click', startGuidedTour);
+
+  const btnTourClose = document.getElementById('btnTourClose');
+  if (btnTourClose) {
+    btnTourClose.addEventListener('click', () => {
+      const modal = document.getElementById('guidedTourModal');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+
+  const btnTourPrev = document.getElementById('btnTourPrev');
+  if (btnTourPrev) {
+    btnTourPrev.addEventListener('click', () => {
+      if (currentTourIdx > 0) {
+        currentTourIdx--;
+        renderTourStep();
+      }
+    });
+  }
+
+  const btnTourNext = document.getElementById('btnTourNext');
+  if (btnTourNext) {
+    btnTourNext.addEventListener('click', () => {
+      if (currentTourIdx < tourSteps.length - 1) {
+        currentTourIdx++;
+        renderTourStep();
+      } else {
+        const modal = document.getElementById('guidedTourModal');
+        if (modal) modal.style.display = 'none';
+      }
+    });
+  }
+
+  // 10. GENERADOR DE TARJETAS PARA COMPARTIR (SHARE CARD)
+  let activeShareCardData = null;
+
+  function openShareCardModal(data) {
+    const modal = document.getElementById('shareCardModal');
+    const canvas = document.getElementById('shareCardCanvas');
+    if (!modal || !canvas) return;
+
+    drawShareCard(canvas, data);
+    modal.style.display = 'flex';
+    activeShareCardData = data;
+  }
+
+  function drawShareCard(canvas, data) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Fondo Gradiente Cósmico Profundo
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, '#0a0818');
+    bgGrad.addColorStop(0.5, '#120d2b');
+    bgGrad.addColorStop(1, '#05040e');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Polvo cósmico / Estrellas
+    for (let i = 0; i < 120; i++) {
+      const x = Math.abs(Math.sin(i * 99.7)) * W;
+      const y = Math.abs(Math.cos(i * 77.3)) * H;
+      const r = (i % 3) + 1;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.2 + (i % 5) * 0.15})`;
+      ctx.fill();
+    }
+
+    // Marco Ceremonial Doble Dorado
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(30, 30, W - 60, H - 60);
+
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(42, 42, W - 84, H - 84);
+
+    // Acentos de esquinas
+    ctx.fillStyle = '#ffd700';
+    [[42, 42], [W - 42, 42], [42, H - 42], [W - 42, H - 42]].forEach(([cx, cy]) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Encabezado
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(212, 175, 55, 0.9)';
+    ctx.font = 'bold 22px "Cinzel", Georgia, serif';
+    ctx.fillText('TORAH GEMATRIA & DECIPHERING TOOL', W / 2, 100);
+
+    // Dedicatoria sutil IDF
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.85)';
+    ctx.font = 'bold 15px "Montserrat", sans-serif';
+    ctx.fillText('🛡️ DEDICADO A LOS HÉROES DE LAS FUERZAS DE DEFENSA DE ISRAEL', W / 2, 132);
+
+    // Línea divisoria decorativa
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - 200, 155);
+    ctx.lineTo(W / 2 + 200, 155);
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+    ctx.stroke();
+
+    // Palabra Hebrea Gigante Central
+    const hebrewText = data.hebrew || 'שלום';
+    ctx.fillStyle = '#ffd700';
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
+    ctx.shadowBlur = 25;
+    ctx.font = 'bold 110px "Frank Ruhl Libre", "David", serif';
+    ctx.fillText(hebrewText, W / 2, 310);
+    ctx.shadowBlur = 0; // reset
+
+    // Concepto en Español
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 34px "Cinzel", Georgia, serif';
+    ctx.fillText(data.title || 'Paz / Integridad', W / 2, 385);
+
+    // Badge Dorado del Valor Numérico Central
+    const numVal = data.number !== undefined ? data.number : 376;
+    const badgeY = 445;
+    const badgeW = 340;
+    const badgeH = 80;
+    const badgeX = (W - badgeW) / 2;
+
+    ctx.fillStyle = 'rgba(212, 175, 55, 0.15)';
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 20);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#00ced1';
+    ctx.font = 'bold 16px "Montserrat", sans-serif';
+    ctx.fillText('VALOR GEMÁTRICO', W / 2, badgeY + 28);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 38px "Montserrat", sans-serif';
+    ctx.fillText(`${numVal}`, W / 2, badgeY + 66);
+
+    // Caja de Correspondencia y Análisis Místico
+    const boxY = 570;
+    const boxW = W - 160;
+    const boxH = 320;
+    const boxX = 80;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    // Título de la Correspondencia
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 22px "Cinzel", Georgia, serif';
+    ctx.fillText(data.subtitle || 'Correspondencia Sagrada & Esencia', W / 2, boxY + 45);
+
+    // Texto Explicativo (Multi-Línea)
+    ctx.fillStyle = 'rgba(245, 246, 250, 0.9)';
+    ctx.font = '19px "Montserrat", sans-serif';
+    const descText = data.context || 'En la Cábala y la tradición bíblica, este número representa una frecuencia de equilibrio perfecto y emanación espiritual.';
+    wrapCanvasText(ctx, descText, W / 2, boxY + 95, boxW - 60, 30);
+
+    // Versículo o Cita si existe
+    if (data.verse) {
+      ctx.fillStyle = '#c8a2c8';
+      ctx.font = 'italic 18px "Montserrat", sans-serif';
+      wrapCanvasText(ctx, `📜 ${data.verse}`, W / 2, boxY + 240, boxW - 60, 26);
+    }
+
+    // Footer con Fecha Hebrea
+    const todayInfo = Engine.GregorianToHebrew(new Date());
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.font = '15px "Montserrat", sans-serif';
+    ctx.fillText(`Generado el ${todayInfo.fullHebrewString} • Decodificador de Gematria de la Torá`, W / 2, H - 65);
+  }
+
+  function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+    if (!text) return;
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, currentY);
+        line = words[n] + ' ';
+        currentY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, currentY);
+  }
+
+  // Conectar botón de compartir de la Calculadora
+  const btnShareCalc = document.getElementById('btnShareCalc');
+  if (btnShareCalc) {
+    btnShareCalc.addEventListener('click', () => {
+      const res = appState.gematriaResult;
+      if (!res || res.lettersCount === 0) {
+        alert('Ingresa primero una palabra para compartir.');
+        return;
+      }
+
+      const matchConcept = DB.KNOWLEDGE_GRAPH.find(k => k.hebrew === res.cleanText);
+      const matchVerse = DB.TORAH_VERSES.find(v => v.gematria === res.absolute);
+
+      openShareCardModal({
+        type: 'calculator',
+        hebrew: res.cleanText,
+        title: matchConcept ? (matchConcept.spanish || matchConcept.concept) : 'Frecuencia Sagrada',
+        number: res.absolute,
+        subtitle: `Absoluto: ${res.absolute} • Ordinal: ${res.ordinal} • Reducido: ${res.reduced}`,
+        context: matchConcept ? (matchConcept.mysticalMeaning || matchConcept.meaning) : `Palabra de ${res.lettersCount} letras. Su valor reducido ${res.reduced} representa su esencia primordial en el Árbol de la Vida.`,
+        verse: matchVerse ? `${matchVerse.reference}: ${matchVerse.translation}` : null
+      });
+    });
+  }
+
+  // Conectar botón de compartir de ELS
+  const btnShareELS = document.getElementById('btnShareELS');
+  if (btnShareELS) {
+    btnShareELS.addEventListener('click', () => {
+      const match = bibleCodeState.activeMatch;
+      if (!match) {
+        alert('Selecciona primero un código ELS para compartir.');
+        return;
+      }
+
+      openShareCardModal({
+        type: 'els',
+        hebrew: match.word,
+        title: `Código ELS (Salto ${match.skip})`,
+        number: Engine.CalculateGematria(match.word).absolute,
+        subtitle: `Encontrado en ${elsSelectedBook.toUpperCase()} a salto ${match.skip}`,
+        context: `Codificado a intervalos equidistantes de ${match.skip} letras, iniciando en la posición #${match.start}.`,
+        verse: getVerseContext(match.start)
+      });
+    });
+  }
+
+  // Acciones dentro del modal de Share Card
+  const btnShareModalClose = document.getElementById('btnShareModalClose');
+  if (btnShareModalClose) {
+    btnShareModalClose.addEventListener('click', () => {
+      const modal = document.getElementById('shareCardModal');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+
+  const btnDownloadSharePNG = document.getElementById('btnDownloadSharePNG');
+  if (btnDownloadSharePNG) {
+    btnDownloadSharePNG.addEventListener('click', () => {
+      const canvas = document.getElementById('shareCardCanvas');
+      if (!canvas) return;
+      const link = document.createElement('a');
+      link.download = `gematria-${activeShareCardData ? activeShareCardData.hebrew : 'hallazgo'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+
+  const btnCopyShareImage = document.getElementById('btnCopyShareImage');
+  if (btnCopyShareImage) {
+    btnCopyShareImage.addEventListener('click', async () => {
+      const canvas = document.getElementById('shareCardCanvas');
+      const alertBox = document.getElementById('shareStatusAlert');
+      if (!canvas) return;
+
+      try {
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+          if (navigator.clipboard && navigator.clipboard.write) {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            if (alertBox) {
+              alertBox.className = 'share-status-alert success';
+              alertBox.textContent = '✅ ¡Imagen copiada al portapapeles! Lista para pegar en WhatsApp o redes.';
+              alertBox.style.display = 'block';
+              setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
+            }
+          } else {
+            btnDownloadSharePNG.click();
+          }
+        });
+      } catch (err) {
+        console.warn('Clipboard write failed:', err);
+        btnDownloadSharePNG.click();
+      }
+    });
+  }
+
+  const btnCopyShareText = document.getElementById('btnCopyShareText');
+  if (btnCopyShareText) {
+    btnCopyShareText.addEventListener('click', () => {
+      if (!activeShareCardData) return;
+      const alertBox = document.getElementById('shareStatusAlert');
+      const textToCopy = `✡️ Decodificador de Gematria de la Torá\nPalabra: ${activeShareCardData.hebrew} (${activeShareCardData.title})\nValor Gematria: ${activeShareCardData.number}\n${activeShareCardData.context || ''}\n${activeShareCardData.verse ? '📜 ' + activeShareCardData.verse : ''}`;
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        if (alertBox) {
+          alertBox.className = 'share-status-alert success';
+          alertBox.textContent = '✅ ¡Texto copiado al portapapeles!';
+          alertBox.style.display = 'block';
+          setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+        }
+      });
+    });
   }
 
   // --- 11. INICIALIZACIÓN COMPLETA DE LA APP ---

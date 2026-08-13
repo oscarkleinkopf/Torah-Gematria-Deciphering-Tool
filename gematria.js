@@ -1287,6 +1287,94 @@ function ScanTopographicELS(corpusText, skip, wordsList = [], options = {}) {
   return foundWords;
 }
 
+// --- FASE 7: SEMÁFORO DE SIGNIFICANCIA ESTADÍSTICA Y TOOLTIPS EDUCATIVOS (MEJORA 8) ---
+function FormatSignificanceMetrics(match) {
+  if (!match) return null;
+  const pValue = typeof match.pValue === 'number' ? match.pValue : 0.5;
+  const expected = typeof match.expectedCount === 'number' ? match.expectedCount : 1.0;
+  const wordLen = match.word ? match.word.length : 3;
+
+  // Clasificación por nivel de significancia
+  let level = 'low';
+  let badgeColor = '#e74c3c'; // Rojo
+  let badgeText = '🔴 Casual';
+  let title = 'Frecuencia Estadística Estándar';
+  let explanation = `La probabilidad de encontrar esta secuencia en textos de longitud similar por azar es estándar (esperado ~${expected.toFixed(2)} hallazgos, p = ${pValue.toFixed(4)}).`;
+  let probabilityDesc = '1 en 1-10 textos al azar';
+
+  if (pValue <= 0.005 || (wordLen >= 4 && pValue <= 0.02)) {
+    level = 'high';
+    badgeColor = '#2ecc71'; // Verde
+    badgeText = '🟢 Asombroso / Muy Significativo';
+    title = 'Frecuencia Extraordinariamente Rara';
+    const odds = Math.max(10, Math.round(1 / Math.max(0.00001, pValue)));
+    probabilityDesc = `1 en ${odds} textos equivalentes al azar`;
+    explanation = `Este hallazgo posee una probabilidad extremadamente baja de ocurrir por azar (p = ${pValue.toFixed(4)}, esperado: ${expected.toFixed(3)}). En estadística cabalística, denota una concentración de diseño deliberado.`;
+  } else if (pValue <= 0.05 || (wordLen >= 3 && pValue <= 0.08)) {
+    level = 'medium';
+    badgeColor = '#f39c12'; // Amarillo / Oro
+    badgeText = '🟡 Notable';
+    title = 'Patrón Relevante';
+    const odds = Math.max(2, Math.round(1 / Math.max(0.001, pValue)));
+    probabilityDesc = `1 en ${odds} textos equivalentes`;
+    explanation = `Esta secuencia muestra una frecuencia por encima del promedio probabilístico (p = ${pValue.toFixed(4)}, esperado: ${expected.toFixed(2)}). Sugiere una correspondencia mística digna de estudio.`;
+  }
+
+  return {
+    level,
+    badgeColor,
+    badgeText,
+    title,
+    explanation,
+    probabilityDesc,
+    pValue,
+    expectedCount: expected
+  };
+}
+
+const EDUCATIONAL_TOOLTIPS = {
+  absolute: {
+    title: 'Gematria Absoluta (Estándar / Ragil)',
+    text: 'El método clásico milenario donde cada letra tiene su valor numérico canónico de 1 a 400 (Alef=1, Yod=10, Qof=100, Tav=400). Revela la arquitectura cuantitativa de la creación.'
+  },
+  ordinal: {
+    title: 'Gematria Ordinal (Siduri)',
+    text: 'Asigna a cada letra su número de orden secuencial en el alfabeto (1 al 22). Refleja el orden emanativo y la progresión jerárquica de la energía.'
+  },
+  reduced: {
+    title: 'Gematria Reducida (Katan / Esencia 1-9)',
+    text: 'Suma teosófica de los dígitos hasta reducir a un número de 1 a 9. En Cábala representa la raíz arquetípica pura de la idea.'
+  },
+  atbash: {
+    title: 'Cifrado Atbash (Espejo de Opuestos)',
+    text: 'Cifrado bíblico por sustitución donde la 1ª letra (Alef) se cambia por la última (Tav), la 2ª (Bet) por la penúltima (Shin). Revela el lado oculto o complementario de la luz.'
+  },
+  albam: {
+    title: 'Cifrado Albam (Mitad del Alfabeto)',
+    text: 'Divide las 22 letras en dos grupos de 11; la 1ª se empareja con la 12ª (Alef-Lamed, Bet-Mem). Utilizado en textos del Talmud para revelar polaridades.'
+  },
+  avgad: {
+    title: 'Cifrado Avgad (Paso Siguiente / Ascenso)',
+    text: 'Cada letra se sustituye por la siguiente inmediata en el alefato (Alef->Bet, Bet->Gimel). Simboliza el desenvolvimiento y la elevación de nivel espiritual.'
+  },
+  colel: {
+    title: 'Principio del Colel (Tolerancia Mística ±1)',
+    text: 'Regla rabínica clásica que suma o resta 1 al valor total, representando la "Unidad Conectora Divina" que unifica la multiplicidad del universo.'
+  },
+  els: {
+    title: 'Secuencias de Letras Equidistantes (Código de la Torá)',
+    text: 'Palabras cifradas leyendo letras a intervalos fijos constantes (saltos de N letras). Permite descubrir conceptos interconectados a través de la topografía del texto sagrado.'
+  },
+  roshei_teivot: {
+    title: 'Acrósticos Roshei Teivot (Letras Iniciales)',
+    text: 'Lectura de las primeras letras de una serie consecutiva de palabras. Empleado en la Biblia para codificar nombres sagrados, mandamientos y profecías ocultas.'
+  },
+  sofei_teivot: {
+    title: 'Acrósticos Sofei Teivot (Letras Finales)',
+    text: 'Lectura de las letras finales de un versículo. Simboliza el sello o propósito final hacia el que se dirige la acción.'
+  }
+};
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -1312,7 +1400,9 @@ const _exportedEngine = {
   FindReverseGematria,
   AnalyzeCrossConnection,
   SearchSpanishSemantic,
-  ScanTopographicELS
+  ScanTopographicELS,
+  FormatSignificanceMetrics,
+  EDUCATIONAL_TOOLTIPS
 };
 
 if (typeof module !== 'undefined' && module.exports) {

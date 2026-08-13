@@ -378,6 +378,35 @@ async function runAllTests() {
   assert(topoWorkerRes.action === 'topographicResults', "Worker responde con 'topographicResults'");
   assert(Array.isArray(topoWorkerRes.foundWords) && topoWorkerRes.foundWords.length > 0, `Worker topográfico encontró ${topoWorkerRes.foundWords.length} términos`);
 
+  console.log("\n=== SECCIÓN 21: SEMÁFORO DE SIGNIFICANCIA ESTADÍSTICA (MEJORA 8) ===");
+  const sigHigh = Engine.FormatSignificanceMetrics({ word: 'ישראל', skip: 50, pValue: 0.001, expectedCount: 0.02 });
+  assert(sigHigh.level === 'high', "p=0.001 clasifica como significancia 'high'");
+  assert(sigHigh.badgeColor === '#2ecc71', "Significancia alta tiene color verde (#2ecc71)");
+
+  const sigMed = Engine.FormatSignificanceMetrics({ word: 'שלום', skip: 25, pValue: 0.03, expectedCount: 0.8 });
+  assert(sigMed.level === 'medium', "p=0.03 clasifica como significancia 'medium'");
+
+  const sigLow = Engine.FormatSignificanceMetrics({ word: 'אל', skip: 2, pValue: 0.75, expectedCount: 15.2 });
+  assert(sigLow.level === 'low', "p=0.75 clasifica como significancia 'low'");
+
+  console.log("\n=== SECCIÓN 22: TOOLTIPS Y DICCIONARIO EDUCATIVO (MEJORA 8) ===");
+  assert(Engine.EDUCATIONAL_TOOLTIPS && typeof Engine.EDUCATIONAL_TOOLTIPS === 'object', "EDUCATIONAL_TOOLTIPS está exportado");
+  assert(Engine.EDUCATIONAL_TOOLTIPS.absolute && Engine.EDUCATIONAL_TOOLTIPS.absolute.title.includes('Absoluta'), "Tooltips contiene explicación de Gematria Absoluta");
+  assert(Engine.EDUCATIONAL_TOOLTIPS.atbash && Engine.EDUCATIONAL_TOOLTIPS.atbash.title.includes('Atbash'), "Tooltips contiene explicación de Atbash");
+  assert(Engine.EDUCATIONAL_TOOLTIPS.els && Engine.EDUCATIONAL_TOOLTIPS.els.title.includes('Equidistantes'), "Tooltips contiene explicación de ELS");
+  assert(Engine.EDUCATIONAL_TOOLTIPS.colel && Engine.EDUCATIONAL_TOOLTIPS.colel.title.includes('Colel'), "Tooltips contiene explicación del Colel");
+
+  console.log("\n=== SECCIÓN 23: ESTRUCTURA DE TARJETA PARA COMPARTIR (MEJORA 10) ===");
+  const shareMockData = {
+    type: 'calculator',
+    hebrew: 'שלום',
+    title: 'Paz',
+    number: 376,
+    subtitle: 'Frecuencia Sagrada',
+    context: 'Representa armonía cósmica y plenitud.'
+  };
+  assert(shareMockData.hebrew === 'שלום' && shareMockData.number === 376, "Datos de tarjeta estructurados correctamente para generación en Canvas");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

@@ -66,6 +66,7 @@
       <button class="nav-btn" data-tab="letters">Espejo de Letras</button>
       <button class="nav-btn" data-tab="favorites">⭐ Favoritos</button>
       <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
+      <button class="nav-btn tour-nav-btn" id="btnStartTour" title="Iniciar recorrido interactivo de 3 pasos">✨ Tour Guiado</button>
     </nav>
 
     <!-- SECCIÓN 1: CALCULADORA -->
@@ -115,7 +116,10 @@
 
         <!-- Panel Derecho: Resultados del Cálculo -->
         <div class="glass-card results-panel">
-          <h3 class="results-header">Valores Calculados</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 class="results-header" style="border: none; padding: 0; margin: 0;">Valores Calculados</h3>
+            <button id="btnShareCalc" class="share-trigger-btn" title="Generar tarjeta de imagen de este hallazgo para compartir en redes">📤 Compartir Tarjeta</button>
+          </div>
           
           <div class="results-grid">
             <div class="result-card primary" title="Suma estándar del valor de cada letra. Es el método más tradicional (Mispar Hechrah).">
@@ -514,6 +518,8 @@
               </div>
               <!-- Botón Exportar PNG -->
               <button id="btnExportMatrixPNG" title="Exportar matriz como imagen PNG" style="display: none; background: rgba(0,206,209,0.1); border: 1px solid rgba(0,206,209,0.3); color: #00ced1; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📷 Exportar PNG</button>
+              <!-- Botón Compartir Tarjeta ELS -->
+              <button id="btnShareELS" title="Generar tarjeta mística de este código bíblico para compartir" style="display: none; background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.4); color: #c8a2c8; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📤 Compartir Tarjeta</button>
               <!-- Botón Guardar Favorito -->
               <button id="btnSaveELSFavorite" title="Guardar este hallazgo en Favoritos" style="display: none; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">⭐ Guardar</button>
             </div>
@@ -710,6 +716,81 @@
       <div class="modal-body">
         <h4 style="color: var(--gold-primary); margin-bottom: 0.5rem; font-family: var(--font-serif);">Significado Místico</h4>
         <p id="modalLetterMeaning">El líder, la fuerza divina...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Tour Guiado Interactivo (Mejora 9) -->
+  <div class="modal-overlay tour-overlay" id="guidedTourModal" style="display: none;">
+    <div class="modal-content tour-modal-content">
+      <div class="tour-header">
+        <div class="tour-badge">✨ INICIACIÓN CABALÍSTICA</div>
+        <button class="modal-close" id="btnTourClose">&times;</button>
+      </div>
+      
+      <div class="tour-step-body" id="tourStepBody">
+        <!-- Renderizado dinámicamente -->
+      </div>
+
+      <div class="tour-footer">
+        <div class="tour-progress-dots" id="tourProgressDots">
+          <span class="tour-dot active"></span>
+          <span class="tour-dot"></span>
+          <span class="tour-dot"></span>
+        </div>
+        <div class="tour-nav-actions">
+          <button class="tour-btn-prev" id="btnTourPrev" style="display: none;">← Anterior</button>
+          <button class="tour-btn-next" id="btnTourNext">Siguiente →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Generador de Tarjetas de Compartir (Mejora 10) -->
+  <div class="modal-overlay share-modal-overlay" id="shareCardModal" style="display: none;">
+    <div class="modal-content share-modal-content">
+      <div class="share-modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.3rem;">🖼️</span>
+          <h3 style="color: var(--gold-primary); font-family: var(--font-serif); margin: 0; font-size: 1.15rem;">Tarjeta Mística para Compartir</h3>
+        </div>
+        <button class="modal-close" id="btnShareModalClose">&times;</button>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Esta tarjeta gráfica ha sido generada en alta resolución para compartir en redes sociales, WhatsApp o guardar como estudio personal.
+      </p>
+
+      <!-- Contenedor del Canvas y Vista Previa -->
+      <div class="share-canvas-wrapper" style="text-align: center; margin-bottom: 1.2rem; overflow: hidden; border-radius: 14px; border: 1px solid rgba(212,175,55,0.3); background: rgba(0,0,0,0.6); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <canvas id="shareCardCanvas" width="1080" height="1080" style="max-width: 100%; height: auto; display: block; margin: 0 auto;"></canvas>
+      </div>
+
+      <!-- Acciones de Compartir -->
+      <div class="share-action-buttons">
+        <button class="share-act-btn btn-copy-image" id="btnCopyShareImage">
+          <span>📋</span> Copiar Imagen al Portapapeles
+        </button>
+        <button class="share-act-btn btn-download-png" id="btnDownloadSharePNG">
+          <span>💾</span> Descargar Imagen PNG
+        </button>
+        <button class="share-act-btn btn-copy-text" id="btnCopyShareText">
+          <span>🔗</span> Copiar Resumen
+        </button>
+      </div>
+      <div id="shareStatusAlert" class="share-status-alert" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Modal para Tooltips Educativos y Sistemas (Mejora 8) -->
+  <div class="modal-overlay educational-modal-overlay" id="educationalTooltipModal" style="display: none;">
+    <div class="modal-content edu-modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(212,175,55,0.2); padding-bottom: 0.5rem;">
+        <h3 id="eduModalTitle" style="color: var(--gold-primary); font-family: var(--font-serif); margin: 0; font-size: 1.1rem;">Concepto de Gematria</h3>
+        <button class="modal-close" id="btnEduModalClose">&times;</button>
+      </div>
+      <div id="eduModalBody" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">
+        <!-- Explicación formativa -->
       </div>
     </div>
   </div>
