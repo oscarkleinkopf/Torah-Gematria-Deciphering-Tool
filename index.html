@@ -12,9 +12,14 @@
   <div class="stars"></div>
 
   <div class="app-container">
-    <!-- Encabezado -->
+    <!-- Header con Botón Móvil -->
     <header>
-      <h1>DECODIFICADOR DE GEMATRIA</h1>
+      <div class="header-top-row">
+        <h1>DECODIFICADOR DE GEMATRIA</h1>
+        <button class="mobile-nav-toggle" id="btnMobileNavToggle" aria-label="Abrir menú de navegación">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
       <p>Explora el entrelazado místico del alfabeto hebreo, las correspondencias numéricas de la Torá y los hitos del Sionismo a través del lente de la numerología espiritual.</p>
       
       <!-- Banner de Dedicatoria -->
@@ -497,7 +502,44 @@
             <span id="elsResultCountBadge" style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 0.2rem 0.6rem; border-radius: 10px;">0 hallazgos</span>
           </div>
 
-          <div class="els-results-list" id="elsResultsList" style="max-height: 250px; overflow-y: auto; background: rgba(10,8,20,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.5rem; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
+          <!-- Indicador de Caché Inteligente (Mejora 12) -->
+          <div id="elsCacheStatus" class="els-cache-status-bar" style="display: none;">
+            <span style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; color: #00ced1;">
+              <span>⚡</span> <strong id="lblCacheStatusText">Resultado instantáneo desde Caché</strong>
+            </span>
+            <button id="btnClearELSCache" class="cache-clear-btn" title="Limpiar la caché de búsquedas">🧹 Vaciar</button>
+          </div>
+
+          <!-- Barra de Paginación y Ordenamiento (Mejora 11) -->
+          <div id="elsPaginationControls" class="els-pagination-wrapper" style="display: none;">
+            <div class="els-pagination-toolbar">
+              <div style="display: flex; align-items: center; gap: 0.3rem;">
+                <label style="font-size: 0.74rem; color: var(--text-secondary);">Orden:</label>
+                <select id="selELSSort" class="els-pagination-select">
+                  <option value="significance">🔥 Relevancia (Score)</option>
+                  <option value="skip_asc">Menor Salto</option>
+                  <option value="skip_desc">Mayor Salto</option>
+                  <option value="position">Posición Bíblica</option>
+                </select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.3rem;">
+                <label style="font-size: 0.74rem; color: var(--text-secondary);">Ver:</label>
+                <select id="selELSPageSize" class="els-pagination-select">
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                  <option value="50">50</option>
+                  <option value="all">Todos</option>
+                </select>
+              </div>
+            </div>
+            <div class="els-pagination-nav">
+              <button id="btnELSPrevPage" class="page-nav-btn">← Ant</button>
+              <span id="lblELSPageInfo" class="page-nav-info">Pág 1 de 1</span>
+              <button id="btnELSNextPage" class="page-nav-btn">Sig →</button>
+            </div>
+          </div>
+
+          <div class="els-results-list" id="elsResultsList" style="max-height: 280px; overflow-y: auto; background: rgba(10,8,20,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 0.5rem; scrollbar-width: thin; scrollbar-color: var(--gold-primary) rgba(255,255,255,0.02);">
             <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 2rem 0; font-size: 0.9rem;">
               Ingresa una palabra o usa una sugerencia rápida...
             </div>

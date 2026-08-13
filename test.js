@@ -407,6 +407,45 @@ async function runAllTests() {
   };
   assert(shareMockData.hebrew === 'שלום' && shareMockData.number === 376, "Datos de tarjeta estructurados correctamente para generación en Canvas");
 
+  console.log("\n=== SECCIÓN 24: MOTOR DE CACHÉ LRU (MEJORA 12) ===");
+  const testCache = new Engine.GematriaSearchCache(3);
+  testCache.set({ word: 'שלום', book: 'genesis' }, [{ word: 'שלום', skip: 10 }]);
+  testCache.set({ word: 'אהבה', book: 'genesis' }, [{ word: 'אהבה', skip: 5 }]);
+  testCache.set({ word: 'ישראל', book: 'genesis' }, [{ word: 'ישראל', skip: 50 }]);
+
+  assert(testCache.size() === 3, "El caché contiene 3 elementos guardados");
+  const hit = testCache.get({ word: 'שלום', book: 'genesis' });
+  assert(hit && hit[0].word === 'שלום', "Recupera correctamente coincidencia desde caché");
+
+  // Añadir un 4º elemento (debe expulsar 'אהבה' porque 'שלום' fue accedido recientemente)
+  testCache.set({ word: 'תורה', book: 'genesis' }, [{ word: 'תורה', skip: 50 }]);
+  assert(testCache.size() === 3, "El tamaño del caché se mantiene acotado al límite de 3");
+  assert(testCache.get({ word: 'אהבה', book: 'genesis' }) === null, "Expulsa el elemento menos recientemente usado (LRU)");
+  assert(testCache.get({ word: 'שלום', book: 'genesis' }) !== null, "Conserva el elemento accedido recientemente");
+
+  testCache.clear();
+  assert(testCache.size() === 0, "El método clear() vacía la caché por completo");
+
+  console.log("\n=== SECCIÓN 25: ORDENAMIENTO DE RESULTADOS ELS (MEJORA 11) ===");
+  const unsortedMatches = [
+    { word: 'A', skip: 50, start: 100, significanceScore: 3, pValue: 0.05 },
+    { word: 'B', skip: 10, start: 500, significanceScore: 9, pValue: 0.001 },
+    { word: 'C', skip: 100, start: 50, significanceScore: 1, pValue: 0.6 }
+  ];
+
+  const sortedBySig = Engine.SortELSResults(unsortedMatches, 'significance');
+  assert(sortedBySig[0].word === 'B', "Ordenamiento por significancia coloca el mayor score (9) primero");
+  assert(sortedBySig[2].word === 'C', "Ordenamiento por significancia coloca el menor score (1) al final");
+
+  const sortedBySkipAsc = Engine.SortELSResults(unsortedMatches, 'skip_asc');
+  assert(sortedBySkipAsc[0].word === 'B' && sortedBySkipAsc[0].skip === 10, "Ordenamiento por menor salto coloca salto 10 primero");
+
+  const sortedBySkipDesc = Engine.SortELSResults(unsortedMatches, 'skip_desc');
+  assert(sortedBySkipDesc[0].word === 'C' && sortedBySkipDesc[0].skip === 100, "Ordenamiento por mayor salto coloca salto 100 primero");
+
+  const sortedByPos = Engine.SortELSResults(unsortedMatches, 'position');
+  assert(sortedByPos[0].word === 'C' && sortedByPos[0].start === 50, "Ordenamiento por posición bíblica coloca inicio #50 primero");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

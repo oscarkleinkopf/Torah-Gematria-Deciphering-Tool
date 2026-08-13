@@ -2405,6 +2405,85 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bar) bar.style.display = 'none';
   }
 
+  // --- FASE 8: MOTOR DE CACHÉ Y PAGINACIÓN INTELIGENTE ELS (MEJORAS 11 Y 12) ---
+  const elsSearchCache = new Engine.GematriaSearchCache(100);
+
+  let elsPaginationState = {
+    currentPage: 1,
+    pageSize: 15,
+    sortBy: 'significance',
+    allMatches: [],
+    searchedQuery: '',
+    termsArray: []
+  };
+
+  // Listeners de Paginación y Ordenamiento
+  const selELSSort = document.getElementById('selELSSort');
+  if (selELSSort) {
+    selELSSort.addEventListener('change', (e) => {
+      elsPaginationState.sortBy = e.target.value;
+      elsPaginationState.currentPage = 1;
+      renderELSPaginatedView();
+    });
+  }
+
+  const selELSPageSize = document.getElementById('selELSPageSize');
+  if (selELSPageSize) {
+    selELSPageSize.addEventListener('change', (e) => {
+      const val = e.target.value;
+      elsPaginationState.pageSize = val === 'all' ? 9999 : parseInt(val, 10);
+      elsPaginationState.currentPage = 1;
+      renderELSPaginatedView();
+    });
+  }
+
+  const btnELSPrevPage = document.getElementById('btnELSPrevPage');
+  if (btnELSPrevPage) {
+    btnELSPrevPage.addEventListener('click', () => {
+      if (elsPaginationState.currentPage > 1) {
+        elsPaginationState.currentPage--;
+        renderELSPaginatedView();
+      }
+    });
+  }
+
+  const btnELSNextPage = document.getElementById('btnELSNextPage');
+  if (btnELSNextPage) {
+    btnELSNextPage.addEventListener('click', () => {
+      const totalPages = Math.ceil(elsPaginationState.allMatches.length / elsPaginationState.pageSize);
+      if (elsPaginationState.currentPage < totalPages) {
+        elsPaginationState.currentPage++;
+        renderELSPaginatedView();
+      }
+    });
+  }
+
+  const btnClearELSCache = document.getElementById('btnClearELSCache');
+  if (btnClearELSCache) {
+    btnClearELSCache.addEventListener('click', () => {
+      elsSearchCache.clear();
+      const statusBox = document.getElementById('elsCacheStatus');
+      if (statusBox) statusBox.style.display = 'none';
+      alert('🧹 Caché de búsquedas ELS vaciada.');
+    });
+  }
+
+  // Toggle de Navegación Móvil (Mejora 13)
+  const btnMobileNavToggle = document.getElementById('btnMobileNavToggle');
+  if (btnMobileNavToggle) {
+    btnMobileNavToggle.addEventListener('click', () => {
+      const nav = document.querySelector('nav');
+      if (nav) {
+        nav.classList.toggle('mobile-expanded');
+        if (nav.classList.contains('mobile-expanded')) {
+          nav.style.flexWrap = 'wrap';
+        } else {
+          nav.style.flexWrap = 'nowrap';
+        }
+      }
+    });
+  }
+
   function handleELSSearch() {
     const rawQuery = txtSearchELS.value.trim();
     if (!rawQuery) return;
@@ -2414,6 +2493,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const minSkip = parseInt(numMinSkip.value, 10) || 2;
     const maxSkip = parseInt(numMaxSkip.value, 10) || 120;
     const text = getActiveTorahText();
+    const cacheStatusBox = document.getElementById('elsCacheStatus');
+    const lblCacheText = document.getElementById('lblCacheStatusText');
 
     if (!text) {
       elsResultsList.innerHTML = `
@@ -2427,6 +2508,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dividir por comas para multi-término
     const termsRaw = rawQuery.split(',').map(t => t.trim()).filter(t => t.length > 0);
     
+    // Comprobar Caché Inteligente (Mejora 12)
+    const cacheKeyParams = {
+      word: rawQuery,
+      book: elsSelectedBook,
+      minSkip,
+      maxSkip,
+      mode: 'els'
+    };
+
+    const cached = elsSearchCache.get(cacheKeyParams);
+    if (cached) {
+      if (cacheStatusBox && lblCacheText) {
+        lblCacheText.textContent = `Resultado instantáneo desde Caché (${cached.length} hallazgos • 0 ms)`;
+        cacheStatusBox.style.display = 'flex';
+      }
+      renderELSResultsList(cached, rawQuery, termsRaw);
+      return;
+    }
+
+    if (cacheStatusBox) cacheStatusBox.style.display = 'none';
+
     // Para búsquedas multi-término o saltos amplios, usar Web Worker
     const useWorker = (maxSkip - minSkip > 30 || termsRaw.length === 1) && typeof Worker !== 'undefined';
 
@@ -2483,6 +2585,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Guardar en Caché
+    elsSearchCache.set(cacheKeyParams, allMatches);
+
     const countBadge = document.getElementById('elsResultCountBadge');
     if (countBadge) countBadge.textContent = `${allMatches.length} hallazgo(s)`;
 
@@ -2490,16 +2595,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderELSResultsList(matches, searchedQuery, termsArray) {
+    elsPaginationState.allMatches = matches || [];
+    elsPaginationState.searchedQuery = searchedQuery;
+    elsPaginationState.termsArray = termsArray;
+    elsPaginationState.currentPage = 1;
+
+    // Guardar en caché si viene de Worker
+    elsSearchCache.set({
+      word: searchedQuery,
+      book: elsSelectedBook,
+      minSkip: parseInt(numMinSkip.value, 10) || 2,
+      maxSkip: parseInt(numMaxSkip.value, 10) || 120,
+      mode: 'els'
+    }, matches);
+
+    renderELSPaginatedView();
+  }
+
+  function renderELSPaginatedView() {
     elsResultsList.innerHTML = '';
     const narrativePanel = document.getElementById('elsNarrativePanel');
+    const paginationControls = document.getElementById('elsPaginationControls');
+    const lblPageInfo = document.getElementById('lblELSPageInfo');
+    const btnPrev = document.getElementById('btnELSPrevPage');
+    const btnNext = document.getElementById('btnELSNextPage');
+    const countBadge = document.getElementById('elsResultCountBadge');
 
-    if (matches.length === 0) {
+    const totalMatches = elsPaginationState.allMatches.length;
+    if (countBadge) countBadge.textContent = `${totalMatches} hallazgo(s)`;
+
+    if (totalMatches === 0) {
       elsResultsList.innerHTML = `
         <div style="color: var(--text-secondary); text-align: center; padding: 2rem 0; font-size: 0.9rem;">
-          No se encontraron secuencias ELS para "${searchedQuery}" en el libro seleccionado (${elsSelectedBook.toUpperCase()}) y rango de saltos.
+          No se encontraron secuencias ELS para "${elsPaginationState.searchedQuery}" en el libro seleccionado (${elsSelectedBook.toUpperCase()}) y rango de saltos.
         </div>
       `;
       
+      if (paginationControls) paginationControls.style.display = 'none';
       bibleCodeState.activeMatch = null;
       matrixEmptyState.style.display = 'block';
       matrixContainer.style.display = 'none';
@@ -2509,7 +2641,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    matches.forEach((match, idx) => {
+    // Ordenar resultados según selección
+    const sortedMatches = Engine.SortELSResults(elsPaginationState.allMatches, elsPaginationState.sortBy);
+
+    // Calcular páginas
+    const pageSize = elsPaginationState.pageSize;
+    const totalPages = Math.max(1, Math.ceil(totalMatches / pageSize));
+    const currentPage = Math.min(elsPaginationState.currentPage, totalPages);
+    elsPaginationState.currentPage = currentPage;
+
+    const startIdx = (currentPage - 1) * pageSize;
+    const pageMatches = sortedMatches.slice(startIdx, startIdx + pageSize);
+
+    // Actualizar controles de paginación
+    if (paginationControls) {
+      paginationControls.style.display = totalMatches > 15 ? 'flex' : 'none';
+    }
+    if (lblPageInfo) lblPageInfo.textContent = `Pág ${currentPage} de ${totalPages} (${totalMatches} tot)`;
+    if (btnPrev) btnPrev.disabled = currentPage <= 1;
+    if (btnNext) btnNext.disabled = currentPage >= totalPages;
+
+    pageMatches.forEach((match, idx) => {
       const item = document.createElement('div');
       item.className = 'els-result-item';
       
@@ -2521,7 +2673,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="els-result-header-row">
           <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
             <span class="els-result-word">${match.word}</span>
-            ${termsArray && termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${match.rawQuery}</span>` : ''}
+            ${elsPaginationState.termsArray && elsPaginationState.termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${match.rawQuery}</span>` : ''}
             ${sig ? `<span class="significance-badge ${sig.level}" title="${sig.explanation} (${sig.probabilityDesc})">${sig.badgeText}</span>` : ''}
           </div>
           <span class="els-result-skip">Salto: ${match.skip}</span>
@@ -2547,7 +2699,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBibleCodeMatrix();
       });
 
-      if (idx === 0) {
+      if (idx === 0 && currentPage === 1) {
         item.classList.add('active');
         bibleCodeState.activeMatch = match;
         bibleCodeState.primaryWord = match.word;
@@ -2561,7 +2713,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elsResultsList.appendChild(item);
     });
 
-    if (bibleCodeState.activeMatch) {
+    if (bibleCodeState.activeMatch && currentPage === 1) {
       const match = bibleCodeState.activeMatch;
       const w = bibleCodeState.matrixWidth;
       const text = getActiveTorahText();

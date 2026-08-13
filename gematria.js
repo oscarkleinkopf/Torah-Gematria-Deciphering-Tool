@@ -1375,6 +1375,80 @@ const EDUCATIONAL_TOOLTIPS = {
   }
 };
 
+// --- FASE 8: MOTOR DE CACHÉ INTELIGENTE Y ORDENAMIENTO DE RESULTADOS (MEJORAS 11 Y 12) ---
+class GematriaSearchCache {
+  constructor(maxSize = 100) {
+    this.maxSize = maxSize;
+    this.cache = new Map();
+  }
+
+  generateKey(params) {
+    if (typeof params === 'string') return params.toLowerCase().trim();
+    const { word = '', book = 'all', minSkip = 2, maxSkip = 120, mode = 'els' } = params;
+    return `${mode}_${book}_${minSkip}_${maxSkip}_${word}`.toLowerCase().trim();
+  }
+
+  get(params) {
+    const key = this.generateKey(params);
+    if (!this.cache.has(key)) return null;
+    const entry = this.cache.get(key);
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+    return entry.data;
+  }
+
+  set(params, data) {
+    const key = this.generateKey(params);
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxSize) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  size() {
+    return this.cache.size;
+  }
+}
+
+function SortELSResults(matches, sortBy = 'significance') {
+  if (!Array.isArray(matches)) return [];
+  const list = [...matches];
+
+  switch (sortBy) {
+    case 'significance':
+      return list.sort((a, b) => {
+        const scoreA = typeof a.significanceScore === 'number' ? a.significanceScore : 0;
+        const scoreB = typeof b.significanceScore === 'number' ? b.significanceScore : 0;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        const pA = typeof a.pValue === 'number' ? a.pValue : 1;
+        const pB = typeof b.pValue === 'number' ? b.pValue : 1;
+        return pA - pB;
+      });
+
+    case 'skip_asc':
+      return list.sort((a, b) => Math.abs(a.skip) - Math.abs(b.skip));
+
+    case 'skip_desc':
+      return list.sort((a, b) => Math.abs(b.skip) - Math.abs(a.skip));
+
+    case 'position':
+      return list.sort((a, b) => a.start - b.start);
+
+    default:
+      return list;
+  }
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -1402,7 +1476,9 @@ const _exportedEngine = {
   SearchSpanishSemantic,
   ScanTopographicELS,
   FormatSignificanceMetrics,
-  EDUCATIONAL_TOOLTIPS
+  EDUCATIONAL_TOOLTIPS,
+  GematriaSearchCache,
+  SortELSResults
 };
 
 if (typeof module !== 'undefined' && module.exports) {
