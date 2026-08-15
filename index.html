@@ -27,7 +27,8 @@
 
     <!-- Navegación Principal -->
     <nav>
-      <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
+      <button class="nav-btn active" data-tab="explore">Explorar</button>
+      <button class="nav-btn" data-tab="calculator">Calculadora de Gematria</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
       <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
       <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
@@ -38,8 +39,72 @@
       <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
     </nav>
 
+    <!-- SECCIÓN: EXPLORAR CORRELACIONES -->
+    <div id="explore" class="tab-content active">
+      <div class="glass-card explore-panel">
+        <h3 class="input-title">Explorar correlaciones</h3>
+        <p class="explore-lead">
+          Busca un <strong>apellido</strong>, <strong>nombre</strong>, <strong>fecha</strong> o <strong>evento</strong>
+          y descubre resonancias en el grafo de conocimiento, la línea de tiempo y la Torá.
+        </p>
+
+        <div class="explore-search-row">
+          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, Oslo, Herzl, 708…" autocomplete="off">
+          <button type="button" id="btnExploreSearch" class="explore-search-btn">Buscar</button>
+        </div>
+
+        <div class="explore-chips" id="exploreQuickChips">
+          <button type="button" class="explore-chip" data-q="Cohen">Cohen</button>
+          <button type="button" class="explore-chip" data-q="Herzl">Herzl</button>
+          <button type="button" class="explore-chip" data-q="Herzl + 1897">Herzl + 1897</button>
+          <button type="button" class="explore-chip" data-q="14/05/1948">14/05/1948</button>
+          <button type="button" class="explore-chip" data-q="Oslo">Oslo</button>
+          <button type="button" class="explore-chip" data-q="708">708</button>
+          <button type="button" class="explore-chip" data-q="Cohen y 1948">Cohen y 1948</button>
+          <button type="button" class="explore-chip" data-q="Balfour">Balfour</button>
+        </div>
+
+        <div id="exploreHistory" class="explore-history" style="display:none;"></div>
+      </div>
+
+      <div class="glass-card explore-panel profile-panel">
+        <h3 class="input-title">Mi perfil personal</h3>
+        <p class="explore-lead">
+          Nombre, apellido y fecha de nacimiento → un informe único: gematria, año hebreo aproximado,
+          resonancias históricas, grafo, versículos y términos ELS.
+        </p>
+        <form id="formPersonalProfile" class="profile-form" autocomplete="off">
+          <label class="profile-field">
+            <span>Nombre</span>
+            <input type="text" id="txtProfileGiven" class="explore-input" placeholder="David, Raquel, Oscar…">
+          </label>
+          <label class="profile-field">
+            <span>Apellido</span>
+            <input type="text" id="txtProfileSurname" class="explore-input" placeholder="Cohen, Herzl, Klein…">
+          </label>
+          <label class="profile-field">
+            <span>Fecha de nacimiento</span>
+            <input type="text" id="txtProfileDate" class="explore-input" placeholder="14/05/1948 o 1948">
+          </label>
+          <label class="profile-field">
+            <span>Evento o término extra (opcional)</span>
+            <input type="text" id="txtProfileExtra" class="explore-input" placeholder="Israel, Oslo, Sión…">
+          </label>
+          <div class="profile-form-actions">
+            <button type="submit" class="explore-search-btn" id="btnBuildProfile">Generar informe</button>
+            <button type="button" class="explore-action-btn" id="btnProfileExample">Ejemplo: David Cohen</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="glass-card explore-panel explore-output-panel" id="exploreOutputPanel">
+        <div id="exploreStatus" class="explore-status" aria-live="polite"></div>
+        <div id="exploreResults" class="explore-results"></div>
+      </div>
+    </div>
+
     <!-- SECCIÓN 1: CALCULADORA -->
-    <div id="calculator" class="tab-content active">
+    <div id="calculator" class="tab-content">
       <div class="calculator-grid">
         <!-- Panel Izquierdo: Entrada de Texto y Teclado -->
         <div class="glass-card input-panel">
@@ -277,7 +342,7 @@
         </summary>
         <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.8rem;">
           <p>
-            El <strong>Código de la Biblia</strong> o búsqueda por <strong>Secuencias de Letras Equidistantes (ELS)</strong> busca términos ocultos en el texto hebreo continuo de la Torá (Génesis 1-5, sin espacios ni puntuación).
+            El <strong>Código de la Biblia</strong> o búsqueda por <strong>Secuencias de Letras Equidistantes (ELS)</strong> busca términos ocultos en el texto hebreo continuo de la Torá (corpus consonántico de los 5 libros, ~27 000 letras, sin espacios ni puntuación).
           </p>
           <p style="margin-top: 0.5rem;">
             El motor toma una palabra y prueba todos los saltos posibles (ej: tomar cada 7ª letra). Si las letras de la palabra forman una secuencia a igual intervalo y se disponen en una cuadrícula con el ancho adecuado, la palabra aparece alineada verticalmente o en diagonal, permitiendo visualizar cruces con otras palabras clave en la misma matriz.
@@ -367,9 +432,9 @@
                 <span id="lblMatrixWidth" style="font-size: 0.85rem; color: var(--gold-primary); font-weight: bold; min-width: 25px; display: inline-block; text-align: center;">50</span>
               </div>
               <!-- Botón Exportar PNG -->
-              <button id="btnExportMatrixPNG" title="Exportar matriz como imagen PNG" style="display: none; background: rgba(0,206,209,0.1); border: 1px solid rgba(0,206,209,0.3); color: #00ced1; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📷 Exportar PNG</button>
+              <button id="btnExportMatrixPNG" class="btn-els-action btn-export-png" title="Exportar matriz como imagen PNG" style="display: none;">📷 Exportar PNG</button>
               <!-- Botón Guardar Favorito -->
-              <button id="btnSaveELSFavorite" title="Guardar este hallazgo en Favoritos" style="display: none; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); color: var(--gold-primary); padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">⭐ Guardar</button>
+              <button id="btnSaveELSFavorite" class="btn-els-action btn-save-favorite" title="Guardar este hallazgo en Favoritos" style="display: none;">⭐ Guardar</button>
             </div>
           </div>
 
@@ -503,13 +568,13 @@
       <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <h3 class="input-title" style="margin: 0;">⭐ Hallazgos Guardados</h3>
-          <button id="btnClearAllFavorites" style="background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: #e74c3c; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;">🗑️ Limpiar Todo</button>
+          <button id="btnClearAllFavorites" class="btn-clear-favorites">🗑️ Limpiar Todo</button>
         </div>
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
           Aquí se guardan automáticamente los hallazgos ELS que marques como favoritos. Persisten entre sesiones del navegador.
         </p>
-        <div id="favoritesContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-          <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem 0; grid-column: 1/-1;">
+        <div id="favoritesContainer" class="favorites-grid">
+          <div class="favorites-empty">
             No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.
           </div>
         </div>
@@ -561,6 +626,9 @@
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
   <script src="gematria.js"></script>
+  <script src="explore.js"></script>
+  <script src="storage.js"></script>
+  <script src="export.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

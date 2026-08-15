@@ -599,17 +599,85 @@ const KNOWLEDGE_GRAPH = [
     tags: ['ejército', 'defensa', 'heroísmo'],
     mysticalNote: 'Acrónimo de Tzeva Hahaganah LeYisrael. Representa el escudo físico del pueblo en su patria soberana. Su valor es 125.',
     relatedVerses: []
+  },
+  {
+    id: 'ein_sof',
+    hebrew: 'אין סוף',
+    spanish: 'Ein Sof',
+    category: 'divino',
+    tags: ['cábala', 'infinito', 'emanación'],
+    mysticalNote: 'El Infinito — la esencia divina antes de toda emanación. En la Cábala, Ein Sof es el origen sin límite del que descienden las Sefirot.',
+    relatedVerses: []
+  },
+  {
+    id: 'shekhinah',
+    hebrew: 'שכינה',
+    spanish: 'Shejiná',
+    category: 'divino',
+    tags: ['presencia', 'cábala', 'femenino divino'],
+    mysticalNote: 'La Presencia Divina que mora con Israel. En la tradición mística es la manifestación inmanente de lo Divino, asociada a la redención y al retorno.',
+    relatedVerses: ['Éxodo 25:8']
+  },
+  {
+    id: 'chai',
+    hebrew: 'חי',
+    spanish: 'Jai (Vida)',
+    category: 'concepto',
+    tags: ['vida', '18', 'bendición'],
+    mysticalNote: 'Vida. Su valor es 18, número central de la tradición judía de bendición y donativos (chai). Resonancia con el Árbol de la Vida.',
+    relatedVerses: ['Génesis 2:7']
+  },
+  {
+    id: 'mitzvah',
+    hebrew: 'מצוה',
+    spanish: 'Mitzvá',
+    category: 'concepto',
+    tags: ['mandamiento', 'alianza', 'práctica'],
+    mysticalNote: 'Mandamiento o acto sagrado. Cada mitzvá es un puente entre lo humano y lo divino; su valor es 141.',
+    relatedVerses: ['Deuteronomio 6:1']
+  },
+  {
+    id: 'geulah',
+    hebrew: 'גאולה',
+    spanish: 'Gueulá (Redención)',
+    category: 'concepto',
+    tags: ['redención', 'sionismo', 'esperanza'],
+    mysticalNote: 'La redención nacional y espiritual. Puente entre el anhelo de retorno a Sión y la restauración cósmica en la Cábala.',
+    relatedVerses: ['Éxodo 6:6']
+  },
+  {
+    id: 'brit',
+    hebrew: 'ברית',
+    spanish: 'Brit (Alianza)',
+    category: 'concepto',
+    tags: ['alianza', 'pacto', 'abrahmico'],
+    mysticalNote: 'La alianza entre Dios y el pueblo. Su valor es 612. Fundamento de la identidad y de la promesa de la tierra.',
+    relatedVerses: ['Génesis 17:7']
+  },
+  {
+    id: 'tikkun',
+    hebrew: 'תיקון',
+    spanish: 'Tikún (Reparación)',
+    category: 'concepto',
+    tags: ['cábala', 'reparación', 'mundo'],
+    mysticalNote: 'Tikún Olam — la reparación del mundo. En Luria, el trabajo humano de reunir las chispas divinas dispersas.',
+    relatedVerses: []
   }
 ];
 
 const HISTORICAL_EVENTS = [
+  { year: -1313, label: '~1313 a.C.', title: 'Entrega de la Torá en Sinaí', desc: 'Según la tradición, la revelación en el monte Sinaí establece la alianza nacional y la Torá como eje espiritual de Israel.', hebrewYear: 'ב\'תמ"ח', gematriaMatches: [611, 130], searchTerms: ['תורה', 'סיני', 'משה'] },
   { year: -586, label: '586 a.C.', title: 'Destrucción del Primer Templo', desc: 'El Templo de Salomón es destruido por los babilonios, dando inicio al primer exilio judío.', hebrewYear: 'ג\'קכ"ד', gematriaMatches: [586], searchTerms: ['מקדש', 'בבל', 'גלות'] },
+  { year: -516, label: '516 a.C.', title: 'Dedicación del Segundo Templo', desc: 'Tras el retorno de Babilonia, se dedica el Segundo Templo en Jerusalén, símbolo de la renovación nacional.', hebrewYear: 'ג\'רמ"ח', gematriaMatches: [516, 444], searchTerms: ['מקדש', 'ירושלים', 'שיבה'] },
   { year: 70, label: '70 d.C.', title: 'Destrucción del Segundo Templo', desc: 'Los romanos destruyen Jerusalén y el Segundo Templo, iniciando el exilio prolongado (Galut).', hebrewYear: 'ג\'תת"ק', gematriaMatches: [70, 800], searchTerms: ['רומא', 'ירושלים', 'מקדש'] },
+  { year: 135, label: '135 d.C.', title: 'Caída de Betar (Bar Kojba)', desc: 'Fin de la revuelta de Bar Kojba. Intensificación del exilio y de la esperanza mesiánica de retorno.', hebrewYear: 'ג\'תתצ"ה', gematriaMatches: [135], searchTerms: ['ביתר', 'גלות', 'ציון'] },
   { year: 1492, label: '1492', title: 'Expulsión de España', desc: 'Los Reyes Católicos decretan la expulsión de los judíos de España (Sefarad). Gran migración espiritual.', hebrewYear: 'ה\'רנ"ב', gematriaMatches: [1492, 252], searchTerms: ['ספרד', 'גורש', 'גלות'] },
   { year: 1882, label: '1882', title: 'Primera Aliyá & BILU', desc: 'Inicia el retorno sionista agrícola moderno. Fundación de Rishon LeZion y Petaj Tikva.', hebrewYear: 'תרמ"ב', gematriaMatches: [1882, 642, 48], searchTerms: ['ביל"ו', 'עליה', 'ציון'] },
   { year: 1897, label: '1897', title: 'Congreso de Basilea', desc: 'Theodor Herzl preside el Primer Congreso Sionista Mundial en Basilea, formulando el Programa Sionista.', hebrewYear: 'תרנ"ז', gematriaMatches: [1897, 657, 325, 39], searchTerms: ['הרצל', 'בזל', 'מדינה'] },
+  { year: 1917, label: '1917', title: 'Declaración Balfour', desc: 'Gran Bretaña expresa apoyo a un hogar nacional judío en Palestina, catalizando la diplomacia sionista.', hebrewYear: 'תרע"ח', gematriaMatches: [1917, 678], searchTerms: ['בלפור', 'ציון', 'ארץ'] },
   { year: 1948, label: '1948', title: 'Declaración del Estado de Israel', desc: 'Proclamada el 14 de mayo por David Ben-Gurión, marcando la soberanía nacional judía tras 19 siglos.', hebrewYear: 'תש"ח', gematriaMatches: [1948, 708, 1045, 321], searchTerms: ['ישראל', 'מדינה', 'תש"ח'] },
   { year: 1967, label: '1967', title: 'Guerra de los Seis Días', desc: 'Reunificación de Jerusalén, recuperando el acceso al Muro de los Lamentos y el casco antiguo.', hebrewYear: 'תשכ"ז', gematriaMatches: [1967, 727, 582], searchTerms: ['ירושלים', 'ציון', 'שלום'] },
+  { year: 1979, label: '1979', title: 'Paz Egipto–Israel', desc: 'Tratado de Camp David: primer acuerdo de paz entre Israel y un Estado árabe vecino.', hebrewYear: 'תשל"ט', gematriaMatches: [1979, 739, 376], searchTerms: ['שלום', 'מצרים', 'ישראל'] },
   { year: 1993, label: '1993', title: 'Acuerdos de Oslo', desc: 'Primer acuerdo cara a cara entre el Estado de Israel y la OLP para buscar una paz regional.', hebrewYear: 'תשנ"ג', gematriaMatches: [1993, 753], searchTerms: ['שלום', 'ישראל', 'ברית'] }
 ];
 

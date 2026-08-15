@@ -77,8 +77,8 @@ async function runAllTests() {
   assert(factorRelation !== null && factorRelation.factor === 2 && factorRelation.type === 'multiple', "26 es múltiplo x2 de 13");
 
   // 6. Validar integridad de la Base de Datos
-  assert(DB.KNOWLEDGE_GRAPH.length === 50, `KNOWLEDGE_GRAPH tiene exactamente 50 conceptos (actual: ${DB.KNOWLEDGE_GRAPH.length})`);
-  assert(DB.HISTORICAL_EVENTS.length === 8, `HISTORICAL_EVENTS tiene 8 hitos históricos (actual: ${DB.HISTORICAL_EVENTS.length})`);
+  assert(DB.KNOWLEDGE_GRAPH.length === 57, `KNOWLEDGE_GRAPH tiene exactamente 57 conceptos (actual: ${DB.KNOWLEDGE_GRAPH.length})`);
+  assert(DB.HISTORICAL_EVENTS.length === 13, `HISTORICAL_EVENTS tiene 13 hitos históricos (actual: ${DB.HISTORICAL_EVENTS.length})`);
 
   // 7. Validar búsqueda global de correlaciones
   const correlations = Engine.FindCorrelations('אהבה', DB.KNOWLEDGE_GRAPH);
@@ -186,7 +186,10 @@ async function runAllTests() {
   assert(Math.abs(totalFreq - 1.0) < 1e-6, "La suma de las frecuencias de letras es igual a 1.0");
 
   // Validar CalculateELSPValue para 'תורה' en salto 50 con N=6877 benchmark
-  const pValStats6877 = Engine.CalculateELSPValue(6877, 'תורה', 50, freqsData.frequencies);
+  // Use letter frequencies from the historic Genesis 1–5 slice so the classic
+  // expectedMatches (~0.2004) stays independent of the expanded corpus mix.
+  const freqsGenesis15 = Engine.CalculateLetterFrequencies(TORAH_TEXT.slice(0, 6877));
+  const pValStats6877 = Engine.CalculateELSPValue(6877, 'תורה', 50, freqsGenesis15.frequencies);
   assert(Math.abs(pValStats6877.expectedMatches - 0.20036) < 1e-2, `Esperado para 'תורה' (s=50, N=6877) ~0.2004 (obtenido: ${pValStats6877.expectedMatches.toFixed(5)})`);
 
   // Validar CalculateELSPValue sobre corpus expandido
@@ -226,6 +229,24 @@ async function runAllTests() {
     totalBookLength += bookText.length;
   });
   assert(totalBookLength === TORAH_TEXT.length, `La suma de longitudes de los 5 libros (${totalBookLength}) coincide con TORAH_TEXT.length (${TORAH_TEXT.length})`);
+
+  // Fase 4: sanitize pipeline + curated expansions
+  assert(typeof Engine.SanitizeHebrewConsonants === 'function', "Exporta SanitizeHebrewConsonants");
+  assert(Engine.SanitizeHebrewConsonants('שָׁ לוםบ') === 'שלוםב', "SanitizeHebrewConsonants elimina niqqud/espacios y corrige Thai→bet");
+  assert(TORAH_BOOKS.exodus.includes('אנכייהוהאלהיך'), "Éxodo incluye el Decálogo (Éx 20)");
+  assert(TORAH_BOOKS.deuteronomy.includes('שמעישראליהוהאלהינויהוהאחד'), "Deuteronomio incluye el Shemá");
+  assert(TORAH_BOOKS.numbers.includes('יברכךיהוהוישמרך'), "Números incluye Birkat Kohanim");
+
+  const { TORAH_BOOK_OFFSETS } = require('./torah_text.js');
+  assert(Array.isArray(TORAH_BOOK_OFFSETS) && TORAH_BOOK_OFFSETS.length === 5, "TORAH_BOOK_OFFSETS define offsets de 5 libros");
+
+  // FindELS shouldCancel aborta temprano
+  let cancelChecks = 0;
+  const cancelled = Engine.FindELS(TORAH_TEXT, 'תורה', 1, 200, {
+    shouldCancel: () => { cancelChecks++; return cancelChecks > 3; }
+  });
+  assert(Array.isArray(cancelled), "FindELS con shouldCancel retorna un arreglo (abortable)");
+  assert(cancelChecks > 3, "FindELS invoca shouldCancel durante el barrido");
 
   // 14, 15 y 16: Pruebas asíncronas de Worker, Progreso y Scoring no bloqueante
   console.log("\n=== SECCIÓN 14: MULTITHREADED ELS WORKER & MENSAJERÍA ASÍNCRONA ===");
@@ -297,6 +318,79 @@ async function runAllTests() {
   assert(typeof sampleMatch.significanceScore === 'number' && sampleMatch.significanceScore >= 0, `Coincidencia ELS incluye significanceScore >= 0 (${sampleMatch.significanceScore.toFixed(3)})`);
 
   assert(mainThreadTicks >= 0, `Demostración de no-bloqueo: hilo principal ejecutó ${mainThreadTicks} ticks de event loop mientras worker procesaba`);
+
+  console.log("\n=== SECCIÓN 17: EXPLORAR CORRELACIONES (apellido / fecha / evento) ===");
+  const Explore = require('./explore.js');
+  assert(typeof Explore.ExploreCorrelations === 'function', "explore.js exporta ExploreCorrelations");
+  assert(Explore.NAME_DICTIONARY.length >= 30, `NAME_DICTIONARY tiene al menos 30 entradas (actual: ${Explore.NAME_DICTIONARY.length})`);
+
+  const dateParsed = Explore.ParseDateQuery('14/05/1948');
+  assert(dateParsed && dateParsed.year === 1948 && dateParsed.day === 14 && dateParsed.month === 5, "ParseDateQuery entiende 14/05/1948");
+  assert(dateParsed.hebrewYearApprox === 5708, "ParseDateQuery estima año hebreo ~5708");
+
+  const cohen = Explore.ExploreCorrelations('Cohen', DB, Engine);
+  assert(cohen.queryType === 'surname' && cohen.meta.primaryHebrew === 'כהן', "Cohen resuelve a apellido כהן");
+  assert(cohen.knowledge.length > 0, "Cohen produce correlaciones en el grafo de conocimiento");
+  assert(cohen.suggestedELS.includes('כהן'), "Cohen sugiere ELS כהן");
+
+  const independence = Explore.ExploreCorrelations('14/05/1948', DB, Engine);
+  assert(independence.queryType === 'date', "14/05/1948 se clasifica como fecha");
+  assert(independence.events.some(e => e.event.year === 1948), "14/05/1948 correlaciona con la Independencia de 1948");
+
+  const oslo = Explore.ExploreCorrelations('Oslo', DB, Engine);
+  assert(oslo.events.some(e => /oslo/i.test(e.event.title)), "Oslo encuentra los Acuerdos de Oslo");
+
+  const num708 = Explore.ExploreCorrelations('708', DB, Engine);
+  assert(num708.queryType === 'number', "708 se clasifica como número");
+  assert(num708.verses.some(v => v.verse.gematria === 708), "708 encuentra Deuteronomio 32:3");
+  assert(num708.zionist.some(z => z.card.gematria === 708), "708 encuentra la tarjeta sionista Tashach");
+
+  const herzl = Explore.ExploreCorrelations('Herzl', DB, Engine);
+  assert(herzl.queryType === 'surname' && herzl.meta.primaryHebrew === 'הרצל', "Herzl resuelve a הרצל");
+  assert(herzl.events.some(e => e.event.year === 1897), "Herzl correlaciona con el Congreso de Basilea");
+
+  // Compound + year-as-date + report
+  assert(Explore.ExploreCorrelations('1948', DB, Engine).queryType === 'date', "1948 se clasifica como fecha (no solo número)");
+  assert(Explore.ExploreCorrelations('Cohen', DB, Engine).suggestedELS.length === 1 && Explore.ExploreCorrelations('Cohen', DB, Engine).suggestedELS[0] === 'כהן', "Cohen sugiere solo ELS del diccionario (sin ruido fonético)");
+
+  const compound = Explore.ExploreCorrelations('Herzl + 1897', DB, Engine);
+  assert(compound.queryType === 'compound', "Herzl + 1897 es consulta compuesta");
+  assert(compound.events.some(e => e.event.year === 1897), "Compuesta Herzl+1897 encuentra Basilea 1897");
+  assert(compound.meta.primaryHebrew === 'הרצל', "Compuesta preserva hebreo de Herzl");
+
+  const report = Explore.FormatCorrelationReport(compound);
+  assert(typeof report === 'string' && report.includes('INFORME DE CORRELACIONES') && report.includes('Herzl + 1897'), "FormatCorrelationReport genera informe de texto");
+
+  const { ExportCorrelationReport } = require('./export.js');
+  assert(typeof ExportCorrelationReport === 'function', "export.js exporta ExportCorrelationReport");
+
+  console.log("\n=== SECCIÓN 18: PERFIL PERSONAL (nombre + apellido + fecha) ===");
+  assert(typeof Explore.BuildPersonalProfile === 'function', "explore.js exporta BuildPersonalProfile");
+  assert(Explore.LookupNameDictionary('oscar') && Explore.LookupNameDictionary('oscar').hebrew === 'אוסקר', "Diccionario incluye Oscar → אוסקר");
+  assert(Explore.LookupNameDictionary('raquel') && Explore.LookupNameDictionary('raquel').hebrew === 'רחל', "Diccionario incluye Raquel → רחל");
+
+  const profile = Explore.BuildPersonalProfile({
+    givenName: 'David',
+    surname: 'Cohen',
+    birthDate: '14/05/1948'
+  }, DB, Engine);
+  assert(profile.queryType === 'profile', "David Cohen · 14/05/1948 se clasifica como perfil");
+  assert(profile.profile.givenHebrew === 'דוד', "Nombre David → דוד");
+  assert(profile.profile.surnameHebrew === 'כהן', "Apellido Cohen → כהן");
+  assert(profile.profile.fullHebrew === 'דודכהן', "Nombre completo hebreo דודכהן");
+  assert(profile.profile.fullGematria && profile.profile.fullGematria.absolute === 89, `Gematria absoluta de דודכהן es 89 (actual: ${profile.profile.fullGematria && profile.profile.fullGematria.absolute})`);
+  assert(profile.profile.dateInfo && profile.profile.dateInfo.year === 1948 && profile.profile.dateInfo.hebrewYearApprox === 5708, "Perfil estima año hebreo ~5708");
+  assert(profile.events.some(e => e.event.year === 1948), "El perfil correlaciona con la Independencia de 1948");
+  assert(Array.isArray(profile.suggestedELS) && profile.suggestedELS.includes('דודכהן'), "El perfil sugiere ELS del nombre completo");
+
+  const profileReport = Explore.FormatCorrelationReport(profile);
+  assert(
+    profileReport.includes('INFORME DE CORRELACIONES') &&
+    profileReport.includes('David') &&
+    profileReport.includes('כהן') &&
+    /Nacimiento: 14\/05\/1948/.test(profileReport),
+    "El informe de perfil incluye identidad, hebreo y fecha"
+  );
 
   console.log("\n=== RESUMEN ===");
   if (success) {

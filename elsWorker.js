@@ -152,6 +152,7 @@ function handleWorkerMessage(data) {
 
       const matches = FindELS(text, searchWord, minSkip, maxSkip, {
         onProgress,
+        shouldCancel: () => activeCancellation,
         ...options
       });
 

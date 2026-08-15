@@ -1,43 +1,58 @@
 # Torá Gematria & Decodificador Místico (Bible Code ELS)
 
-Una aplicación web interactiva y estática (deployable en Netlify / GitHub Pages) para explorar las correlaciones de Gematria, el entrelazado místico del alfabeto hebreo, la línea de tiempo del Sionismo y el motor de búsqueda del **Código de la Biblia (ELS - Equidistant Letter Sequences)** sobre Génesis 1-5.
+Una aplicación web interactiva y estática (deployable en Netlify / GitHub Pages) para explorar las correlaciones de Gematria, el entrelazado místico del alfabeto hebreo, la línea de tiempo del Sionismo y el motor de búsqueda del **Código de la Biblia (ELS - Equidistant Letter Sequences)** sobre un corpus consonántico de los **5 libros de la Torá** (~27 000 letras; Génesis amplio; Éxodo–Deuteronomio como extractos curados, con Decálogo, Shemá y Birkat Kohanim).
 
-## 🚀 Características Principales
+## Características Principales
 
 1. **Calculadora Multidimensional de Gematria**:
-   - Muestra **Estándar (Mispar Hechrah)**, **Absoluto Gadol (Sofit)**, **Ordinal (Sidri)**, **Reducido (Katan)** y **Cifrado Atbash**.
+   - Muestra **Estándar (Mispar Hechrah)**, **Absoluto Gadol (Sofit)**, **Ordinal (Sidri)**, **Reducido (Katan)** y cifrados **Atbash / Albam / Avgad**.
    - Soporta entrada directa en Hebreo y traducción fonética inteligente del Español al Hebreo.
-   - Constelación de relación relacional interactiva en HTML5 Canvas.
+   - Constelación de relación interactiva en HTML5 Canvas.
 
 2. **Descubrimientos en Tiempo Real (Grafo de Conocimiento)**:
-   - Grafo integrado con 50 conceptos clave (Nombres Divinos, Sefirot, Sionismo, Personajes Bíblicos).
+   - Grafo integrado con 57 conceptos clave (Nombres Divinos, Sefirot, Sionismo, Cábala, Personajes Bíblicos).
    - Genera tarjetas de resonancia matemática y puentes narrativos cabalísticos.
 
-3. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:
-   - Motor de búsqueda de Secuencias de Letras Equidistantes (ELS) sobre 6,877 consonantes de la Torá (Génesis 1-5).
-   - Matriz visual responsiva en orientación **RTL (Derecha a Izquierda)** con ajuste dinámico de columnas ($W = |d|$).
-   - **Buscador Automático & Crossover Density**: Identifica coincidencias ELS y resalta en tiempo real las palabras secundarias cruzadas dentro del mismo cuadrante visual.
-   - **Terminal Cyber-Mística de Escaneo**: Transición animada con logs de depuración secuenciales y lluvia de caracteres hebreos.
+3. **Explorar correlaciones (apellido / fecha / evento)**:
+   - Buscador unificado: apellido (Cohen, Herzl…), fecha (`14/05/1948` / `1948`), evento (Oslo, Balfour) o número (`708`).
+  - Consultas compuestas: `Herzl + 1897`, `Cohen y 1948`.
+  - **Perfil personal**: nombre + apellido + fecha de nacimiento → dossier unificado (gematria, año hebreo aproximado, timeline, grafo, versículos, ELS).
+  - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
+   - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
 
-4. **Línea de Tiempo del Sionismo & Comparador de Dos Palabras**:
-   - Canvas interactivo de sincronías históricas (1882 a 1993).
+4. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:
+   - Motor de búsqueda ELS sobre corpus consonántico embebido (~27k letras, 5 libros).
+   - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y **cancelación real** (terminate + `shouldCancel`).
+   - Matriz visual responsiva en orientación **RTL** con ajuste dinámico de columnas.
+   - **Crossover Density**, p-valor / significancia estadística, historial y sugerencias rápidas.
+   - Exportación **PNG** de la matriz y pestaña de **Favoritos** (LocalStorage).
+
+5. **Acrósticos (Roshei / Sofei Teivot)**:
+   - Búsqueda de acrósticos de inicio/final de palabra sobre texto hebreo libre.
+
+6. **Línea de Tiempo del Sionismo & Comparador de Dos Palabras**:
+   - Canvas interactivo de sincronías históricas (Sinaí → Oslo, 13 hitos).
    - Comparador de órbitas duales que construye un puente espiritual entre dos términos.
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 - HTML5 / CSS3 (Vanilla CSS con diseño futurista cósmico / glassmorphism)
-- JavaScript (ES6+ sin dependencias externas ni backend)
-- Sefaria API / Consonantal Torah Text (Genesis 1-5)
-- Node.js (para la suite de pruebas unitarias `test.js`)
+- JavaScript ES6+ sin dependencias externas ni backend
+- Corpus consonántico embebido en `torah_text.js` (sanitizado en carga; sin API externa)
+- Node.js (suites de pruebas `test.js` y `adversarial_test.js`)
 
-## 🧪 Pruebas Unitarias
-
-Para ejecutar el banco de pruebas automatizadas:
+## Pruebas Unitarias
 
 ```bash
-node test.js
+make check
+# equivalente:
+node test.js && node adversarial_test.js
 ```
 
-## 🌐 Despliegue en Netlify
+## Despliegue en Netlify
 
-El repositorio incluye `netlify.toml` preconfigurado. Simplemente conecta el repositorio GitHub en Netlify o arrastra la carpeta del proyecto a Netlify Drop.
+El repositorio incluye `netlify.toml` preconfigurado. Conecta el repositorio GitHub en Netlify o arrastra la carpeta del proyecto a Netlify Drop.
+
+## Arquitectura
+
+Ver [PROJECT.md](PROJECT.md) para contratos de módulos, hitos (M1–M5) y layout del código.

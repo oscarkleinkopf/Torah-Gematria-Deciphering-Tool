@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- CARGAR BASE DE DATOS Y MOTOR ---
   const DB = window.GematriaDB;
   const Engine = window.GematriaEngine;
+  const Storage = window.GematriaStorage || {};
 
   if (!DB || !Engine) {
     console.error('Error: No se pudo cargar database.js o gematria.js.');
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- ESTADO DE LA APLICACIÓN ---
   let autoScanDebounceTimer = null;
   let appState = {
-    currentTab: 'calculator',
+    currentTab: 'explore',
     inputLanguage: 'hebrew', // 'hebrew' o 'spanish'
     rawInputText: '',
     hebrewProcessedText: '',
@@ -128,33 +129,38 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- 1. ENRUTADOR INTERNO DE PESTAÑAS ---
+  function switchTab(tabId) {
+    if (!tabId) return;
+
+    navButtons.forEach(btn => btn.classList.remove('active'));
+    tabContents.forEach(tab => tab.classList.remove('active'));
+
+    const btn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+    const tab = document.getElementById(tabId);
+    if (btn) btn.classList.add('active');
+    if (tab) tab.classList.add('active');
+
+    appState.currentTab = tabId;
+
+    if (tabId === 'calculator') {
+      resizeCanvas();
+      updateRelationGraph();
+    } else if (tabId === 'comparison') {
+      resizeComparisonCanvas();
+    } else if (tabId === 'zionism') {
+      resizeTimelineCanvas();
+    } else if (tabId === 'biblecode') {
+      if (bibleCodeState.activeMatch) {
+        renderBibleCodeMatrix();
+      }
+    } else if (tabId === 'favorites') {
+      renderFavoritesTab();
+    }
+  }
+
   navButtons.forEach(button => {
     button.addEventListener('click', () => {
-      const tabId = button.getAttribute('data-tab');
-      
-      // Actualizar botones de navegación
-      navButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-      
-      // Actualizar vistas
-      tabContents.forEach(tab => tab.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      
-      appState.currentTab = tabId;
-
-      // Resize y render según corresponda
-      if (tabId === 'calculator') {
-        resizeCanvas();
-        updateRelationGraph();
-      } else if (tabId === 'comparison') {
-        resizeComparisonCanvas();
-      } else if (tabId === 'zionism') {
-        resizeTimelineCanvas();
-      } else if (tabId === 'biblecode') {
-        if (bibleCodeState.activeMatch) {
-          renderBibleCodeMatrix();
-        }
-      }
+      switchTab(button.getAttribute('data-tab'));
     });
   });
 
@@ -395,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="discovery-value-bar">
           <span>Cruces: <strong>${crossovers.length}</strong></span>
-          <span style="font-size: 0.75rem; color: var(--purple-accent); font-weight: bold;">Torah (Génesis)</span>
+          <span style="font-size: 0.75rem; color: var(--purple-accent); font-weight: bold;">Torá (5 libros)</span>
         </div>
       `;
 
@@ -540,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
     if (!text) return;
 
     // Buscar coincidencias ELS en un rango estándar rápido de saltos (2 a 120)
@@ -610,14 +616,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDiscoveriesPanel(appState.gematriaResult);
   }
 
-  // Navegar a otra pestaña
-  function switchTab(tabId) {
-    const button = Array.from(navButtons).find(btn => btn.getAttribute('data-tab') === tabId);
-    if (button) {
-      button.click();
-    }
-  }
-
   // Animación interactiva del Matrix Scanner
   function triggerMatrixScannerAnimation(match, crossovers, callback) {
     const overlay = document.getElementById('matrixScannerOverlay');
@@ -648,12 +646,16 @@ document.addEventListener('DOMContentLoaded', () => {
       matrixBg.textContent = randomHebrew;
     }, 45);
 
+    const corpusLen = (typeof window.TORAH_TEXT === 'string' && window.TORAH_TEXT.length)
+      ? window.TORAH_TEXT.length.toLocaleString('es-ES')
+      : '26.371';
+    const kgCount = (DB.KNOWLEDGE_GRAPH && DB.KNOWLEDGE_GRAPH.length) || 50;
     const logs = [
       { text: '> INICIANDO DECODIFICADOR AUTOMÁTICO EN LA TORÁ...', delay: 0 },
-      { text: `> Cargando Génesis 1-5: 6,877 consonantes puras cargadas en memoria.`, delay: 200 },
+      { text: `> Cargando corpus de 5 libros: ${corpusLen} consonantes puras en memoria.`, delay: 200 },
       { text: `> Escaneando secuencias equidistantes para: "${match.word}"...`, delay: 400 },
       { text: `> ¡Palabra hallada! Salto constante = ${match.skip} letras (Letra de inicio: #${match.start}).`, delay: 650, class: 'info' },
-      { text: `> Buscando cruces en el cuadrante con el Grafo de 50 conceptos...`, delay: 850 },
+      { text: `> Buscando cruces en el cuadrante con el Grafo de ${kgCount} conceptos...`, delay: 850 },
       { text: `> ¡Detección de cruces completada! ${crossovers.length} correspondencias identificadas.`, delay: 1050, class: 'success' },
       { text: `> Configurando ancho de columnas de la cuadrícula a ${Math.abs(match.skip)}. Renderizando...`, delay: 1250 }
     ];
@@ -1760,8 +1762,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // Mapear índice global a versículo aproximado de Génesis 1-5
+  // Mapear índice global a libro + posición aproximada en el corpus expandido
   function getVerseContext(globalIdx) {
+    const offsets = window.TORAH_BOOK_OFFSETS;
+    if (Array.isArray(offsets) && offsets.length) {
+      for (const book of offsets) {
+        if (globalIdx >= book.offset && globalIdx < book.offset + book.length) {
+          const local = globalIdx - book.offset;
+          const section = Math.floor(local / 500) + 1;
+          return `${book.label} ~§${section} (letra #${globalIdx})`;
+        }
+      }
+      return `Torá (letra #${globalIdx})`;
+    }
+
+    // Fallback legacy: Génesis 1–5 aproximado
     const boundaries = [
       { ch: 1, limit: 1677, verses: 31, rate: 1677 / 31, offset: 0 },
       { ch: 2, limit: 2912, verses: 25, rate: 1235 / 25, offset: 1677 },
@@ -1769,7 +1784,6 @@ document.addEventListener('DOMContentLoaded', () => {
       { ch: 4, limit: 5452, verses: 26, rate: 1229 / 26, offset: 4223 },
       { ch: 5, limit: 6877, verses: 32, rate: 1425 / 32, offset: 5452 }
     ];
-    
     for (let b of boundaries) {
       if (globalIdx < b.limit) {
         const relativeIdx = globalIdx - b.offset;
@@ -1777,27 +1791,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return `Génesis ${b.ch}:${verseNum}`;
       }
     }
-    return "Génesis 5:32";
+    return `Torá (letra #${globalIdx})`;
   }
 
   // --- FASE 5: HISTORIAL Y SUGERENCIAS RÁPIDAS DE BÚSQUEDA ELS ---
-  function getELSSearchHistory() {
-    try {
-      return JSON.parse(localStorage.getItem('els_search_history') || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
   function saveELSSearchHistory(query) {
-    if (!query || query.trim().length === 0) return;
-    let history = getELSSearchHistory();
-    history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
-    history.unshift(query);
-    if (history.length > 8) history = history.slice(0, 8);
-    try {
-      localStorage.setItem('els_search_history', JSON.stringify(history));
-    } catch (e) {}
+    if (Storage.SaveELSSearchHistory) Storage.SaveELSSearchHistory(query);
     renderELSSearchHistory();
   }
 
@@ -1806,7 +1805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('elsHistoryChips');
     if (!section || !container) return;
 
-    const history = getELSSearchHistory();
+    const history = Storage.GetELSSearchHistory ? Storage.GetELSSearchHistory() : [];
     if (history.length === 0) {
       section.style.display = 'none';
       return;
@@ -1830,7 +1829,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearELSHistory = document.getElementById('btnClearELSHistory');
   if (btnClearELSHistory) {
     btnClearELSHistory.addEventListener('click', () => {
-      localStorage.removeItem('els_search_history');
+      if (Storage.ClearELSSearchHistory) Storage.ClearELSSearchHistory();
       renderELSSearchHistory();
     });
   }
@@ -1879,6 +1878,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (msg.action === 'elsResults') {
       hideELSProgressBar();
       renderELSResultsList(msg.matches, msg.searchWord, [msg.searchWord]);
+    } else if (msg.action === 'cancelled') {
+      hideELSProgressBar();
+      activeELSRequestId = null;
+      elsResultsList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:1rem;font-style:italic;">Búsqueda cancelada.</div>';
     } else if (msg.action === 'error') {
       hideELSProgressBar();
       elsResultsList.innerHTML = `<div style="color:#e74c3c;text-align:center;padding:1.5rem;">Error en el worker: ${msg.error}</div>`;
@@ -1907,7 +1910,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancel = document.getElementById('btnCancelELS');
     if (btnCancel) {
       btnCancel.addEventListener('click', () => {
-        if (elsWorkerInstance) elsWorkerInstance.postMessage({ action: 'cancel', requestId: activeELSRequestId });
+        const cancelledId = activeELSRequestId;
+        activeELSRequestId = null;
+        if (elsWorkerInstance) {
+          try {
+            elsWorkerInstance.postMessage({ action: 'cancel', requestId: cancelledId });
+          } catch (e) {}
+          // Hard-stop: terminate worker so FindELS cannot keep burning CPU
+          try {
+            elsWorkerInstance.terminate();
+          } catch (e) {}
+          elsWorkerInstance = null;
+        }
         hideELSProgressBar();
         elsResultsList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:1rem;font-style:italic;">Búsqueda cancelada.</div>';
       });
@@ -1934,7 +1948,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const minSkip = parseInt(numMinSkip.value, 10) || 2;
     const maxSkip = parseInt(numMaxSkip.value, 10) || 120;
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
 
     if (!text) {
       elsResultsList.innerHTML = `
@@ -1969,6 +1983,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         worker.postMessage({
           action: 'searchELS',
+          text: window.TORAH_TEXT || window.TorahText || '',
           searchWord: searchHebrew,
           minSkip,
           maxSkip,
@@ -2076,7 +2091,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bibleCodeState.activeMatch) {
       const match = bibleCodeState.activeMatch;
       const w = bibleCodeState.matrixWidth;
-      const text = window.TorahText || "";
+      const text = window.TORAH_TEXT || window.TorahText || "";
       const minIdx = Math.min(...match.indices);
       const maxIdx = Math.max(...match.indices);
       const startRow = Math.floor(minIdx / w);
@@ -2095,7 +2110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function searchSecondaryMatches(minIdx, maxIdx) {
     const matches = [];
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
     
     DB.KNOWLEDGE_GRAPH.forEach(entry => {
       if (entry.hebrew === bibleCodeState.primaryWord) return;
@@ -2148,7 +2163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const match = bibleCodeState.activeMatch;
     if (!match) return;
 
-    const text = window.TorahText || "";
+    const text = window.TORAH_TEXT || window.TorahText || "";
     const w = bibleCodeState.matrixWidth;
 
     const matchIndices = match.indices;
@@ -2318,133 +2333,99 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportMatrixPNG = document.getElementById('btnExportMatrixPNG');
   if (btnExportMatrixPNG) {
     btnExportMatrixPNG.addEventListener('click', () => {
-      const table = matrixContainer.querySelector('.bible-code-matrix');
-      if (!table) return;
-
+      if (typeof window.ExportMatrixAsPNG !== 'function') return;
       const match = bibleCodeState.activeMatch;
-      const wordLabel = match ? match.word : 'matriz';
-
-      // Crear canvas temporal con estilo
-      const W = table.offsetWidth + 40;
-      const H = table.offsetHeight + 80;
-      const canvas = document.createElement('canvas');
-      canvas.width = W * 2;
-      canvas.height = H * 2;
-      const ctx = canvas.getContext('2d');
-
-      // Fondo oscuro
-      ctx.scale(2, 2);
-      ctx.fillStyle = '#05040a';
-      ctx.fillRect(0, 0, W, H);
-
-      // Título
-      ctx.fillStyle = '#d4af37';
-      ctx.font = 'bold 13px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Código de la Biblia ELS — "${wordLabel}" | Salto: ${match ? match.skip : '?'} | Torah Gematria Decipher`, W / 2, 20);
-
-      // Usar html2canvas-like approach: renderizar via SVG foreignObject
-      const svgData = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${W - 40}" height="${H - 40}">
-          <foreignObject width="100%" height="100%">
-            <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: monospace; font-size: 11px; color: #ccc; background: #05040a; padding: 4px;">
-              ${table.outerHTML}
-            </div>
-          </foreignObject>
-        </svg>`;
-
-      const img = new Image();
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = () => {
-        ctx.drawImage(img, 20, 30);
-
-        // Pie de página
-        ctx.fillStyle = 'rgba(212,175,55,0.6)';
-        ctx.font = '9px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Generado por GematriaDecipher — Torah Gematria Deciphering Tool', W / 2, H - 8);
-
-        URL.revokeObjectURL(url);
-
-        // Descargar
-        const link = document.createElement('a');
-        link.download = `ELS_${wordLabel.replace(/[^א-ת\w]/g, '_')}_skip${match ? match.skip : ''}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        // Fallback: solo descargar el canvas con fondo
-        const link = document.createElement('a');
-        link.download = `ELS_matrix.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      };
-
-      img.src = url;
+      window.ExportMatrixAsPNG(matrixContainer, undefined, match || null);
     });
   }
 
-  // --- MÓDULO: FAVORITOS ELS (localStorage) ---
-  function getFavorites() {
-    try { return JSON.parse(localStorage.getItem('els_favorites') || '[]'); } catch(e) { return []; }
-  }
-
-  function saveFavorites(favs) {
-    try { localStorage.setItem('els_favorites', JSON.stringify(favs)); } catch(e) {}
-  }
-
+  // --- MÓDULO: FAVORITOS ELS (storage.js) ---
   function renderFavoritesTab() {
     const container = document.getElementById('favoritesContainer');
     if (!container) return;
-    const favs = getFavorites();
+    const favs = Storage.GetFavorites ? Storage.GetFavorites() : [];
     if (favs.length === 0) {
-      container.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 3rem 0; grid-column: 1/-1;">No hay favoritos guardados. Busca palabras en el Código de la Biblia y guarda tus hallazgos con ⭐.</div>';
+      container.innerHTML = '<div class="favorites-empty">No hay favoritos guardados. Guarda hallazgos ELS o correlaciones desde Explorar.</div>';
       return;
     }
 
     container.innerHTML = '';
     favs.forEach((fav, idx) => {
       const card = document.createElement('div');
-      card.className = 'glass-card';
-      card.style.cssText = 'padding: 1rem; border: 1px solid rgba(212,175,55,0.2); position: relative;';
-      const sigScore = (fav.significanceScore || 0).toFixed(2);
-      const sigClass = fav.significanceScore > 5 ? 'color: #2ecc71;' : fav.significanceScore > 2 ? 'color: var(--gold-primary);' : 'color: var(--text-secondary);';
-      card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-          <span style="font-family: var(--font-hebrew); font-size: 1.6rem; color: var(--gold-primary);">${fav.word}</span>
-          <button data-idx="${idx}" class="fav-remove-btn" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem;" title="Eliminar">✕</button>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
-          Salto: <strong style="color: var(--text-primary);">${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
-        </div>
-        <div style="font-size: 0.78rem; ${sigClass}">
-          Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
-        </div>
-        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 0.4rem;">${new Date(fav.savedAt).toLocaleDateString()}</div>
-        <button data-idx="${idx}" class="fav-reload-btn" style="margin-top: 0.7rem; width: 100%; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.25); color: var(--gold-primary); padding: 0.3rem; border-radius: 10px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s;">🔍 Volver a buscar</button>
-      `;
+      card.className = 'glass-card favorite-card';
+      if (fav.type === 'explore') {
+        const data = fav.data || {};
+        card.innerHTML = `
+          <div class="favorite-card-header">
+            <span class="favorite-word" style="font-family:var(--font-serif);font-size:1.1rem;">🔎 ${fav.title || fav.word}</span>
+            <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
+          </div>
+          <div class="favorite-meta">Correlación · ${fav.verse || data.queryType || 'explore'}</div>
+          <div class="favorite-sig sig-mid">
+            ${(data.events || []).slice(0, 2).join(' · ') || 'Sin eventos'} ${(data.primaryHebrew ? '· ' + data.primaryHebrew : '')}
+          </div>
+          <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+          <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="explore">🔍 Volver a explorar</button>
+        `;
+      } else if (fav.type === 'profile') {
+        const data = fav.data || {};
+        const pr = data.profile || {};
+        card.innerHTML = `
+          <div class="favorite-card-header">
+            <span class="favorite-word" style="font-family:var(--font-serif);font-size:1.1rem;">👤 ${fav.title || fav.word}</span>
+            <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
+          </div>
+          <div class="favorite-meta">Perfil · ${escapeHtml([pr.givenName, pr.surname].filter(Boolean).join(' '))} ${pr.birthDate ? '· ' + escapeHtml(pr.birthDate) : ''}</div>
+          <div class="favorite-sig sig-mid">
+            ${(data.events || []).slice(0, 2).join(' · ') || 'Sin eventos'} ${(data.primaryHebrew ? '· ' + data.primaryHebrew : '')}
+          </div>
+          <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+          <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="profile">🔍 Abrir perfil</button>
+        `;
+      } else {
+        const sigScore = (fav.significanceScore || 0).toFixed(2);
+        const sigClass = fav.significanceScore > 5 ? 'sig-high' : fav.significanceScore > 2 ? 'sig-mid' : 'sig-low';
+        card.innerHTML = `
+          <div class="favorite-card-header">
+            <span class="favorite-word">${fav.word}</span>
+            <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
+          </div>
+          <div class="favorite-meta">
+            Salto: <strong>${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
+          </div>
+          <div class="favorite-sig ${sigClass}">
+            Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
+          </div>
+          <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+          <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="els">🔍 Volver a buscar</button>
+        `;
+      }
       container.appendChild(card);
     });
 
-    // Eventos eliminar
     container.querySelectorAll('.fav-remove-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const favs2 = getFavorites();
-        favs2.splice(parseInt(btn.dataset.idx, 10), 1);
-        saveFavorites(favs2);
+        if (Storage.RemoveFavorite) Storage.RemoveFavorite(parseInt(btn.dataset.idx, 10));
         renderFavoritesTab();
       });
     });
 
-    // Eventos volver a buscar
     container.querySelectorAll('.fav-reload-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const fav = getFavorites()[parseInt(btn.dataset.idx, 10)];
+        const fav = (Storage.GetFavorites ? Storage.GetFavorites() : [])[parseInt(btn.dataset.idx, 10)];
         if (!fav) return;
+        if (fav.type === 'profile' || btn.getAttribute('data-fav-type') === 'profile') {
+          const pr = (fav.data && fav.data.profile) || {};
+          switchTab('explore');
+          fillProfileForm(pr);
+          runProfileBuild(pr);
+          return;
+        }
+        if (fav.type === 'explore' || btn.getAttribute('data-fav-type') === 'explore') {
+          switchTab('explore');
+          runExploreSearch(fav.title || fav.word);
+          return;
+        }
         switchTab('biblecode');
         txtSearchELS.value = fav.word;
         handleELSSearch();
@@ -2452,30 +2433,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function switchTab(tabId) {
-    navButtons.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(t => t.classList.remove('active'));
-    const btn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
-    const tab = document.getElementById(tabId);
-    if (btn) btn.classList.add('active');
-    if (tab) tab.classList.add('active');
-    appState.currentTab = tabId;
-    if (tabId === 'favorites') renderFavoritesTab();
-  }
-
   const btnSaveELSFavorite = document.getElementById('btnSaveELSFavorite');
   if (btnSaveELSFavorite) {
     btnSaveELSFavorite.addEventListener('click', () => {
       const match = bibleCodeState.activeMatch;
-      if (!match) return;
-      const favs = getFavorites();
-      const already = favs.find(f => f.word === match.word && f.skip === match.skip && f.start === match.start);
-      if (already) {
-        btnSaveELSFavorite.textContent = '✅ Ya guardado';
-        setTimeout(() => { btnSaveELSFavorite.textContent = '⭐ Guardar'; }, 2000);
-        return;
-      }
-      favs.unshift({
+      if (!match || !Storage.SaveFavorite) return;
+      const before = Storage.GetFavorites ? Storage.GetFavorites().length : 0;
+      Storage.SaveFavorite({
         word: match.word,
         skip: match.skip,
         start: match.start,
@@ -2485,9 +2449,8 @@ document.addEventListener('DOMContentLoaded', () => {
         verse: getVerseContext(match.start),
         savedAt: new Date().toISOString()
       });
-      if (favs.length > 50) favs.pop();
-      saveFavorites(favs);
-      btnSaveELSFavorite.textContent = '✅ Guardado';
+      const after = Storage.GetFavorites ? Storage.GetFavorites().length : 0;
+      btnSaveELSFavorite.textContent = after === before ? '✅ Ya guardado' : '✅ Guardado';
       setTimeout(() => { btnSaveELSFavorite.textContent = '⭐ Guardar'; }, 2000);
     });
   }
@@ -2496,20 +2459,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnClearAllFavorites) {
     btnClearAllFavorites.addEventListener('click', () => {
       if (confirm('¿Eliminar todos los favoritos guardados?')) {
-        localStorage.removeItem('els_favorites');
+        if (Storage.ClearFavorites) Storage.ClearFavorites();
         renderFavoritesTab();
       }
     });
   }
-
-  // Renderizar favoritos cuando se navega a ese tab
-  navButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      if (button.getAttribute('data-tab') === 'favorites') {
-        renderFavoritesTab();
-      }
-    });
-  });
 
   // --- MÓDULO: ACRÓSTICOS (ROSHEI / SOFEI TEIVOT) ---
   const txtAcrosticsInput = document.getElementById('txtAcrosticsInput');
@@ -2598,6 +2552,434 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter' && e.ctrlKey) btnFindAcrostics.click();
       });
     }
+  }
+
+  // --- MÓDULO: EXPLORAR CORRELACIONES (apellido / fecha / evento) ---
+  const Explore = window.GematriaExplore;
+  const txtExploreQuery = document.getElementById('txtExploreQuery');
+  const btnExploreSearch = document.getElementById('btnExploreSearch');
+  const exploreResults = document.getElementById('exploreResults');
+  const exploreStatus = document.getElementById('exploreStatus');
+  const exploreHistoryEl = document.getElementById('exploreHistory');
+  let lastExploreData = null;
+
+  function fillProfileForm(pr) {
+    pr = pr || {};
+    const givenEl = document.getElementById('txtProfileGiven');
+    const surnameEl = document.getElementById('txtProfileSurname');
+    const dateEl = document.getElementById('txtProfileDate');
+    const extraEl = document.getElementById('txtProfileExtra');
+    if (givenEl) givenEl.value = pr.givenName || '';
+    if (surnameEl) surnameEl.value = pr.surname || '';
+    if (dateEl) dateEl.value = pr.birthDate || '';
+    if (extraEl) extraEl.value = pr.extra || '';
+  }
+
+  function runProfileBuild(pr) {
+    pr = pr || {};
+    const givenName = String(pr.givenName || '').trim();
+    const surname = String(pr.surname || '').trim();
+    const birthDate = String(pr.birthDate || '').trim();
+    const extra = String(pr.extra || '').trim();
+
+    if (!Explore || typeof Explore.BuildPersonalProfile !== 'function') {
+      if (exploreStatus) exploreStatus.textContent = 'Motor de exploración no disponible.';
+      return;
+    }
+    if (!givenName && !surname) {
+      lastExploreData = null;
+      renderExploreResults({
+        query: '',
+        queryType: 'profile',
+        error: 'Indica al menos un nombre o un apellido.',
+        knowledge: [],
+        events: [],
+        zionist: [],
+        verses: []
+      });
+      return;
+    }
+
+    const data = Explore.BuildPersonalProfile({
+      givenName,
+      surname,
+      birthDate,
+      extra
+    }, DB, Engine);
+    lastExploreData = data;
+    if (Storage.SaveExploreHistory) Storage.SaveExploreHistory(data.query);
+    renderExploreHistory();
+    renderExploreResults(data);
+    if (exploreResults) exploreResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderExploreHistory() {
+    if (!exploreHistoryEl || !Storage.GetExploreHistory) return;
+    const history = Storage.GetExploreHistory();
+    if (!history.length) {
+      exploreHistoryEl.style.display = 'none';
+      exploreHistoryEl.innerHTML = '';
+      return;
+    }
+    exploreHistoryEl.style.display = 'flex';
+    exploreHistoryEl.innerHTML = '<span class="explore-history-label">Recientes:</span>' +
+      history.map(q => `<button type="button" class="explore-chip explore-history-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('') +
+      '<button type="button" class="explore-chip explore-history-clear" id="btnClearExploreHistory" title="Limpiar historial">✕</button>';
+    exploreHistoryEl.querySelectorAll('.explore-history-chip').forEach(chip => {
+      chip.addEventListener('click', () => runExploreSearch(chip.getAttribute('data-q')));
+    });
+    const clearBtn = document.getElementById('btnClearExploreHistory');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (Storage.ClearExploreHistory) Storage.ClearExploreHistory();
+        renderExploreHistory();
+      });
+    }
+  }
+
+  function runExploreSearch(rawQuery) {
+    if (!Explore || typeof Explore.ExploreCorrelations !== 'function') {
+      if (exploreStatus) exploreStatus.textContent = 'Motor de exploración no disponible.';
+      return;
+    }
+    const query = (rawQuery != null ? rawQuery : (txtExploreQuery && txtExploreQuery.value) || '').trim();
+    if (txtExploreQuery) txtExploreQuery.value = query;
+    if (!query) {
+      if (exploreStatus) exploreStatus.textContent = 'Escribe un apellido, fecha, evento o número. También: «Herzl + 1897».';
+      if (exploreResults) exploreResults.innerHTML = '';
+      lastExploreData = null;
+      return;
+    }
+
+    if (Storage.SaveExploreHistory) Storage.SaveExploreHistory(query);
+    renderExploreHistory();
+
+    const data = Explore.ExploreCorrelations(query, DB, Engine);
+    lastExploreData = data;
+    renderExploreResults(data);
+  }
+
+  function renderExploreResults(data) {
+    if (!exploreResults) return;
+    const meta = data.meta || {};
+    const typeLabels = {
+      surname: 'Apellido',
+      name: 'Nombre',
+      date: 'Fecha',
+      event: 'Evento',
+      number: 'Número',
+      concept: 'Concepto',
+      hebrew: 'Hebreo',
+      text: 'Texto',
+      compound: 'Compuesta',
+      profile: 'Perfil personal'
+    };
+
+    if (data.error) {
+      if (exploreStatus) exploreStatus.textContent = data.error;
+      exploreResults.innerHTML = `<div class="explore-empty">${escapeHtml(data.error)}</div>`;
+      return;
+    }
+
+    const knowledge = data.knowledge || [];
+    const events = data.events || [];
+    const zionist = data.zionist || [];
+    const verses = data.verses || [];
+    const total = knowledge.length + events.length + zionist.length + verses.length;
+
+    if (exploreStatus) {
+      const he = meta.primaryHebrew
+        ? ` · Hebreo: <span style="font-family:var(--font-hebrew)">${escapeHtml(meta.primaryHebrew)}</span>`
+        : '';
+      const g = meta.primaryGematria && meta.primaryGematria.absolute
+        ? ` · Gematria: <strong>${meta.primaryGematria.absolute}</strong>`
+        : (meta.numbers && meta.numbers.length ? ` · Números: ${meta.numbers.slice(0, 5).join(', ')}` : '');
+      exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g} · ${total} correlación(es)`;
+    }
+
+    if (total === 0 && !(data.suggestedELS && data.suggestedELS.length) && !data.profile) {
+      exploreResults.innerHTML = '<div class="explore-empty">Sin correlaciones directas. Prueba otro apellido, una fecha (ej. 1948), un evento (ej. Oslo) o una búsqueda compuesta (Herzl + 1897).</div>';
+      return;
+    }
+
+    let html = '';
+
+    if (data.profile) {
+      const p = data.profile;
+      const g = p.fullGematria || p.givenGematria || p.surnameGematria;
+      html += `<div class="profile-identity">
+        <div>
+          <div class="profile-name">${escapeHtml(p.displayName)}</div>
+          ${p.birthDate ? `<div class="meta">Nacimiento: ${escapeHtml(p.birthDate)}${p.dateInfo && p.dateInfo.hebrewYearApprox ? ' ≈ HE ~' + p.dateInfo.hebrewYearApprox : ''}</div>` : ''}
+          ${p.extra ? `<div class="meta">Extra: ${escapeHtml(p.extra)}</div>` : ''}
+        </div>
+        ${p.fullHebrew ? `<div class="he">${escapeHtml(p.givenHebrew || '')} ${escapeHtml(p.surnameHebrew || '')}</div>` : ''}
+        <div class="profile-gem-pills">
+          ${p.givenHebrew ? `<span class="profile-gem-pill">Nombre <span class="he" style="font-size:1rem;">${escapeHtml(p.givenHebrew)}</span> <strong>${p.givenGematria ? p.givenGematria.absolute : ''}</strong></span>` : ''}
+          ${p.surnameHebrew ? `<span class="profile-gem-pill">Apellido <span class="he" style="font-size:1rem;">${escapeHtml(p.surnameHebrew)}</span> <strong>${p.surnameGematria ? p.surnameGematria.absolute : ''}</strong></span>` : ''}
+          ${g ? `<span class="profile-gem-pill">Completo Abs <strong>${g.absolute}</strong> · Ord <strong>${g.ordinal}</strong> · Red <strong>${g.reduced}</strong></span>` : ''}
+        </div>
+      </div>`;
+      if (total === 0 && !(data.suggestedELS && data.suggestedELS.length)) {
+        html += '<div class="explore-empty">Identidad calculada, pero sin correlaciones directas en el grafo o la línea de tiempo. Prueba un término extra (Israel, Oslo, Sión…).</div>';
+      }
+    }
+
+    html += `<div class="explore-actions explore-toolbar">
+      <button type="button" class="explore-action-btn" id="btnExportExploreReport">📄 Exportar informe</button>
+      <button type="button" class="explore-action-btn" id="btnSaveExploreFavorite">⭐ Guardar correlación</button>
+    </div>`;
+
+    if (meta.nameEntry || meta.dateInfo || meta.primaryGematria || data.queryType === 'compound') {
+      html += '<div class="explore-summary-bar">';
+      if (data.queryType === 'compound' && meta.parts) {
+        html += `<span>Partes: <strong>${escapeHtml(meta.parts.map(p => p.query).join(' + '))}</strong></span>`;
+      }
+      if (meta.nameEntry) {
+        html += `<span>Diccionario: <strong>${escapeHtml(meta.nameEntry.note || meta.nameEntry.id)}</strong></span>`;
+      }
+      if (meta.dateInfo) {
+        html += `<span>Año: <strong>${meta.dateInfo.year}</strong>`;
+        if (meta.dateInfo.hebrewYearApprox) html += ` ≈ hebreo ~${meta.dateInfo.hebrewYearApprox}`;
+        html += '</span>';
+      }
+      if (meta.primaryGematria) {
+        html += `<span>Abs ${meta.primaryGematria.absolute} · Ord ${meta.primaryGematria.ordinal} · Red ${meta.primaryGematria.reduced}</span>`;
+      }
+      html += '</div>';
+    }
+
+    if (data.events.length) {
+      html += '<div><div class="explore-section-title">Línea de tiempo</div><div class="explore-grid">';
+      data.events.slice(0, 8).forEach((hit, idx) => {
+        const ev = hit.event;
+        html += `
+          <div class="explore-card">
+            <h4>${escapeHtml(ev.title)}</h4>
+            <div class="meta">${escapeHtml(ev.label)} · ${escapeHtml(ev.hebrewYear || '')}</div>
+            <div class="meta">${escapeHtml(ev.desc)}</div>
+            <div class="reasons">${escapeHtml((hit.reasons || []).join(' · '))}</div>
+            <div class="explore-actions">
+              <button type="button" class="explore-action-btn" data-explore-els="${idx}" data-els-terms="${escapeHtml((ev.searchTerms || []).join(','))}">Buscar ELS</button>
+              <button type="button" class="explore-action-btn" data-explore-zionism="1">Ver timeline</button>
+            </div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.knowledge.length) {
+      html += '<div><div class="explore-section-title">Grafo de conocimiento</div><div class="explore-grid">';
+      data.knowledge.slice(0, 12).forEach(corr => {
+        const e = corr.entry;
+        const matchDesc = (corr.matches || []).map(m => m.desc).join(' · ');
+        html += `
+          <div class="explore-card">
+            <div class="he">${escapeHtml(e.hebrew)}</div>
+            <h4>${escapeHtml(e.spanish)}</h4>
+            <div class="meta">${'⭐'.repeat(corr.stars || 1)} · ${escapeHtml(e.category || '')}</div>
+            <div class="meta">${escapeHtml((e.mysticalNote || '').slice(0, 160))}${(e.mysticalNote || '').length > 160 ? '…' : ''}</div>
+            <div class="reasons">${escapeHtml(matchDesc)}</div>
+            <div class="explore-actions">
+              <button type="button" class="explore-action-btn" data-explore-calc="${escapeHtml(e.hebrew)}">Abrir en calculadora</button>
+            </div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.zionist.length) {
+      html += '<div><div class="explore-section-title">Correlaciones sionistas</div><div class="explore-grid">';
+      data.zionist.slice(0, 6).forEach(hit => {
+        const c = hit.card;
+        html += `
+          <div class="explore-card">
+            <div class="he">${escapeHtml(c.hebrew)}</div>
+            <h4>${escapeHtml(c.concept)}</h4>
+            <div class="meta">Gematria ${c.gematria}</div>
+            <div class="meta">${escapeHtml((c.mysticalConnection || '').slice(0, 160))}…</div>
+            <div class="reasons">${escapeHtml((hit.reasons || []).join(' · '))}</div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.verses.length) {
+      html += '<div><div class="explore-section-title">Versículos por valor</div><div class="explore-grid">';
+      data.verses.forEach(hit => {
+        const v = hit.verse;
+        html += `
+          <div class="explore-card">
+            <h4>${escapeHtml(v.reference)}</h4>
+            <div class="he">${escapeHtml(v.hebrew)}</div>
+            <div class="meta">${escapeHtml(v.translation)}</div>
+            <div class="reasons">Gematria ${v.gematria}</div>
+          </div>`;
+      });
+      html += '</div></div>';
+    }
+
+    if (data.suggestedELS && data.suggestedELS.length) {
+      html += `
+        <div>
+          <div class="explore-section-title">Código de la Biblia (ELS)</div>
+          <p class="meta" style="margin-bottom:0.6rem;color:var(--text-secondary);font-size:0.85rem;">
+            Lanza una búsqueda ELS con los términos sugeridos a partir de tu consulta.
+          </p>
+          <div class="explore-actions">
+            <button type="button" class="explore-action-btn" id="btnExploreRunELS" data-els-terms="${escapeHtml(data.suggestedELS.join(','))}">
+              Buscar ELS: ${escapeHtml(data.suggestedELS.join(', '))}
+            </button>
+          </div>
+        </div>`;
+    }
+
+    exploreResults.innerHTML = html;
+
+    const btnExport = document.getElementById('btnExportExploreReport');
+    if (btnExport) {
+      btnExport.addEventListener('click', () => {
+        const report = Explore.FormatCorrelationReport
+          ? Explore.FormatCorrelationReport(data)
+          : '';
+        if (!report) return;
+        const safe = String(data.query || 'consulta').replace(/[^\wא-ת\-]+/g, '_').slice(0, 40);
+        if (typeof window.ExportCorrelationReport === 'function') {
+          window.ExportCorrelationReport(report, `correlacion_${safe}.txt`);
+        } else {
+          const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `correlacion_${safe}.txt`;
+          a.click();
+        }
+        btnExport.textContent = '✅ Informe descargado';
+        setTimeout(() => { btnExport.textContent = '📄 Exportar informe'; }, 2000);
+      });
+    }
+
+    const btnSaveExplore = document.getElementById('btnSaveExploreFavorite');
+    if (btnSaveExplore && Storage.SaveFavorite) {
+      btnSaveExplore.addEventListener('click', () => {
+        const summary = {
+          events: (data.events || []).slice(0, 5).map(h => h.event.title),
+          knowledge: (data.knowledge || []).slice(0, 5).map(c => c.entry.spanish),
+          suggestedELS: data.suggestedELS || [],
+          queryType: data.queryType,
+          primaryHebrew: meta.primaryHebrew || '',
+          absolute: meta.primaryGematria ? meta.primaryGematria.absolute : null
+        };
+        const before = Storage.GetFavorites().length;
+        Storage.SaveFavorite({
+          id: data.queryType === 'profile'
+            ? `profile|${(data.profile && data.profile.displayName) || data.query}|${(data.profile && data.profile.birthDate) || ''}`
+            : `explore|${data.query}`,
+          type: data.queryType === 'profile' ? 'profile' : 'explore',
+          title: data.query,
+          word: data.query,
+          skip: '—',
+          start: '—',
+          verse: meta.primaryHebrew || data.queryType,
+          significanceScore: data.events.length + data.knowledge.length,
+          pValue: null,
+          data: data.queryType === 'profile' ? {
+            profile: {
+              givenName: data.profile.givenName,
+              surname: data.profile.surname,
+              birthDate: data.profile.birthDate,
+              extra: data.profile.extra
+            },
+            events: (data.events || []).slice(0, 5).map(h => h.event.title),
+            knowledge: (data.knowledge || []).slice(0, 5).map(c => c.entry.spanish),
+            suggestedELS: data.suggestedELS || [],
+            queryType: 'profile',
+            primaryHebrew: meta.primaryHebrew || '',
+            absolute: meta.primaryGematria ? meta.primaryGematria.absolute : null
+          } : summary,
+          savedAt: new Date().toISOString()
+        });
+        const after = Storage.GetFavorites().length;
+        btnSaveExplore.textContent = after === before ? '✅ Ya guardado' : '✅ Guardado';
+        setTimeout(() => { btnSaveExplore.textContent = '⭐ Guardar correlación'; }, 2000);
+      });
+    }
+
+    exploreResults.querySelectorAll('[data-els-terms]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const terms = btn.getAttribute('data-els-terms') || '';
+        if (!terms) return;
+        switchTab('biblecode');
+        if (txtSearchELS) {
+          txtSearchELS.value = terms;
+          handleELSSearch();
+        }
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-zionism]').forEach(btn => {
+      btn.addEventListener('click', () => switchTab('zionism'));
+    });
+
+    exploreResults.querySelectorAll('[data-explore-calc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const he = btn.getAttribute('data-explore-calc') || '';
+        switchTab('calculator');
+        setLanguage('hebrew');
+        if (txtInput) {
+          txtInput.value = he;
+          processInputText(he);
+        }
+      });
+    });
+  }
+
+  if (btnExploreSearch) {
+    btnExploreSearch.addEventListener('click', () => runExploreSearch());
+  }
+  if (txtExploreQuery) {
+    txtExploreQuery.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') runExploreSearch();
+    });
+  }
+  document.querySelectorAll('#exploreQuickChips .explore-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      runExploreSearch(chip.getAttribute('data-q') || chip.textContent);
+    });
+  });
+  renderExploreHistory();
+
+  const formPersonalProfile = document.getElementById('formPersonalProfile');
+  const btnProfileExample = document.getElementById('btnProfileExample');
+  if (formPersonalProfile) {
+    formPersonalProfile.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      runProfileBuild({
+        givenName: (document.getElementById('txtProfileGiven') || {}).value,
+        surname: (document.getElementById('txtProfileSurname') || {}).value,
+        birthDate: (document.getElementById('txtProfileDate') || {}).value,
+        extra: (document.getElementById('txtProfileExtra') || {}).value
+      });
+    });
+  }
+  if (btnProfileExample) {
+    btnProfileExample.addEventListener('click', () => {
+      const example = {
+        givenName: 'David',
+        surname: 'Cohen',
+        birthDate: '14/05/1948',
+        extra: ''
+      };
+      fillProfileForm(example);
+      runProfileBuild(example);
+    });
   }
 
   // Añadir p-value y significancia estadística al panel de narrativa ELS
