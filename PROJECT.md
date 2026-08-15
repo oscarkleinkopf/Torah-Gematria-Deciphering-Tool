@@ -2,7 +2,7 @@
 
 ## Architecture
 Vanilla JavaScript ES6+ single-page application with modular architecture:
-- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS` and browser alias `TorahText`.
+- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS`, `TORAH_VERSE_MAP`, `LookupTorahVerse(index)` (letter → Génesis 1:1, etc.).
 - `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
 - `hebrew_calendar.js`: Gregorian ↔ Hebrew civil calendar (Dershowitz/Reingold), Hebrew year letters (ה׳תש״ח), parse `5 Iyar 5708`.
@@ -57,6 +57,11 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `GregorianToHebrew(y, m, d)` / `HebrewToGregorian(hy, hm, hd)`: civil Hebrew calendar (1=Nisan … 7=Tishrei).
 - `ParseHebrewDate("5 Iyar 5708")`: Latin Hebrew date → Gregorian.
 - `NumberToHebrewLetters(n)`: 5708 → ה׳תש״ח.
+
+### `torah_text.js`
+- `LookupTorahVerse(index)`: letter offset in `TORAH_TEXT` → `{ reference, bookLabel, chapter, verse, start, end }`.
+- `LookupTorahVerseSpan(indices)`: ELS letter list → `"Génesis 1:1 → Génesis 1:2"`.
+- `TORAH_VERSE_MAP`: compact `[start, bookIdx, chapter, verse]` covering 100% of the corpus.
 
 ## Verification
 ```bash

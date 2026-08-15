@@ -25,6 +25,7 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Motor de búsqueda ELS sobre corpus consonántico embebido (~27k letras, 5 libros).
    - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y **cancelación real** (terminate + `shouldCancel`).
    - Matriz visual responsiva en orientación **RTL** con ajuste dinámico de columnas.
+  - Cada hallazgo ELS muestra la **referencia de versículo** real (p. ej. Génesis 1:1, Éxodo 20:2), no un bloque aproximado.
    - **Crossover Density**, p-valor / significancia estadística, historial y sugerencias rápidas.
    - Exportación **PNG** de la matriz y pestaña de **Favoritos** (LocalStorage).
 

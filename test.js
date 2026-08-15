@@ -237,8 +237,24 @@ async function runAllTests() {
   assert(TORAH_BOOKS.deuteronomy.includes('שמעישראליהוהאלהינויהוהאחד'), "Deuteronomio incluye el Shemá");
   assert(TORAH_BOOKS.numbers.includes('יברכךיהוהוישמרך'), "Números incluye Birkat Kohanim");
 
-  const { TORAH_BOOK_OFFSETS } = require('./torah_text.js');
+  const { TORAH_BOOK_OFFSETS, TORAH_VERSE_MAP, LookupTorahVerse, LookupTorahVerseSpan } = require('./torah_text.js');
   assert(Array.isArray(TORAH_BOOK_OFFSETS) && TORAH_BOOK_OFFSETS.length === 5, "TORAH_BOOK_OFFSETS define offsets de 5 libros");
+  assert(Array.isArray(TORAH_VERSE_MAP) && TORAH_VERSE_MAP.length >= 300, `TORAH_VERSE_MAP tiene versículos alineados (actual: ${TORAH_VERSE_MAP.length})`);
+  assert(typeof LookupTorahVerse === 'function' && LookupTorahVerse(0).reference === 'Génesis 1:1', "Letra #0 → Génesis 1:1");
+  assert(LookupTorahVerse(5).reference === 'Génesis 1:1', "El ELS clásico de תורה (letra #5) cae en Génesis 1:1");
+  assert(LookupTorahVerse(28).reference === 'Génesis 1:2', "Letra #28 → Génesis 1:2");
+  const decIdx = TORAH_TEXT.indexOf('אנכייהוהאלהיך');
+  assert(decIdx > 0 && LookupTorahVerse(decIdx).reference === 'Éxodo 20:2', "El Decálogo mapea a Éxodo 20:2");
+  const birkatIdx = TORAH_TEXT.indexOf('יברכךיהוהוישמרך');
+  assert(birkatIdx > 0 && LookupTorahVerse(birkatIdx).reference === 'Números 6:24', "Birkat Kohanim mapea a Números 6:24");
+  const shemaIdx = TORAH_TEXT.indexOf('שמעישראליהוהאלהינויהוהאחד');
+  assert(shemaIdx > 0 && LookupTorahVerse(shemaIdx).reference === 'Deuteronomio 6:4', "El Shemá mapea a Deuteronomio 6:4");
+  let unmapped = 0;
+  for (let i = 0; i < TORAH_TEXT.length; i += 97) {
+    if (!LookupTorahVerse(i)) unmapped++;
+  }
+  assert(unmapped === 0, "El muestreo del corpus está 100% cubierto por el mapa de versículos");
+  assert(LookupTorahVerseSpan([5, 28]).includes('Génesis 1:1') && LookupTorahVerseSpan([5, 28]).includes('Génesis 1:2'), "LookupTorahVerseSpan cubre un rango de versículos");
 
   // FindELS shouldCancel aborta temprano
   let cancelChecks = 0;

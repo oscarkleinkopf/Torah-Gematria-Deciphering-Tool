@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
       crossingsListHtml = '<li><em>Ningún cruce conceptual detectado en este cuadrante.</em></li>';
     }
 
-    const verseCtx = getVerseContext(match.start);
+    const verseCtx = getVerseContext(match.start, match.indices);
 
     discoveryDetailsBox.innerHTML = `
       <div class="discovery-details-header">
@@ -1763,32 +1763,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // Mapear índice global a libro + posición aproximada en el corpus expandido
-  function getVerseContext(globalIdx) {
+  function getVerseContext(globalIdx, indices) {
+    if (typeof window.LookupTorahVerseSpan === 'function' && Array.isArray(indices) && indices.length) {
+      const span = window.LookupTorahVerseSpan(indices);
+      if (span) return span;
+    }
+    if (typeof window.LookupTorahVerse === 'function') {
+      const v = window.LookupTorahVerse(globalIdx);
+      if (v) return v.reference;
+    }
     const offsets = window.TORAH_BOOK_OFFSETS;
     if (Array.isArray(offsets) && offsets.length) {
       for (const book of offsets) {
         if (globalIdx >= book.offset && globalIdx < book.offset + book.length) {
-          const local = globalIdx - book.offset;
-          const section = Math.floor(local / 500) + 1;
-          return `${book.label} ~§${section} (letra #${globalIdx})`;
+          return `${book.label} (letra #${globalIdx})`;
         }
-      }
-      return `Torá (letra #${globalIdx})`;
-    }
-
-    // Fallback legacy: Génesis 1–5 aproximado
-    const boundaries = [
-      { ch: 1, limit: 1677, verses: 31, rate: 1677 / 31, offset: 0 },
-      { ch: 2, limit: 2912, verses: 25, rate: 1235 / 25, offset: 1677 },
-      { ch: 3, limit: 4223, verses: 24, rate: 1311 / 24, offset: 2912 },
-      { ch: 4, limit: 5452, verses: 26, rate: 1229 / 26, offset: 4223 },
-      { ch: 5, limit: 6877, verses: 32, rate: 1425 / 32, offset: 5452 }
-    ];
-    for (let b of boundaries) {
-      if (globalIdx < b.limit) {
-        const relativeIdx = globalIdx - b.offset;
-        const verseNum = Math.min(b.verses, Math.floor(relativeIdx / b.rate) + 1);
-        return `Génesis ${b.ch}:${verseNum}`;
       }
     }
     return `Torá (letra #${globalIdx})`;
@@ -2042,7 +2031,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const item = document.createElement('div');
       item.className = 'els-result-item';
       
-      const verseContext = getVerseContext(match.start);
+      const verseContext = getVerseContext(match.start, match.indices);
       const termBadgeClass = `term-badge-${match.termIndex % 4}`;
 
       item.innerHTML = `
@@ -2139,7 +2128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     panel.style.display = 'block';
 
-    const verseCtx = getVerseContext(match.start);
+    const verseCtx = getVerseContext(match.start, match.indices);
     const skipDirection = match.skip > 0 ? 'hacia adelante' : 'hacia atrás (inverso)';
     const termColorClass = `term-badge-${(match.termIndex || 0) % 4}`;
 
@@ -2446,7 +2435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         indices: match.indices,
         pValue: match.pValue,
         significanceScore: match.significanceScore,
-        verse: getVerseContext(match.start),
+        verse: getVerseContext(match.start, match.indices),
         savedAt: new Date().toISOString()
       });
       const after = Storage.GetFavorites ? Storage.GetFavorites().length : 0;
