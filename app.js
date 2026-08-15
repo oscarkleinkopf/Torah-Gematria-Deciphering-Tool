@@ -2367,6 +2367,21 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
           <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="explore">🔍 Volver a explorar</button>
         `;
+      } else if (fav.type === 'profile') {
+        const data = fav.data || {};
+        const pr = data.profile || {};
+        card.innerHTML = `
+          <div class="favorite-card-header">
+            <span class="favorite-word" style="font-family:var(--font-serif);font-size:1.1rem;">👤 ${fav.title || fav.word}</span>
+            <button data-idx="${idx}" class="fav-remove-btn" title="Eliminar">✕</button>
+          </div>
+          <div class="favorite-meta">Perfil · ${escapeHtml([pr.givenName, pr.surname].filter(Boolean).join(' '))} ${pr.birthDate ? '· ' + escapeHtml(pr.birthDate) : ''}</div>
+          <div class="favorite-sig sig-mid">
+            ${(data.events || []).slice(0, 2).join(' · ') || 'Sin eventos'} ${(data.primaryHebrew ? '· ' + data.primaryHebrew : '')}
+          </div>
+          <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
+          <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="profile">🔍 Abrir perfil</button>
+        `;
       } else {
         const sigScore = (fav.significanceScore || 0).toFixed(2);
         const sigClass = fav.significanceScore > 5 ? 'sig-high' : fav.significanceScore > 2 ? 'sig-mid' : 'sig-low';
@@ -2399,6 +2414,13 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', () => {
         const fav = (Storage.GetFavorites ? Storage.GetFavorites() : [])[parseInt(btn.dataset.idx, 10)];
         if (!fav) return;
+        if (fav.type === 'profile' || btn.getAttribute('data-fav-type') === 'profile') {
+          const pr = (fav.data && fav.data.profile) || {};
+          switchTab('explore');
+          fillProfileForm(pr);
+          runProfileBuild(pr);
+          return;
+        }
         if (fav.type === 'explore' || btn.getAttribute('data-fav-type') === 'explore') {
           switchTab('explore');
           runExploreSearch(fav.title || fav.word);
@@ -2541,6 +2563,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const exploreHistoryEl = document.getElementById('exploreHistory');
   let lastExploreData = null;
 
+  function fillProfileForm(pr) {
+    pr = pr || {};
+    const givenEl = document.getElementById('txtProfileGiven');
+    const surnameEl = document.getElementById('txtProfileSurname');
+    const dateEl = document.getElementById('txtProfileDate');
+    const extraEl = document.getElementById('txtProfileExtra');
+    if (givenEl) givenEl.value = pr.givenName || '';
+    if (surnameEl) surnameEl.value = pr.surname || '';
+    if (dateEl) dateEl.value = pr.birthDate || '';
+    if (extraEl) extraEl.value = pr.extra || '';
+  }
+
+  function runProfileBuild(pr) {
+    pr = pr || {};
+    const givenName = String(pr.givenName || '').trim();
+    const surname = String(pr.surname || '').trim();
+    const birthDate = String(pr.birthDate || '').trim();
+    const extra = String(pr.extra || '').trim();
+
+    if (!Explore || typeof Explore.BuildPersonalProfile !== 'function') {
+      if (exploreStatus) exploreStatus.textContent = 'Motor de exploración no disponible.';
+      return;
+    }
+    if (!givenName && !surname) {
+      lastExploreData = null;
+      renderExploreResults({
+        query: '',
+        queryType: 'profile',
+        error: 'Indica al menos un nombre o un apellido.',
+        knowledge: [],
+        events: [],
+        zionist: [],
+        verses: []
+      });
+      return;
+    }
+
+    const data = Explore.BuildPersonalProfile({
+      givenName,
+      surname,
+      birthDate,
+      extra
+    }, DB, Engine);
+    lastExploreData = data;
+    if (Storage.SaveExploreHistory) Storage.SaveExploreHistory(data.query);
+    renderExploreHistory();
+    renderExploreResults(data);
+    if (exploreResults) exploreResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function escapeHtml(str) {
     return String(str == null ? '' : str)
       .replace(/&/g, '&amp;')
@@ -2607,11 +2679,21 @@ document.addEventListener('DOMContentLoaded', () => {
       concept: 'Concepto',
       hebrew: 'Hebreo',
       text: 'Texto',
-      compound: 'Compuesta'
+      compound: 'Compuesta',
+      profile: 'Perfil personal'
     };
 
-    const total =
-      data.knowledge.length + data.events.length + data.zionist.length + data.verses.length;
+    if (data.error) {
+      if (exploreStatus) exploreStatus.textContent = data.error;
+      exploreResults.innerHTML = `<div class="explore-empty">${escapeHtml(data.error)}</div>`;
+      return;
+    }
+
+    const knowledge = data.knowledge || [];
+    const events = data.events || [];
+    const zionist = data.zionist || [];
+    const verses = data.verses || [];
+    const total = knowledge.length + events.length + zionist.length + verses.length;
 
     if (exploreStatus) {
       const he = meta.primaryHebrew
@@ -2623,12 +2705,33 @@ document.addEventListener('DOMContentLoaded', () => {
       exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g} · ${total} correlación(es)`;
     }
 
-    if (total === 0 && !(data.suggestedELS && data.suggestedELS.length)) {
+    if (total === 0 && !(data.suggestedELS && data.suggestedELS.length) && !data.profile) {
       exploreResults.innerHTML = '<div class="explore-empty">Sin correlaciones directas. Prueba otro apellido, una fecha (ej. 1948), un evento (ej. Oslo) o una búsqueda compuesta (Herzl + 1897).</div>';
       return;
     }
 
     let html = '';
+
+    if (data.profile) {
+      const p = data.profile;
+      const g = p.fullGematria || p.givenGematria || p.surnameGematria;
+      html += `<div class="profile-identity">
+        <div>
+          <div class="profile-name">${escapeHtml(p.displayName)}</div>
+          ${p.birthDate ? `<div class="meta">Nacimiento: ${escapeHtml(p.birthDate)}${p.dateInfo && p.dateInfo.hebrewYearApprox ? ' ≈ HE ~' + p.dateInfo.hebrewYearApprox : ''}</div>` : ''}
+          ${p.extra ? `<div class="meta">Extra: ${escapeHtml(p.extra)}</div>` : ''}
+        </div>
+        ${p.fullHebrew ? `<div class="he">${escapeHtml(p.givenHebrew || '')} ${escapeHtml(p.surnameHebrew || '')}</div>` : ''}
+        <div class="profile-gem-pills">
+          ${p.givenHebrew ? `<span class="profile-gem-pill">Nombre <span class="he" style="font-size:1rem;">${escapeHtml(p.givenHebrew)}</span> <strong>${p.givenGematria ? p.givenGematria.absolute : ''}</strong></span>` : ''}
+          ${p.surnameHebrew ? `<span class="profile-gem-pill">Apellido <span class="he" style="font-size:1rem;">${escapeHtml(p.surnameHebrew)}</span> <strong>${p.surnameGematria ? p.surnameGematria.absolute : ''}</strong></span>` : ''}
+          ${g ? `<span class="profile-gem-pill">Completo Abs <strong>${g.absolute}</strong> · Ord <strong>${g.ordinal}</strong> · Red <strong>${g.reduced}</strong></span>` : ''}
+        </div>
+      </div>`;
+      if (total === 0 && !(data.suggestedELS && data.suggestedELS.length)) {
+        html += '<div class="explore-empty">Identidad calculada, pero sin correlaciones directas en el grafo o la línea de tiempo. Prueba un término extra (Israel, Oslo, Sión…).</div>';
+      }
+    }
 
     html += `<div class="explore-actions explore-toolbar">
       <button type="button" class="explore-action-btn" id="btnExportExploreReport">📄 Exportar informe</button>
@@ -2776,8 +2879,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const before = Storage.GetFavorites().length;
         Storage.SaveFavorite({
-          id: `explore|${data.query}`,
-          type: 'explore',
+          id: data.queryType === 'profile'
+            ? `profile|${(data.profile && data.profile.displayName) || data.query}|${(data.profile && data.profile.birthDate) || ''}`
+            : `explore|${data.query}`,
+          type: data.queryType === 'profile' ? 'profile' : 'explore',
           title: data.query,
           word: data.query,
           skip: '—',
@@ -2785,7 +2890,20 @@ document.addEventListener('DOMContentLoaded', () => {
           verse: meta.primaryHebrew || data.queryType,
           significanceScore: data.events.length + data.knowledge.length,
           pValue: null,
-          data: summary,
+          data: data.queryType === 'profile' ? {
+            profile: {
+              givenName: data.profile.givenName,
+              surname: data.profile.surname,
+              birthDate: data.profile.birthDate,
+              extra: data.profile.extra
+            },
+            events: (data.events || []).slice(0, 5).map(h => h.event.title),
+            knowledge: (data.knowledge || []).slice(0, 5).map(c => c.entry.spanish),
+            suggestedELS: data.suggestedELS || [],
+            queryType: 'profile',
+            primaryHebrew: meta.primaryHebrew || '',
+            absolute: meta.primaryGematria ? meta.primaryGematria.absolute : null
+          } : summary,
           savedAt: new Date().toISOString()
         });
         const after = Storage.GetFavorites().length;
@@ -2837,6 +2955,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   renderExploreHistory();
+
+  const formPersonalProfile = document.getElementById('formPersonalProfile');
+  const btnProfileExample = document.getElementById('btnProfileExample');
+  if (formPersonalProfile) {
+    formPersonalProfile.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      runProfileBuild({
+        givenName: (document.getElementById('txtProfileGiven') || {}).value,
+        surname: (document.getElementById('txtProfileSurname') || {}).value,
+        birthDate: (document.getElementById('txtProfileDate') || {}).value,
+        extra: (document.getElementById('txtProfileExtra') || {}).value
+      });
+    });
+  }
+  if (btnProfileExample) {
+    btnProfileExample.addEventListener('click', () => {
+      const example = {
+        givenName: 'David',
+        surname: 'Cohen',
+        birthDate: '14/05/1948',
+        extra: ''
+      };
+      fillProfileForm(example);
+      runProfileBuild(example);
+    });
+  }
 
   // Añadir p-value y significancia estadística al panel de narrativa ELS
   const _origRenderNarrative = renderNarrativePanel;

@@ -15,8 +15,9 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
 
 3. **Explorar correlaciones (apellido / fecha / evento)**:
    - Buscador unificado: apellido (Cohen, Herzl…), fecha (`14/05/1948` / `1948`), evento (Oslo, Balfour) o número (`708`).
-   - Consultas compuestas: `Herzl + 1897`, `Cohen y 1948`.
-   - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
+  - Consultas compuestas: `Herzl + 1897`, `Cohen y 1948`.
+  - **Perfil personal**: nombre + apellido + fecha de nacimiento → dossier unificado (gematria, año hebreo aproximado, timeline, grafo, versículos, ELS).
+  - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
    - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
 
 4. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:

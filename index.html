@@ -65,6 +65,39 @@
         </div>
 
         <div id="exploreHistory" class="explore-history" style="display:none;"></div>
+      </div>
+
+      <div class="glass-card explore-panel profile-panel">
+        <h3 class="input-title">Mi perfil personal</h3>
+        <p class="explore-lead">
+          Nombre, apellido y fecha de nacimiento → un informe único: gematria, año hebreo aproximado,
+          resonancias históricas, grafo, versículos y términos ELS.
+        </p>
+        <form id="formPersonalProfile" class="profile-form" autocomplete="off">
+          <label class="profile-field">
+            <span>Nombre</span>
+            <input type="text" id="txtProfileGiven" class="explore-input" placeholder="David, Raquel, Oscar…">
+          </label>
+          <label class="profile-field">
+            <span>Apellido</span>
+            <input type="text" id="txtProfileSurname" class="explore-input" placeholder="Cohen, Herzl, Klein…">
+          </label>
+          <label class="profile-field">
+            <span>Fecha de nacimiento</span>
+            <input type="text" id="txtProfileDate" class="explore-input" placeholder="14/05/1948 o 1948">
+          </label>
+          <label class="profile-field">
+            <span>Evento o término extra (opcional)</span>
+            <input type="text" id="txtProfileExtra" class="explore-input" placeholder="Israel, Oslo, Sión…">
+          </label>
+          <div class="profile-form-actions">
+            <button type="submit" class="explore-search-btn" id="btnBuildProfile">Generar informe</button>
+            <button type="button" class="explore-action-btn" id="btnProfileExample">Ejemplo: David Cohen</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="glass-card explore-panel explore-output-panel" id="exploreOutputPanel">
         <div id="exploreStatus" class="explore-status" aria-live="polite"></div>
         <div id="exploreResults" class="explore-results"></div>
       </div>

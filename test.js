@@ -364,6 +364,34 @@ async function runAllTests() {
   const { ExportCorrelationReport } = require('./export.js');
   assert(typeof ExportCorrelationReport === 'function', "export.js exporta ExportCorrelationReport");
 
+  console.log("\n=== SECCIÓN 18: PERFIL PERSONAL (nombre + apellido + fecha) ===");
+  assert(typeof Explore.BuildPersonalProfile === 'function', "explore.js exporta BuildPersonalProfile");
+  assert(Explore.LookupNameDictionary('oscar') && Explore.LookupNameDictionary('oscar').hebrew === 'אוסקר', "Diccionario incluye Oscar → אוסקר");
+  assert(Explore.LookupNameDictionary('raquel') && Explore.LookupNameDictionary('raquel').hebrew === 'רחל', "Diccionario incluye Raquel → רחל");
+
+  const profile = Explore.BuildPersonalProfile({
+    givenName: 'David',
+    surname: 'Cohen',
+    birthDate: '14/05/1948'
+  }, DB, Engine);
+  assert(profile.queryType === 'profile', "David Cohen · 14/05/1948 se clasifica como perfil");
+  assert(profile.profile.givenHebrew === 'דוד', "Nombre David → דוד");
+  assert(profile.profile.surnameHebrew === 'כהן', "Apellido Cohen → כהן");
+  assert(profile.profile.fullHebrew === 'דודכהן', "Nombre completo hebreo דודכהן");
+  assert(profile.profile.fullGematria && profile.profile.fullGematria.absolute === 89, `Gematria absoluta de דודכהן es 89 (actual: ${profile.profile.fullGematria && profile.profile.fullGematria.absolute})`);
+  assert(profile.profile.dateInfo && profile.profile.dateInfo.year === 1948 && profile.profile.dateInfo.hebrewYearApprox === 5708, "Perfil estima año hebreo ~5708");
+  assert(profile.events.some(e => e.event.year === 1948), "El perfil correlaciona con la Independencia de 1948");
+  assert(Array.isArray(profile.suggestedELS) && profile.suggestedELS.includes('דודכהן'), "El perfil sugiere ELS del nombre completo");
+
+  const profileReport = Explore.FormatCorrelationReport(profile);
+  assert(
+    profileReport.includes('INFORME DE CORRELACIONES') &&
+    profileReport.includes('David') &&
+    profileReport.includes('כהן') &&
+    /Nacimiento: 14\/05\/1948/.test(profileReport),
+    "El informe de perfil incluye identidad, hebreo y fecha"
+  );
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

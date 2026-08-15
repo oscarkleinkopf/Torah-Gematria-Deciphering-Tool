@@ -2093,6 +2093,73 @@ footer a:hover {
   opacity: 0.7;
 }
 
+.profile-panel {
+  margin-top: 1.5rem;
+}
+.explore-output-panel {
+  margin-top: 1.5rem;
+}
+.explore-output-panel:has(#exploreResults:empty):has(#exploreStatus:empty) {
+  display: none;
+}
+.profile-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem 1rem;
+}
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.profile-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+.profile-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: center;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+}
+.profile-identity .he {
+  font-family: var(--font-hebrew);
+  font-size: 1.8rem;
+  color: var(--gold-primary);
+  direction: rtl;
+}
+.profile-identity .profile-name {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+}
+.profile-gem-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.profile-gem-pill {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.profile-gem-pill strong {
+  color: var(--gold-primary);
+}
+
 
 
 

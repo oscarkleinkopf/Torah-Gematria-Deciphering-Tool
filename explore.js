@@ -18,6 +18,16 @@ const NAME_DICTIONARY = [
   { id: 'miriam', spanish: ['miriam', 'maria'], hebrew: 'מרים', kind: 'nombre', note: 'Profetisa' },
   { id: 'aaron', spanish: ['aaron', 'aharon'], hebrew: 'אהרן', kind: 'nombre', note: 'Sumo sacerdote' },
   { id: 'solomon', spanish: ['salomon', 'solomon', 'shlomo'], hebrew: 'שלמה', kind: 'nombre', note: 'Rey Salomón' },
+  { id: 'rachel', spanish: ['raquel', 'rachel'], hebrew: 'רחל', kind: 'nombre', note: 'Matriarca' },
+  { id: 'leah', spanish: ['lea', 'leah'], hebrew: 'לאה', kind: 'nombre', note: 'Matriarca' },
+  { id: 'esther', spanish: ['ester', 'esther'], hebrew: 'אסתר', kind: 'nombre', note: 'Reina Ester' },
+  { id: 'ruth', spanish: ['rut', 'ruth'], hebrew: 'רות', kind: 'nombre', note: 'Rut' },
+  { id: 'daniel', spanish: ['daniel'], hebrew: 'דניאל', kind: 'nombre', note: 'Daniel' },
+  { id: 'michael', spanish: ['miguel', 'michael', 'mijael'], hebrew: 'מיכאל', kind: 'nombre', note: 'Miguel / Mijael' },
+  { id: 'noah', spanish: ['noe', 'noah', 'noaj'], hebrew: 'נח', kind: 'nombre', note: 'Noé' },
+  { id: 'elijah', spanish: ['elias', 'elijah', 'eliyahu'], hebrew: 'אליהו', kind: 'nombre', note: 'Elías' },
+  { id: 'hanna', spanish: ['ana', 'hanna', 'chana'], hebrew: 'חנה', kind: 'nombre', note: 'Jana' },
+  { id: 'oscar', spanish: ['oscar'], hebrew: 'אוסקר', kind: 'nombre', note: 'Nombre (fonética)' },
   // Modern / Zionist
   { id: 'herzl', spanish: ['herzl', 'theodor herzl'], hebrew: 'הרצל', kind: 'apellido', note: 'Fundador del sionismo político' },
   { id: 'bengurion', spanish: ['ben gurion', 'bengurion', 'ben-gurion'], hebrew: 'בן גוריון', kind: 'apellido', note: 'Primer primer ministro' },
@@ -603,6 +613,98 @@ function ExploreCorrelations(query, db, Engine, options) {
   return ExploreCorrelationsSingle(original, database, Engine, options);
 }
 
+function ResolveNameToHebrew(raw, Engine, options) {
+  const text = String(raw || '').trim();
+  if (!text) return { hebrew: '', entry: null, gematria: null };
+  const meta = ResolveExploreQuery(text, Engine, options);
+  const hebrew = (meta.primaryHebrew || '').replace(/[^א-ת]/g, '');
+  const gematria = hebrew && Engine && typeof Engine.CalculateGematria === 'function'
+    ? Engine.CalculateGematria(hebrew)
+    : null;
+  return { hebrew, entry: meta.nameEntry || null, gematria, meta };
+}
+
+/**
+ * Personal profile: given name + surname + birth date (+ optional extra term)
+ * → unified correlation dossier.
+ */
+function BuildPersonalProfile(input, db, Engine, options) {
+  const givenName = String((input && input.givenName) || '').trim();
+  const surname = String((input && input.surname) || '').trim();
+  const birthDate = String((input && input.birthDate) || '').trim();
+  const extra = String((input && input.extra) || '').trim();
+
+  const given = ResolveNameToHebrew(givenName, Engine, options);
+  const family = ResolveNameToHebrew(surname, Engine, options);
+  const fullHebrew = [given.hebrew, family.hebrew].filter(Boolean).join('');
+  const fullGematria = fullHebrew && Engine && typeof Engine.CalculateGematria === 'function'
+    ? Engine.CalculateGematria(fullHebrew)
+    : null;
+  const dateInfo = birthDate ? ParseDateQuery(birthDate) : null;
+
+  const labelParts = [];
+  if (givenName) labelParts.push(givenName);
+  if (surname) labelParts.push(surname);
+  const displayName = labelParts.join(' ') || 'Perfil';
+  const queryLabel = birthDate ? `${displayName} · ${birthDate}` : displayName;
+
+  const mergeParts = [];
+  if (givenName) mergeParts.push(ExploreCorrelationsSingle(givenName, db || {}, Engine, options));
+  if (surname) mergeParts.push(ExploreCorrelationsSingle(surname, db || {}, Engine, options));
+  if (birthDate) mergeParts.push(ExploreCorrelationsSingle(birthDate, db || {}, Engine, options));
+  if (extra) mergeParts.push(ExploreCorrelationsSingle(extra, db || {}, Engine, options));
+  if (fullHebrew && fullHebrew.length >= 2) {
+    mergeParts.push(ExploreCorrelationsSingle(fullHebrew, db || {}, Engine, options));
+  }
+
+  const merged = mergeParts.length
+    ? MergeExploreResults(mergeParts, queryLabel)
+    : {
+        query: queryLabel,
+        queryType: 'profile',
+        meta: { original: queryLabel, hebrewForms: [], gematriaValues: [], numbers: [] },
+        knowledge: [],
+        events: [],
+        zionist: [],
+        verses: [],
+        suggestedELS: []
+      };
+
+  merged.queryType = 'profile';
+  merged.query = queryLabel;
+  merged.profile = {
+    givenName,
+    surname,
+    birthDate,
+    extra,
+    displayName,
+    givenHebrew: given.hebrew,
+    surnameHebrew: family.hebrew,
+    fullHebrew,
+    givenGematria: given.gematria,
+    surnameGematria: family.gematria,
+    fullGematria,
+    dateInfo,
+    givenEntry: given.entry,
+    surnameEntry: family.entry
+  };
+  merged.meta = merged.meta || {};
+  merged.meta.queryType = 'profile';
+  merged.meta.primaryHebrew = fullHebrew || given.hebrew || family.hebrew || '';
+  merged.meta.primaryGematria = fullGematria || given.gematria || family.gematria || null;
+  merged.meta.dateInfo = dateInfo || merged.meta.dateInfo || null;
+  merged.meta.nameEntry = family.entry || given.entry || merged.meta.nameEntry || null;
+
+  if (fullHebrew && fullHebrew.length >= 2) {
+    merged.suggestedELS = [fullHebrew, given.hebrew, family.hebrew]
+      .concat(merged.suggestedELS || [])
+      .filter(Boolean);
+    merged.suggestedELS = [...new Set(merged.suggestedELS)].slice(0, 8);
+  }
+
+  return merged;
+}
+
 /**
  * Build a plain-text correlation report for download / sharing.
  */
@@ -614,7 +716,20 @@ function FormatCorrelationReport(data) {
   lines.push('═══════════════════════════════════════════');
   lines.push(`Consulta: ${data.query}`);
   lines.push(`Tipo: ${data.queryType}`);
-  if (data.meta && data.meta.primaryHebrew) lines.push(`Hebreo: ${data.meta.primaryHebrew}`);
+  if (data.profile) {
+    const p = data.profile;
+    lines.push(`Nombre: ${p.displayName || [p.givenName, p.surname].filter(Boolean).join(' ')}`);
+    if (p.givenHebrew) lines.push(`Nombre hebreo: ${p.givenHebrew}` + (p.givenGematria ? ` (Abs ${p.givenGematria.absolute})` : ''));
+    if (p.surnameHebrew) lines.push(`Apellido hebreo: ${p.surnameHebrew}` + (p.surnameGematria ? ` (Abs ${p.surnameGematria.absolute})` : ''));
+    if (p.fullHebrew && p.fullGematria) lines.push(`Nombre completo: ${p.fullHebrew} (Abs ${p.fullGematria.absolute} | Ord ${p.fullGematria.ordinal} | Red ${p.fullGematria.reduced})`);
+    if (p.birthDate) {
+      let fecha = `Nacimiento: ${p.birthDate}`;
+      if (p.dateInfo && p.dateInfo.hebrewYearApprox) fecha += ` ≈ HE ~${p.dateInfo.hebrewYearApprox}`;
+      lines.push(fecha);
+    }
+    if (p.extra) lines.push(`Término extra: ${p.extra}`);
+  }
+  if (data.meta && data.meta.primaryHebrew && !data.profile) lines.push(`Hebreo: ${data.meta.primaryHebrew}`);
   if (data.meta && data.meta.primaryGematria) {
     const g = data.meta.primaryGematria;
     lines.push(`Gematria: Abs ${g.absolute} | Ord ${g.ordinal} | Red ${g.reduced}`);
@@ -685,6 +800,8 @@ const GematriaExplore = {
   MergeExploreResults,
   ExploreCorrelations,
   ExploreCorrelationsSingle,
+  ResolveNameToHebrew,
+  BuildPersonalProfile,
   FormatCorrelationReport
 };
 
@@ -696,5 +813,6 @@ if (typeof window !== 'undefined') {
   window.ExploreCorrelations = ExploreCorrelations;
   window.ParseDateQuery = ParseDateQuery;
   window.FormatCorrelationReport = FormatCorrelationReport;
+  window.BuildPersonalProfile = BuildPersonalProfile;
   window.NAME_DICTIONARY = NAME_DICTIONARY;
 }
