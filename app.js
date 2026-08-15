@@ -2718,7 +2718,7 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `<div class="profile-identity">
         <div>
           <div class="profile-name">${escapeHtml(p.displayName)}</div>
-          ${p.birthDate ? `<div class="meta">Nacimiento: ${escapeHtml(p.birthDate)}${p.dateInfo && p.dateInfo.hebrewYearApprox ? ' ≈ HE ~' + p.dateInfo.hebrewYearApprox : ''}</div>` : ''}
+          ${p.birthDate ? `<div class="meta">Nacimiento: ${escapeHtml(p.birthDate)}${p.dateInfo && p.dateInfo.hebrewFormatted ? ' · ' + escapeHtml(p.dateInfo.hebrewFormatted) : (p.dateInfo && p.dateInfo.hebrewYearApprox ? ' · HE ' + p.dateInfo.hebrewYearApprox : '')}</div>` : ''}
           ${p.extra ? `<div class="meta">Extra: ${escapeHtml(p.extra)}</div>` : ''}
         </div>
         ${p.fullHebrew ? `<div class="he">${escapeHtml(p.givenHebrew || '')} ${escapeHtml(p.surnameHebrew || '')}</div>` : ''}
@@ -2748,7 +2748,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (meta.dateInfo) {
         html += `<span>Año: <strong>${meta.dateInfo.year}</strong>`;
-        if (meta.dateInfo.hebrewYearApprox) html += ` ≈ hebreo ~${meta.dateInfo.hebrewYearApprox}`;
+        if (meta.dateInfo.hebrewFormatted) html += ` · ${escapeHtml(meta.dateInfo.hebrewFormatted)}`;
+        else if (meta.dateInfo.hebrewYearApprox) html += ` · hebreo ${meta.dateInfo.hebrewYearApprox}`;
         html += '</span>';
       }
       if (meta.primaryGematria) {

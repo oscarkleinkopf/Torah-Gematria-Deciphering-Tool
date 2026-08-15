@@ -326,7 +326,9 @@ async function runAllTests() {
 
   const dateParsed = Explore.ParseDateQuery('14/05/1948');
   assert(dateParsed && dateParsed.year === 1948 && dateParsed.day === 14 && dateParsed.month === 5, "ParseDateQuery entiende 14/05/1948");
-  assert(dateParsed.hebrewYearApprox === 5708, "ParseDateQuery estima año hebreo ~5708");
+  assert(dateParsed.hebrewYearApprox === 5708, "14/05/1948 cae en el año hebreo 5708");
+  assert(dateParsed.hebrew && dateParsed.hebrew.month === 2 && dateParsed.hebrew.day === 5, "14/05/1948 = 5 de Iyar 5708");
+  assert(/Iyar/.test(dateParsed.hebrewFormatted || '') && /5708/.test(dateParsed.hebrewFormatted || ''), "La fecha hebrea formateada incluye Iyar 5708");
 
   const cohen = Explore.ExploreCorrelations('Cohen', DB, Engine);
   assert(cohen.queryType === 'surname' && cohen.meta.primaryHebrew === 'כהן', "Cohen resuelve a apellido כהן");
@@ -379,7 +381,8 @@ async function runAllTests() {
   assert(profile.profile.surnameHebrew === 'כהן', "Apellido Cohen → כהן");
   assert(profile.profile.fullHebrew === 'דודכהן', "Nombre completo hebreo דודכהן");
   assert(profile.profile.fullGematria && profile.profile.fullGematria.absolute === 89, `Gematria absoluta de דודכהן es 89 (actual: ${profile.profile.fullGematria && profile.profile.fullGematria.absolute})`);
-  assert(profile.profile.dateInfo && profile.profile.dateInfo.year === 1948 && profile.profile.dateInfo.hebrewYearApprox === 5708, "Perfil estima año hebreo ~5708");
+  assert(profile.profile.dateInfo && profile.profile.dateInfo.year === 1948 && profile.profile.dateInfo.hebrewYearApprox === 5708, "Perfil calcula año hebreo 5708");
+  assert(profile.profile.dateInfo.hebrew && profile.profile.dateInfo.hebrew.day === 5 && /Iyar/.test(profile.profile.dateInfo.hebrew.monthName || ''), "Perfil: 14/05/1948 = 5 Iyar");
   assert(profile.events.some(e => e.event.year === 1948), "El perfil correlaciona con la Independencia de 1948");
   assert(Array.isArray(profile.suggestedELS) && profile.suggestedELS.includes('דודכהן'), "El perfil sugiere ELS del nombre completo");
 
@@ -391,6 +394,30 @@ async function runAllTests() {
     /Nacimiento: 14\/05\/1948/.test(profileReport),
     "El informe de perfil incluye identidad, hebreo y fecha"
   );
+
+  console.log("\n=== SECCIÓN 19: CALENDARIO HEBREO REAL ===");
+  const Cal = require('./hebrew_calendar.js');
+  assert(typeof Cal.GregorianToHebrew === 'function', "hebrew_calendar.js exporta GregorianToHebrew");
+
+  const indepHe = Cal.GregorianToHebrew(1948, 5, 14);
+  assert(indepHe && indepHe.year === 5708 && indepHe.month === 2 && indepHe.day === 5, "14 may 1948 → 5 Iyar 5708");
+  assert(Cal.NumberToHebrewLetters(5708) === 'ה׳תש״ח', `Año 5708 en letras: ה׳תש״ח (actual: ${Cal.NumberToHebrewLetters(5708)})`);
+
+  const rh = Cal.GregorianToHebrew(1948, 10, 4);
+  assert(rh && rh.year === 5709 && rh.month === 7 && rh.day === 1, "4 oct 1948 es 1 Tishrei 5709 (el atajo +3760 fallaría)");
+
+  const back = Cal.HebrewToGregorian(5708, 2, 5);
+  assert(back && back.year === 1948 && back.month === 5 && back.day === 14, "5 Iyar 5708 → 14 may 1948");
+
+  const parsedHeDate = Explore.ParseDateQuery('5 Iyar 5708');
+  assert(parsedHeDate && parsedHeDate.year === 1948 && parsedHeDate.month === 5 && parsedHeDate.day === 14, "ParseDateQuery entiende 5 Iyar 5708");
+  assert(Explore.ExploreCorrelations('5 Iyar 5708', DB, Engine).events.some(e => e.event.year === 1948), "5 Iyar 5708 correlaciona con la Independencia");
+
+  const tashach = Explore.ParseDateQuery('5708');
+  assert(tashach && tashach.year === 1948 && tashach.hebrewYearApprox === 5708, "5708 (año AM) resuelve al año civil 1948");
+
+  const jan1948 = Explore.ParseDateQuery('1948');
+  assert(jan1948.hebrewYearApprox === 5708 && jan1948.hebrewYearEnd === 5709, "El año civil 1948 cubre 5708–5709");
 
   console.log("\n=== RESUMEN ===");
   if (success) {

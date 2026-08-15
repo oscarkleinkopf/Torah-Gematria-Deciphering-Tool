@@ -3,6 +3,10 @@
  * Search by surname / name / date / event / number → KG + history + Zionism + verses
  */
 
+const HebrewCal = (typeof require !== 'undefined')
+  ? require('./hebrew_calendar.js')
+  : (typeof window !== 'undefined' ? window.GematriaHebrewCalendar : null);
+
 const NAME_DICTIONARY = [
   // Biblical / classic
   { id: 'cohen', spanish: ['cohen', 'coen', 'kohen', 'kohanim'], hebrew: 'כהן', kind: 'apellido', note: 'Sacerdocio — linaje aarónico' },
@@ -76,9 +80,44 @@ function NormalizeExploreQuery(raw) {
     .replace(/\s+/g, ' ');
 }
 
+function ApplyHebrewCalendar(result) {
+  if (!result || result.year == null || result.year <= 0 || !HebrewCal) return result;
+
+  if (result.day && result.month && typeof HebrewCal.GregorianToHebrew === 'function') {
+    const h = HebrewCal.GregorianToHebrew(result.year, result.month, result.day);
+    if (h) {
+      result.hebrew = h;
+      result.hebrewYearApprox = h.year;
+      result.hebrewFormatted = HebrewCal.FormatHebrewDate(h);
+      result.numbers.push(h.year, h.year % 1000);
+    }
+  } else if (typeof HebrewCal.HebrewYearRangeForCivilYear === 'function') {
+    const range = HebrewCal.HebrewYearRangeForCivilYear(result.year);
+    if (range) {
+      result.hebrewYearApprox = range.yearStart;
+      result.hebrewYearEnd = range.yearEnd;
+      result.hebrewFormatted = range.yearStart === range.yearEnd
+        ? `año hebreo ${range.yearStart}`
+        : `año hebreo ${range.yearStart}–${range.yearEnd}`;
+      result.hebrew = {
+        year: range.yearStart,
+        yearEnd: range.yearEnd,
+        civilYearOnly: true,
+        yearLettersShort: HebrewCal.NumberToHebrewLetters(range.yearStart % 1000),
+        formatted: range.formatted
+      };
+      result.numbers.push(range.yearStart, range.yearStart % 1000);
+      if (range.yearEnd !== range.yearStart) {
+        result.numbers.push(range.yearEnd, range.yearEnd % 1000);
+      }
+    }
+  }
+  return result;
+}
+
 /**
  * Parse dates / years from free text.
- * Supports: 1948, 14/5/1948, 14-05-1948, 1948-05-14, 5 Iyar 5708 (partial)
+ * Supports: 1948, 14/5/1948, 14-05-1948, 1948-05-14, 5 Iyar 5708
  */
 function ParseDateQuery(raw) {
   const text = String(raw || '').trim();
@@ -91,6 +130,8 @@ function ParseDateQuery(raw) {
     month: null,
     day: null,
     hebrewYearApprox: null,
+    hebrewFormatted: '',
+    hebrew: null,
     numbers: [],
     reductions: [],
     dayOfYear: null
@@ -114,6 +155,19 @@ function ParseDateQuery(raw) {
     }
   }
 
+  // Hebrew civil date: "5 Iyar 5708", "5 de Iyar, 5708"
+  if (!result.year && HebrewCal && typeof HebrewCal.ParseHebrewDate === 'function') {
+    const parsedHe = HebrewCal.ParseHebrewDate(text);
+    if (parsedHe && parsedHe.gregorian) {
+      result.year = parsedHe.gregorian.year;
+      result.month = parsedHe.gregorian.month;
+      result.day = parsedHe.gregorian.day;
+      result.hebrew = parsedHe.hebrew;
+      result.hebrewYearApprox = parsedHe.hebrew.year;
+      result.hebrewFormatted = HebrewCal.FormatHebrewDate(parsedHe.hebrew);
+    }
+  }
+
   // Bare year 3–4 digits (allow negative BCE via leading -)
   if (!result.year) {
     m = text.match(/^(-?\d{3,4})$/);
@@ -128,6 +182,23 @@ function ParseDateQuery(raw) {
 
   if (result.year == null || Number.isNaN(result.year)) return null;
 
+  // Año AM (5000–6500) escrito como número → año civil de Nisán de ese año hebreo
+  if (!result.month && !result.day && result.year >= 5000 && result.year <= 6500 && HebrewCal && typeof HebrewCal.HebrewToGregorian === 'function') {
+    const nisan = HebrewCal.HebrewToGregorian(result.year, 1, 1);
+    if (nisan && nisan.year >= 1 && nisan.year <= 2100) {
+      const hy = result.year;
+      result.year = nisan.year;
+      result.hebrewYearQuery = hy;
+      result.hebrewYearApprox = hy;
+      result.hebrewFormatted = `año hebreo ${hy}`;
+      result.hebrew = {
+        year: hy,
+        civilYearOnly: true,
+        yearLettersShort: HebrewCal.NumberToHebrewLetters(hy % 1000)
+      };
+    }
+  }
+
   result.numbers.push(Math.abs(result.year));
   if (result.day) result.numbers.push(result.day);
   if (result.month) result.numbers.push(result.month);
@@ -141,12 +212,14 @@ function ParseDateQuery(raw) {
   }
   result.reductions = reductions;
 
-  // Approximate Hebrew year for CE dates (Gregorian + 3760/3761 heuristic)
-  if (result.year > 0) {
-    result.hebrewYearApprox = result.year + 3760;
-    result.numbers.push(result.hebrewYearApprox);
-    // Also last 3 digits often used in shorthand (5708 → 708)
-    result.numbers.push(result.hebrewYearApprox % 1000);
+  if (!result.hebrew) {
+    ApplyHebrewCalendar(result);
+  } else {
+    result.numbers.push(result.hebrew.year, result.hebrew.year % 1000);
+    if (!result.hebrewYearApprox) result.hebrewYearApprox = result.hebrew.year;
+    if (!result.hebrewFormatted && HebrewCal) {
+      result.hebrewFormatted = HebrewCal.FormatHebrewDate(result.hebrew);
+    }
   }
 
   if (result.year > 0 && result.month && result.day) {
@@ -213,6 +286,10 @@ function MatchHistoricalEvents(queryMeta, events) {
       if (queryMeta.dateInfo.hebrewYearApprox) {
         dateNums.push(queryMeta.dateInfo.hebrewYearApprox);
         dateNums.push(queryMeta.dateInfo.hebrewYearApprox % 1000);
+      }
+      if (queryMeta.dateInfo.hebrewYearEnd) {
+        dateNums.push(queryMeta.dateInfo.hebrewYearEnd);
+        dateNums.push(queryMeta.dateInfo.hebrewYearEnd % 1000);
       }
     }
     const gemStrong = [
@@ -305,6 +382,29 @@ function MatchTorahVerses(queryMeta, verses) {
     }));
 }
 
+function EnrichDateMeta(meta, dateInfo) {
+  meta.queryType = 'date';
+  meta.dateInfo = dateInfo;
+  meta.numbers = (dateInfo.numbers || []).slice();
+  meta.gematriaValues = [Math.abs(dateInfo.year)];
+  if (dateInfo.hebrewYearApprox) meta.gematriaValues.push(dateInfo.hebrewYearApprox % 1000);
+  if (dateInfo.hebrewYearEnd) meta.gematriaValues.push(dateInfo.hebrewYearEnd % 1000);
+  const he = dateInfo.hebrew;
+  if (he) {
+    const yearLetters = (he.yearLettersShort || '').replace(/[^א-ת]/g, '');
+    if (yearLetters) {
+      meta.hebrewForms.push(yearLetters);
+      if (!meta.primaryHebrew) meta.primaryHebrew = yearLetters;
+    }
+    if (he.monthNameHe && !he.civilYearOnly) {
+      meta.hebrewForms.push(he.monthNameHe.replace(/[^א-ת]/g, ''));
+    }
+  }
+  meta.hebrewForms = [...new Set(meta.hebrewForms.filter(Boolean))];
+  meta.gematriaValues = [...new Set(meta.gematriaValues.filter(n => n > 0))];
+  return meta;
+}
+
 /**
  * Resolve a free-text query into typed metadata + Hebrew forms + numbers.
  */
@@ -340,13 +440,19 @@ function ResolveExploreQuery(raw, Engine, options) {
     if (plausibleYear && !(n > 0 && n < 1000 && knownGematriaShortcuts.includes(n))) {
       const asDate = ParseDateQuery(original.trim());
       if (asDate && asDate.year != null) {
-        meta.queryType = 'date';
-        meta.dateInfo = asDate;
-        meta.numbers = asDate.numbers.slice();
-        meta.gematriaValues = [Math.abs(asDate.year)];
-        if (asDate.hebrewYearApprox) {
-          meta.gematriaValues.push(asDate.hebrewYearApprox % 1000);
-        }
+        EnrichDateMeta(meta, asDate);
+        return meta;
+      }
+    }
+  }
+
+  // Año hebreo AM escrito como número (5708 → Nisán 5708 ≈ 1948)
+  if (/^\d{4}$/.test(original.trim())) {
+    const n = parseInt(original.trim(), 10);
+    if (n >= 5000 && n <= 6500) {
+      const asHebrewYear = ParseDateQuery(original.trim());
+      if (asHebrewYear && asHebrewYear.year != null) {
+        EnrichDateMeta(meta, asHebrewYear);
         return meta;
       }
     }
@@ -363,11 +469,7 @@ function ResolveExploreQuery(raw, Engine, options) {
 
   const dateInfo = ParseDateQuery(original);
   if (dateInfo) {
-    meta.queryType = 'date';
-    meta.dateInfo = dateInfo;
-    meta.numbers = dateInfo.numbers.slice();
-    meta.gematriaValues = [Math.abs(dateInfo.year)];
-    if (dateInfo.hebrewYearApprox) meta.gematriaValues.push(dateInfo.hebrewYearApprox % 1000);
+    EnrichDateMeta(meta, dateInfo);
     return meta;
   }
 
@@ -724,7 +826,8 @@ function FormatCorrelationReport(data) {
     if (p.fullHebrew && p.fullGematria) lines.push(`Nombre completo: ${p.fullHebrew} (Abs ${p.fullGematria.absolute} | Ord ${p.fullGematria.ordinal} | Red ${p.fullGematria.reduced})`);
     if (p.birthDate) {
       let fecha = `Nacimiento: ${p.birthDate}`;
-      if (p.dateInfo && p.dateInfo.hebrewYearApprox) fecha += ` ≈ HE ~${p.dateInfo.hebrewYearApprox}`;
+      if (p.dateInfo && p.dateInfo.hebrewFormatted) fecha += ` · ${p.dateInfo.hebrewFormatted}`;
+      else if (p.dateInfo && p.dateInfo.hebrewYearApprox) fecha += ` ≈ HE ${p.dateInfo.hebrewYearApprox}`;
       lines.push(fecha);
     }
     if (p.extra) lines.push(`Término extra: ${p.extra}`);
@@ -735,7 +838,11 @@ function FormatCorrelationReport(data) {
     lines.push(`Gematria: Abs ${g.absolute} | Ord ${g.ordinal} | Red ${g.reduced}`);
   }
   if (data.meta && data.meta.dateInfo) {
-    lines.push(`Fecha: año ${data.meta.dateInfo.year}` + (data.meta.dateInfo.hebrewYearApprox ? ` ≈ HE ~${data.meta.dateInfo.hebrewYearApprox}` : ''));
+    const di = data.meta.dateInfo;
+    let fechaLine = `Fecha: año ${di.year}`;
+    if (di.hebrewFormatted) fechaLine += ` · ${di.hebrewFormatted}`;
+    else if (di.hebrewYearApprox) fechaLine += ` · HE ${di.hebrewYearApprox}`;
+    lines.push(fechaLine);
   }
   lines.push('');
 
@@ -802,7 +909,9 @@ const GematriaExplore = {
   ExploreCorrelationsSingle,
   ResolveNameToHebrew,
   BuildPersonalProfile,
-  FormatCorrelationReport
+  FormatCorrelationReport,
+  ApplyHebrewCalendar,
+  EnrichDateMeta
 };
 
 if (typeof module !== 'undefined' && module.exports) {

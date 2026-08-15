@@ -5,7 +5,8 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS` and browser alias `TorahText`.
 - `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
-- `explore.js`: Unified correlation explorer — surname/name dictionary, date parser, `ExploreCorrelations()`, and `BuildPersonalProfile()` (given name + surname + birth date → unified dossier).
+- `hebrew_calendar.js`: Gregorian ↔ Hebrew civil calendar (Dershowitz/Reingold), Hebrew year letters (ה׳תש״ח), parse `5 Iyar 5708`.
+- `explore.js`: Unified correlation explorer — surname/name dictionary, date parser with real Hebrew calendar, `ExploreCorrelations()`, and `BuildPersonalProfile()` (given name + surname + birth date → unified dossier).
 - `export.js`: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
 - `storage.js`: LocalStorage manager for Favorites and Saved Searches.
 - `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
@@ -51,6 +52,11 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `ExploreCorrelations(query, db, Engine)`: Unified search (surname / name / date / event / number / compound).
 - `BuildPersonalProfile({ givenName, surname, birthDate, extra }, db, Engine)`: Personal dossier merging name, surname and birth date into one `queryType: 'profile'` report.
 - `FormatCorrelationReport(data)`: Plain-text correlation / profile report for download.
+
+### `hebrew_calendar.js`
+- `GregorianToHebrew(y, m, d)` / `HebrewToGregorian(hy, hm, hd)`: civil Hebrew calendar (1=Nisan … 7=Tishrei).
+- `ParseHebrewDate("5 Iyar 5708")`: Latin Hebrew date → Gregorian.
+- `NumberToHebrewLetters(n)`: 5708 → ה׳תש״ח.
 
 ## Verification
 ```bash

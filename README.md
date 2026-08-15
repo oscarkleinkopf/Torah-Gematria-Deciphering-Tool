@@ -14,9 +14,10 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Genera tarjetas de resonancia matemática y puentes narrativos cabalísticos.
 
 3. **Explorar correlaciones (apellido / fecha / evento)**:
-   - Buscador unificado: apellido (Cohen, Herzl…), fecha (`14/05/1948` / `1948`), evento (Oslo, Balfour) o número (`708`).
+   - Buscador unificado: apellido (Cohen, Herzl…), fecha (`14/05/1948` / `5 Iyar 5708` / `1948`), evento (Oslo, Balfour) o número (`708`).
   - Consultas compuestas: `Herzl + 1897`, `Cohen y 1948`.
-  - **Perfil personal**: nombre + apellido + fecha de nacimiento → dossier unificado (gematria, año hebreo aproximado, timeline, grafo, versículos, ELS).
+  - **Perfil personal**: nombre + apellido + fecha de nacimiento → dossier unificado (gematria, **fecha hebrea real**, timeline, grafo, versículos, ELS).
+  - Calendario hebreo civil (Nisán–Adar) sin heurística `año+3760`: 14/05/1948 = 5 de Iyar 5708 (ה׳תש״ח).
   - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
    - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
 

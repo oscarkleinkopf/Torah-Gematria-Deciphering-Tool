@@ -49,7 +49,7 @@
         </p>
 
         <div class="explore-search-row">
-          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, Oslo, Herzl, 708…" autocomplete="off">
+          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, 5 Iyar 5708, Oslo…" autocomplete="off">
           <button type="button" id="btnExploreSearch" class="explore-search-btn">Buscar</button>
         </div>
 
@@ -58,6 +58,7 @@
           <button type="button" class="explore-chip" data-q="Herzl">Herzl</button>
           <button type="button" class="explore-chip" data-q="Herzl + 1897">Herzl + 1897</button>
           <button type="button" class="explore-chip" data-q="14/05/1948">14/05/1948</button>
+          <button type="button" class="explore-chip" data-q="5 Iyar 5708">5 Iyar 5708</button>
           <button type="button" class="explore-chip" data-q="Oslo">Oslo</button>
           <button type="button" class="explore-chip" data-q="708">708</button>
           <button type="button" class="explore-chip" data-q="Cohen y 1948">Cohen y 1948</button>
@@ -70,7 +71,7 @@
       <div class="glass-card explore-panel profile-panel">
         <h3 class="input-title">Mi perfil personal</h3>
         <p class="explore-lead">
-          Nombre, apellido y fecha de nacimiento → un informe único: gematria, año hebreo aproximado,
+          Nombre, apellido y fecha de nacimiento → un informe único: gematria, fecha hebrea real,
           resonancias históricas, grafo, versículos y términos ELS.
         </p>
         <form id="formPersonalProfile" class="profile-form" autocomplete="off">
@@ -84,7 +85,7 @@
           </label>
           <label class="profile-field">
             <span>Fecha de nacimiento</span>
-            <input type="text" id="txtProfileDate" class="explore-input" placeholder="14/05/1948 o 1948">
+            <input type="text" id="txtProfileDate" class="explore-input" placeholder="14/05/1948 o 5 Iyar 5708">
           </label>
           <label class="profile-field">
             <span>Evento o término extra (opcional)</span>
@@ -626,6 +627,7 @@
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
   <script src="gematria.js"></script>
+  <script src="hebrew_calendar.js"></script>
   <script src="explore.js"></script>
   <script src="storage.js"></script>
   <script src="export.js"></script>
