@@ -6,9 +6,9 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
 - `hebrew_calendar.js`: Gregorian ↔ Hebrew civil calendar (Dershowitz/Reingold), Hebrew year letters (ה׳תש״ח), parse `5 Iyar 5708`.
-- `explore.js`: Unified correlation explorer — surname/name dictionary, date parser with real Hebrew calendar, `ExploreCorrelations()`, and `BuildPersonalProfile()` (given name + surname + birth date → unified dossier).
+- `explore.js`: Unified correlation explorer — surname/name dictionary (builtin + live user entries from LocalStorage), date parser with real Hebrew calendar, `ExploreCorrelations()`, and `BuildPersonalProfile()` (given name + surname + birth date → unified dossier).
 - `export.js`: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
-- `storage.js`: LocalStorage manager for Favorites and Saved Searches.
+- `storage.js`: LocalStorage manager for Favorites, Explore history, and the user name dictionary (`GetUserNameDictionary` / `SaveUserNameEntry` / `RemoveUserNameEntry`).
 - `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
 - `app.js`: UI Controller, DOM event bindings, Cyber-Mystic navigation, visual animations, Canvas renderers, and Explore tab.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
@@ -44,13 +44,16 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `SaveFavorite(item)`: Saves `{ id, type, title, data, timestamp }`
 - `GetFavorites()`: Returns array of saved items
 - `RemoveFavorite(id)`: Removes item by ID (or numeric index)
+- `GetUserNameDictionary()`: Personal name entries `{ id, spanish[], hebrew, kind, note }`
+- `SaveUserNameEntry(entry)` / `RemoveUserNameEntry(id)`: persist or delete a personal name; merged at lookup time with the builtin `NAME_DICTIONARY`
 
 ### Export Utility (`export.js`)
 - `ExportMatrixAsPNG(canvasElement | containerId, filename, matchMeta?)`: Triggers PNG image download of ELS visual matrix or canvas element.
 
 ### `explore.js`
-- `ExploreCorrelations(query, db, Engine)`: Unified search (surname / name / date / event / number / compound).
+- `ExploreCorrelations(query, db, Engine)`: Unified search (surname / name / date / event / number / compound). Uses builtin + user name dictionary.
 - `BuildPersonalProfile({ givenName, surname, birthDate, extra }, db, Engine)`: Personal dossier merging name, surname and birth date into one `queryType: 'profile'` report.
+- `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()`: live dictionary merge, validation and browse/filter.
 - `FormatCorrelationReport(data)`: Plain-text correlation / profile report for download.
 
 ### `hebrew_calendar.js`

@@ -435,6 +435,81 @@ async function runAllTests() {
   const jan1948 = Explore.ParseDateQuery('1948');
   assert(jan1948.hebrewYearApprox === 5708 && jan1948.hebrewYearEnd === 5709, "El año civil 1948 cubre 5708–5709");
 
+  console.log("\n=== SECCIÓN 20: DICCIONARIO VIVO (persistencia real + lookup) ===");
+  const Storage = require('./storage.js');
+  Storage.ClearUserNameDictionary();
+
+  assert(typeof Explore.GetActiveNameDictionary === 'function', "explore.js exporta GetActiveNameDictionary");
+  assert(typeof Explore.BuildUserNameEntry === 'function', "explore.js exporta BuildUserNameEntry");
+  assert(typeof Storage.SaveUserNameEntry === 'function' && typeof Storage.GetUserNameDictionary === 'function', "storage.js exporta CRUD del diccionario personal");
+
+  const builtinSize = Explore.NAME_DICTIONARY.length;
+  assert(Explore.GetActiveNameDictionary().length === builtinSize, "Sin entradas personales, el diccionario activo es solo la base");
+
+  const invalid = Explore.BuildUserNameEntry({ spanish: '', hebrew: 'כהן' }, Engine);
+  assert(!invalid.ok, "Rechaza una entrada sin alias en español");
+
+  const noHe = Explore.BuildUserNameEntry({ spanish: 'Algo', hebrew: 'א' }, Engine);
+  assert(!noHe.ok, "Rechaza hebreo de una sola consonante");
+
+  const phoneticQ = Engine.SpanishToHebrew('Qwertyname');
+  assert(phoneticQ.replace(/[^א-ת]/g, '') !== 'כהן', "La fonética de Qwertyname no es כהן (el diccionario debe ganar)");
+
+  const built = Explore.BuildUserNameEntry({
+    spanish: 'Qwertyname, Qwerty',
+    hebrew: 'כהן',
+    kind: 'apellido',
+    note: 'Grafía de prueba — no fonética'
+  }, Engine);
+  assert(built.ok && built.entry.hebrew === 'כהן' && built.entry.spanish.includes('qwertyname'), "BuildUserNameEntry normaliza alias y conserva hebreo escrito");
+
+  const saved = Storage.SaveUserNameEntry(built.entry);
+  assert(saved.ok && Storage.GetUserNameDictionary().length === 1, "SaveUserNameEntry persiste la entrada");
+  assert(Storage.GetUserNameDictionary()[0].id === built.entry.id, "La entrada persistida conserva el id");
+
+  const snapshot = JSON.parse(JSON.stringify(Storage.GetUserNameDictionary()));
+  Storage.ClearUserNameDictionary();
+  assert(Storage.GetUserNameDictionary().length === 0, "ClearUserNameDictionary vacía el almacén");
+  snapshot.forEach(e => Storage.SaveUserNameEntry(e));
+  assert(Storage.GetUserNameDictionary().some(e => e.hebrew === 'כהן'), "Releer el JSON persistido restaura la entrada (simula recarga)");
+
+  const active = Explore.GetActiveNameDictionary();
+  assert(active.length === builtinSize + 1, "El diccionario activo fusiona base + personal");
+  assert(active[0].source === 'user' && active[0].hebrew === 'כהן', "Las entradas personales van primero (ganan el lookup)");
+
+  const hit = Explore.LookupNameDictionary('Qwertyname');
+  assert(hit && hit.hebrew === 'כהן' && hit.source === 'user', "LookupNameDictionary resuelve el alias personal a כהן");
+  assert(Explore.LookupNameDictionary('qwerty') && Explore.LookupNameDictionary('qwerty').hebrew === 'כהן', "El segundo alias también resuelve");
+
+  const explored = Explore.ExploreCorrelations('Qwertyname', DB, Engine);
+  assert(explored.queryType === 'surname' && explored.meta.primaryHebrew === 'כהן', "Explorar usa el hebreo del diccionario, no la fonética");
+  assert(explored.suggestedELS.includes('כהן') && !explored.suggestedELS.includes(phoneticQ.replace(/[^א-ת]/g, '')), "ELS sugerido es כהן del diccionario");
+  assert(explored.knowledge.length > 0, "Qwertyname hereda correlaciones reales de כהן");
+
+  const profileLive = Explore.BuildPersonalProfile({
+    givenName: 'David',
+    surname: 'Qwertyname',
+    birthDate: '14/05/1948'
+  }, DB, Engine);
+  assert(profileLive.profile.surnameHebrew === 'כהן', "El perfil personal usa el apellido del diccionario vivo");
+  assert(profileLive.profile.fullHebrew === 'דודכהן', "Nombre completo del perfil con diccionario: דודכהן");
+
+  const found = Explore.SearchNameDictionary('qwerty', Explore.GetActiveNameDictionary());
+  assert(found.some(e => e.id === built.entry.id), "SearchNameDictionary encuentra la entrada personal");
+  assert(Explore.SearchNameDictionary('כהן', Explore.GetActiveNameDictionary()).some(e => e.hebrew.replace(/[^א-ת]/g, '') === 'כהן'), "La búsqueda también funciona por hebreo");
+
+  const override = Explore.BuildUserNameEntry({ spanish: 'oscar', hebrew: 'עזרא', kind: 'nombre', note: 'override' }, Engine);
+  assert(override.ok, "Se puede construir un override de una entrada base");
+  Storage.SaveUserNameEntry(override.entry);
+  assert(Explore.LookupNameDictionary('oscar').hebrew === 'עזרא', "Una entrada personal sustituye el Oscar de la base");
+  Storage.RemoveUserNameEntry(override.entry.id);
+  assert(Explore.LookupNameDictionary('oscar').hebrew === 'אוסקר', "Al borrar el override, vuelve la entrada base");
+
+  Storage.RemoveUserNameEntry(built.entry.id);
+  assert(Storage.GetUserNameDictionary().length === 0, "RemoveUserNameEntry elimina la entrada");
+  const afterDelete = Explore.ExploreCorrelations('Qwertyname', DB, Engine);
+  assert(afterDelete.meta.primaryHebrew !== 'כהן', "Tras borrar, Qwertyname ya no resuelve a כהן");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");
