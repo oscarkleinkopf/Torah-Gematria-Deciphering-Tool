@@ -237,8 +237,24 @@ async function runAllTests() {
   assert(TORAH_BOOKS.deuteronomy.includes('שמעישראליהוהאלהינויהוהאחד'), "Deuteronomio incluye el Shemá");
   assert(TORAH_BOOKS.numbers.includes('יברכךיהוהוישמרך'), "Números incluye Birkat Kohanim");
 
-  const { TORAH_BOOK_OFFSETS } = require('./torah_text.js');
+  const { TORAH_BOOK_OFFSETS, TORAH_VERSE_MAP, LookupTorahVerse, LookupTorahVerseSpan } = require('./torah_text.js');
   assert(Array.isArray(TORAH_BOOK_OFFSETS) && TORAH_BOOK_OFFSETS.length === 5, "TORAH_BOOK_OFFSETS define offsets de 5 libros");
+  assert(Array.isArray(TORAH_VERSE_MAP) && TORAH_VERSE_MAP.length >= 300, `TORAH_VERSE_MAP tiene versículos alineados (actual: ${TORAH_VERSE_MAP.length})`);
+  assert(typeof LookupTorahVerse === 'function' && LookupTorahVerse(0).reference === 'Génesis 1:1', "Letra #0 → Génesis 1:1");
+  assert(LookupTorahVerse(5).reference === 'Génesis 1:1', "El ELS clásico de תורה (letra #5) cae en Génesis 1:1");
+  assert(LookupTorahVerse(28).reference === 'Génesis 1:2', "Letra #28 → Génesis 1:2");
+  const decIdx = TORAH_TEXT.indexOf('אנכייהוהאלהיך');
+  assert(decIdx > 0 && LookupTorahVerse(decIdx).reference === 'Éxodo 20:2', "El Decálogo mapea a Éxodo 20:2");
+  const birkatIdx = TORAH_TEXT.indexOf('יברכךיהוהוישמרך');
+  assert(birkatIdx > 0 && LookupTorahVerse(birkatIdx).reference === 'Números 6:24', "Birkat Kohanim mapea a Números 6:24");
+  const shemaIdx = TORAH_TEXT.indexOf('שמעישראליהוהאלהינויהוהאחד');
+  assert(shemaIdx > 0 && LookupTorahVerse(shemaIdx).reference === 'Deuteronomio 6:4', "El Shemá mapea a Deuteronomio 6:4");
+  let unmapped = 0;
+  for (let i = 0; i < TORAH_TEXT.length; i += 97) {
+    if (!LookupTorahVerse(i)) unmapped++;
+  }
+  assert(unmapped === 0, "El muestreo del corpus está 100% cubierto por el mapa de versículos");
+  assert(LookupTorahVerseSpan([5, 28]).includes('Génesis 1:1') && LookupTorahVerseSpan([5, 28]).includes('Génesis 1:2'), "LookupTorahVerseSpan cubre un rango de versículos");
 
   // FindELS shouldCancel aborta temprano
   let cancelChecks = 0;
@@ -326,7 +342,9 @@ async function runAllTests() {
 
   const dateParsed = Explore.ParseDateQuery('14/05/1948');
   assert(dateParsed && dateParsed.year === 1948 && dateParsed.day === 14 && dateParsed.month === 5, "ParseDateQuery entiende 14/05/1948");
-  assert(dateParsed.hebrewYearApprox === 5708, "ParseDateQuery estima año hebreo ~5708");
+  assert(dateParsed.hebrewYearApprox === 5708, "14/05/1948 cae en el año hebreo 5708");
+  assert(dateParsed.hebrew && dateParsed.hebrew.month === 2 && dateParsed.hebrew.day === 5, "14/05/1948 = 5 de Iyar 5708");
+  assert(/Iyar/.test(dateParsed.hebrewFormatted || '') && /5708/.test(dateParsed.hebrewFormatted || ''), "La fecha hebrea formateada incluye Iyar 5708");
 
   const cohen = Explore.ExploreCorrelations('Cohen', DB, Engine);
   assert(cohen.queryType === 'surname' && cohen.meta.primaryHebrew === 'כהן', "Cohen resuelve a apellido כהן");
@@ -379,7 +397,8 @@ async function runAllTests() {
   assert(profile.profile.surnameHebrew === 'כהן', "Apellido Cohen → כהן");
   assert(profile.profile.fullHebrew === 'דודכהן', "Nombre completo hebreo דודכהן");
   assert(profile.profile.fullGematria && profile.profile.fullGematria.absolute === 89, `Gematria absoluta de דודכהן es 89 (actual: ${profile.profile.fullGematria && profile.profile.fullGematria.absolute})`);
-  assert(profile.profile.dateInfo && profile.profile.dateInfo.year === 1948 && profile.profile.dateInfo.hebrewYearApprox === 5708, "Perfil estima año hebreo ~5708");
+  assert(profile.profile.dateInfo && profile.profile.dateInfo.year === 1948 && profile.profile.dateInfo.hebrewYearApprox === 5708, "Perfil calcula año hebreo 5708");
+  assert(profile.profile.dateInfo.hebrew && profile.profile.dateInfo.hebrew.day === 5 && /Iyar/.test(profile.profile.dateInfo.hebrew.monthName || ''), "Perfil: 14/05/1948 = 5 Iyar");
   assert(profile.events.some(e => e.event.year === 1948), "El perfil correlaciona con la Independencia de 1948");
   assert(Array.isArray(profile.suggestedELS) && profile.suggestedELS.includes('דודכהן'), "El perfil sugiere ELS del nombre completo");
 
@@ -391,6 +410,105 @@ async function runAllTests() {
     /Nacimiento: 14\/05\/1948/.test(profileReport),
     "El informe de perfil incluye identidad, hebreo y fecha"
   );
+
+  console.log("\n=== SECCIÓN 19: CALENDARIO HEBREO REAL ===");
+  const Cal = require('./hebrew_calendar.js');
+  assert(typeof Cal.GregorianToHebrew === 'function', "hebrew_calendar.js exporta GregorianToHebrew");
+
+  const indepHe = Cal.GregorianToHebrew(1948, 5, 14);
+  assert(indepHe && indepHe.year === 5708 && indepHe.month === 2 && indepHe.day === 5, "14 may 1948 → 5 Iyar 5708");
+  assert(Cal.NumberToHebrewLetters(5708) === 'ה׳תש״ח', `Año 5708 en letras: ה׳תש״ח (actual: ${Cal.NumberToHebrewLetters(5708)})`);
+
+  const rh = Cal.GregorianToHebrew(1948, 10, 4);
+  assert(rh && rh.year === 5709 && rh.month === 7 && rh.day === 1, "4 oct 1948 es 1 Tishrei 5709 (el atajo +3760 fallaría)");
+
+  const back = Cal.HebrewToGregorian(5708, 2, 5);
+  assert(back && back.year === 1948 && back.month === 5 && back.day === 14, "5 Iyar 5708 → 14 may 1948");
+
+  const parsedHeDate = Explore.ParseDateQuery('5 Iyar 5708');
+  assert(parsedHeDate && parsedHeDate.year === 1948 && parsedHeDate.month === 5 && parsedHeDate.day === 14, "ParseDateQuery entiende 5 Iyar 5708");
+  assert(Explore.ExploreCorrelations('5 Iyar 5708', DB, Engine).events.some(e => e.event.year === 1948), "5 Iyar 5708 correlaciona con la Independencia");
+
+  const tashach = Explore.ParseDateQuery('5708');
+  assert(tashach && tashach.year === 1948 && tashach.hebrewYearApprox === 5708, "5708 (año AM) resuelve al año civil 1948");
+
+  const jan1948 = Explore.ParseDateQuery('1948');
+  assert(jan1948.hebrewYearApprox === 5708 && jan1948.hebrewYearEnd === 5709, "El año civil 1948 cubre 5708–5709");
+
+  console.log("\n=== SECCIÓN 20: DICCIONARIO VIVO (persistencia real + lookup) ===");
+  const Storage = require('./storage.js');
+  Storage.ClearUserNameDictionary();
+
+  assert(typeof Explore.GetActiveNameDictionary === 'function', "explore.js exporta GetActiveNameDictionary");
+  assert(typeof Explore.BuildUserNameEntry === 'function', "explore.js exporta BuildUserNameEntry");
+  assert(typeof Storage.SaveUserNameEntry === 'function' && typeof Storage.GetUserNameDictionary === 'function', "storage.js exporta CRUD del diccionario personal");
+
+  const builtinSize = Explore.NAME_DICTIONARY.length;
+  assert(Explore.GetActiveNameDictionary().length === builtinSize, "Sin entradas personales, el diccionario activo es solo la base");
+
+  const invalid = Explore.BuildUserNameEntry({ spanish: '', hebrew: 'כהן' }, Engine);
+  assert(!invalid.ok, "Rechaza una entrada sin alias en español");
+
+  const noHe = Explore.BuildUserNameEntry({ spanish: 'Algo', hebrew: 'א' }, Engine);
+  assert(!noHe.ok, "Rechaza hebreo de una sola consonante");
+
+  const phoneticQ = Engine.SpanishToHebrew('Qwertyname');
+  assert(phoneticQ.replace(/[^א-ת]/g, '') !== 'כהן', "La fonética de Qwertyname no es כהן (el diccionario debe ganar)");
+
+  const built = Explore.BuildUserNameEntry({
+    spanish: 'Qwertyname, Qwerty',
+    hebrew: 'כהן',
+    kind: 'apellido',
+    note: 'Grafía de prueba — no fonética'
+  }, Engine);
+  assert(built.ok && built.entry.hebrew === 'כהן' && built.entry.spanish.includes('qwertyname'), "BuildUserNameEntry normaliza alias y conserva hebreo escrito");
+
+  const saved = Storage.SaveUserNameEntry(built.entry);
+  assert(saved.ok && Storage.GetUserNameDictionary().length === 1, "SaveUserNameEntry persiste la entrada");
+  assert(Storage.GetUserNameDictionary()[0].id === built.entry.id, "La entrada persistida conserva el id");
+
+  const snapshot = JSON.parse(JSON.stringify(Storage.GetUserNameDictionary()));
+  Storage.ClearUserNameDictionary();
+  assert(Storage.GetUserNameDictionary().length === 0, "ClearUserNameDictionary vacía el almacén");
+  snapshot.forEach(e => Storage.SaveUserNameEntry(e));
+  assert(Storage.GetUserNameDictionary().some(e => e.hebrew === 'כהן'), "Releer el JSON persistido restaura la entrada (simula recarga)");
+
+  const active = Explore.GetActiveNameDictionary();
+  assert(active.length === builtinSize + 1, "El diccionario activo fusiona base + personal");
+  assert(active[0].source === 'user' && active[0].hebrew === 'כהן', "Las entradas personales van primero (ganan el lookup)");
+
+  const hit = Explore.LookupNameDictionary('Qwertyname');
+  assert(hit && hit.hebrew === 'כהן' && hit.source === 'user', "LookupNameDictionary resuelve el alias personal a כהן");
+  assert(Explore.LookupNameDictionary('qwerty') && Explore.LookupNameDictionary('qwerty').hebrew === 'כהן', "El segundo alias también resuelve");
+
+  const explored = Explore.ExploreCorrelations('Qwertyname', DB, Engine);
+  assert(explored.queryType === 'surname' && explored.meta.primaryHebrew === 'כהן', "Explorar usa el hebreo del diccionario, no la fonética");
+  assert(explored.suggestedELS.includes('כהן') && !explored.suggestedELS.includes(phoneticQ.replace(/[^א-ת]/g, '')), "ELS sugerido es כהן del diccionario");
+  assert(explored.knowledge.length > 0, "Qwertyname hereda correlaciones reales de כהן");
+
+  const profileLive = Explore.BuildPersonalProfile({
+    givenName: 'David',
+    surname: 'Qwertyname',
+    birthDate: '14/05/1948'
+  }, DB, Engine);
+  assert(profileLive.profile.surnameHebrew === 'כהן', "El perfil personal usa el apellido del diccionario vivo");
+  assert(profileLive.profile.fullHebrew === 'דודכהן', "Nombre completo del perfil con diccionario: דודכהן");
+
+  const found = Explore.SearchNameDictionary('qwerty', Explore.GetActiveNameDictionary());
+  assert(found.some(e => e.id === built.entry.id), "SearchNameDictionary encuentra la entrada personal");
+  assert(Explore.SearchNameDictionary('כהן', Explore.GetActiveNameDictionary()).some(e => e.hebrew.replace(/[^א-ת]/g, '') === 'כהן'), "La búsqueda también funciona por hebreo");
+
+  const override = Explore.BuildUserNameEntry({ spanish: 'oscar', hebrew: 'עזרא', kind: 'nombre', note: 'override' }, Engine);
+  assert(override.ok, "Se puede construir un override de una entrada base");
+  Storage.SaveUserNameEntry(override.entry);
+  assert(Explore.LookupNameDictionary('oscar').hebrew === 'עזרא', "Una entrada personal sustituye el Oscar de la base");
+  Storage.RemoveUserNameEntry(override.entry.id);
+  assert(Explore.LookupNameDictionary('oscar').hebrew === 'אוסקר', "Al borrar el override, vuelve la entrada base");
+
+  Storage.RemoveUserNameEntry(built.entry.id);
+  assert(Storage.GetUserNameDictionary().length === 0, "RemoveUserNameEntry elimina la entrada");
+  const afterDelete = Explore.ExploreCorrelations('Qwertyname', DB, Engine);
+  assert(afterDelete.meta.primaryHebrew !== 'כהן', "Tras borrar, Qwertyname ya no resuelve a כהן");
 
   console.log("\n=== RESUMEN ===");
   if (success) {

@@ -46,10 +46,11 @@
         <p class="explore-lead">
           Busca un <strong>apellido</strong>, <strong>nombre</strong>, <strong>fecha</strong> o <strong>evento</strong>
           y descubre resonancias en el grafo de conocimiento, la línea de tiempo y la Torá.
+          Los nombres del diccionario (base + los que tú guardas) se usan de verdad en gematria, correlaciones y ELS.
         </p>
 
         <div class="explore-search-row">
-          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, Oslo, Herzl, 708…" autocomplete="off">
+          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, 5 Iyar 5708, Oslo…" autocomplete="off">
           <button type="button" id="btnExploreSearch" class="explore-search-btn">Buscar</button>
         </div>
 
@@ -58,6 +59,7 @@
           <button type="button" class="explore-chip" data-q="Herzl">Herzl</button>
           <button type="button" class="explore-chip" data-q="Herzl + 1897">Herzl + 1897</button>
           <button type="button" class="explore-chip" data-q="14/05/1948">14/05/1948</button>
+          <button type="button" class="explore-chip" data-q="5 Iyar 5708">5 Iyar 5708</button>
           <button type="button" class="explore-chip" data-q="Oslo">Oslo</button>
           <button type="button" class="explore-chip" data-q="708">708</button>
           <button type="button" class="explore-chip" data-q="Cohen y 1948">Cohen y 1948</button>
@@ -70,7 +72,7 @@
       <div class="glass-card explore-panel profile-panel">
         <h3 class="input-title">Mi perfil personal</h3>
         <p class="explore-lead">
-          Nombre, apellido y fecha de nacimiento → un informe único: gematria, año hebreo aproximado,
+          Nombre, apellido y fecha de nacimiento → un informe único: gematria, fecha hebrea real,
           resonancias históricas, grafo, versículos y términos ELS.
         </p>
         <form id="formPersonalProfile" class="profile-form" autocomplete="off">
@@ -84,7 +86,7 @@
           </label>
           <label class="profile-field">
             <span>Fecha de nacimiento</span>
-            <input type="text" id="txtProfileDate" class="explore-input" placeholder="14/05/1948 o 1948">
+            <input type="text" id="txtProfileDate" class="explore-input" placeholder="14/05/1948 o 5 Iyar 5708">
           </label>
           <label class="profile-field">
             <span>Evento o término extra (opcional)</span>
@@ -95,6 +97,48 @@
             <button type="button" class="explore-action-btn" id="btnProfileExample">Ejemplo: David Cohen</button>
           </div>
         </form>
+      </div>
+
+      <div class="glass-card explore-panel dictionary-panel">
+        <h3 class="input-title">Diccionario de nombres</h3>
+        <p class="explore-lead">
+          Consulta el léxico hebreo de la app y añade los tuyos. Lo que guardas queda en este navegador
+          y entra en Explorar, el perfil personal y las sugerencias ELS — no es una lista decorativa.
+        </p>
+        <form id="formNameDictionary" class="dict-form" autocomplete="off">
+          <input type="hidden" id="txtDictEditId" value="">
+          <label class="profile-field">
+            <span>Nombre o alias (español, varios separados por coma)</span>
+            <input type="text" id="txtDictSpanish" class="explore-input" placeholder="Natalia, Naty">
+          </label>
+          <label class="profile-field">
+            <span>Hebreo (vacío = conversión fonética)</span>
+            <input type="text" id="txtDictHebrew" class="explore-input rtl" placeholder="נטליה" dir="rtl">
+          </label>
+          <label class="profile-field">
+            <span>Tipo</span>
+            <select id="selDictKind" class="explore-input dict-select">
+              <option value="nombre">Nombre</option>
+              <option value="apellido">Apellido</option>
+              <option value="concepto">Concepto</option>
+            </select>
+          </label>
+          <label class="profile-field">
+            <span>Nota (opcional)</span>
+            <input type="text" id="txtDictNote" class="explore-input" placeholder="Familia, grafía preferida…">
+          </label>
+          <div class="profile-form-actions dict-form-actions">
+            <button type="submit" class="explore-search-btn" id="btnDictSave">Guardar en el diccionario</button>
+            <button type="button" class="explore-action-btn" id="btnDictCancelEdit" hidden>Cancelar edición</button>
+          </div>
+        </form>
+        <div id="dictPreview" class="dict-preview" aria-live="polite"></div>
+        <div id="dictFormStatus" class="dict-form-status" aria-live="polite"></div>
+        <div class="dict-toolbar">
+          <input type="search" id="txtDictFilter" class="explore-input" placeholder="Filtrar: Cohen, רחל, apellido…" autocomplete="off">
+          <span id="dictCount" class="dict-count"></span>
+        </div>
+        <div id="dictList" class="dict-list"></div>
       </div>
 
       <div class="glass-card explore-panel explore-output-panel" id="exploreOutputPanel">
@@ -626,8 +670,9 @@
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
   <script src="gematria.js"></script>
-  <script src="explore.js"></script>
+  <script src="hebrew_calendar.js"></script>
   <script src="storage.js"></script>
+  <script src="explore.js"></script>
   <script src="export.js"></script>
   <script src="app.js"></script>
 </body>

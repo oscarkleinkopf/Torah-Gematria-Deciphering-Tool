@@ -1,21 +1,56 @@
 /**
- * storage.js — LocalStorage manager for Favorites and ELS search history.
+ * storage.js — LocalStorage manager for Favorites, search history, and the live name dictionary.
  * Contract (PROJECT.md): SaveFavorite / GetFavorites / RemoveFavorite
+ * In Node (no localStorage) uses an in-memory store so persistence logic is the same as in the browser.
  */
 
 const FAVORITES_KEY = 'els_favorites';
 const ELS_HISTORY_KEY = 'els_search_history';
 const EXPLORE_HISTORY_KEY = 'explore_search_history';
+const USER_NAME_DICTIONARY_KEY = 'name_dictionary_user';
 const MAX_FAVORITES = 50;
 const MAX_HISTORY = 8;
 const MAX_EXPLORE_HISTORY = 10;
+const MAX_USER_NAMES = 200;
 
-function GetFavorites() {
+const memoryStore = Object.create(null);
+
+function getStore() {
+  if (typeof localStorage !== 'undefined') return localStorage;
+  return {
+    getItem(key) {
+      return Object.prototype.hasOwnProperty.call(memoryStore, key) ? memoryStore[key] : null;
+    },
+    setItem(key, value) {
+      memoryStore[key] = String(value);
+    },
+    removeItem(key) {
+      delete memoryStore[key];
+    }
+  };
+}
+
+function readJsonArray(key) {
   try {
-    return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    const raw = getStore().getItem(key);
+    const parsed = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];
   }
+}
+
+function writeJson(key, value) {
+  try {
+    getStore().setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function GetFavorites() {
+  return readJsonArray(FAVORITES_KEY);
 }
 
 function SaveFavorite(item) {
@@ -46,9 +81,7 @@ function SaveFavorite(item) {
   };
   favs.unshift(entry);
   while (favs.length > MAX_FAVORITES) favs.pop();
-  try {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
-  } catch (e) {}
+  writeJson(FAVORITES_KEY, favs);
   return favs;
 }
 
@@ -59,24 +92,18 @@ function RemoveFavorite(id) {
   } else {
     favs = favs.filter(f => f.id !== id && `${f.word}|${f.skip}|${f.start}` !== id);
   }
-  try {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
-  } catch (e) {}
+  writeJson(FAVORITES_KEY, favs);
   return favs;
 }
 
 function ClearFavorites() {
   try {
-    localStorage.removeItem(FAVORITES_KEY);
+    getStore().removeItem(FAVORITES_KEY);
   } catch (e) {}
 }
 
 function GetELSSearchHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(ELS_HISTORY_KEY) || '[]');
-  } catch (e) {
-    return [];
-  }
+  return readJsonArray(ELS_HISTORY_KEY);
 }
 
 function SaveELSSearchHistory(query) {
@@ -85,24 +112,18 @@ function SaveELSSearchHistory(query) {
   history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
   history.unshift(query);
   if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
-  try {
-    localStorage.setItem(ELS_HISTORY_KEY, JSON.stringify(history));
-  } catch (e) {}
+  writeJson(ELS_HISTORY_KEY, history);
   return history;
 }
 
 function ClearELSSearchHistory() {
   try {
-    localStorage.removeItem(ELS_HISTORY_KEY);
+    getStore().removeItem(ELS_HISTORY_KEY);
   } catch (e) {}
 }
 
 function GetExploreHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(EXPLORE_HISTORY_KEY) || '[]');
-  } catch (e) {
-    return [];
-  }
+  return readJsonArray(EXPLORE_HISTORY_KEY);
 }
 
 function SaveExploreHistory(query) {
@@ -112,16 +133,79 @@ function SaveExploreHistory(query) {
   history = history.filter(item => item.toLowerCase() !== q.toLowerCase());
   history.unshift(q);
   if (history.length > MAX_EXPLORE_HISTORY) history = history.slice(0, MAX_EXPLORE_HISTORY);
-  try {
-    localStorage.setItem(EXPLORE_HISTORY_KEY, JSON.stringify(history));
-  } catch (e) {}
+  writeJson(EXPLORE_HISTORY_KEY, history);
   return history;
 }
 
 function ClearExploreHistory() {
   try {
-    localStorage.removeItem(EXPLORE_HISTORY_KEY);
+    getStore().removeItem(EXPLORE_HISTORY_KEY);
   } catch (e) {}
+}
+
+function sanitizeUserNameEntry(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const spanish = Array.isArray(raw.spanish)
+    ? raw.spanish.map(a => String(a || '').trim()).filter(Boolean)
+    : String(raw.spanish || '').split(/[,;/]/).map(a => a.trim()).filter(Boolean);
+  const hebrew = String(raw.hebrew || '').replace(/[^\u05D0-\u05EA\s]/g, '').replace(/\s+/g, ' ').trim();
+  const consonants = hebrew.replace(/[^א-ת]/g, '');
+  if (spanish.length === 0 || consonants.length < 2) return null;
+  const kind = (raw.kind === 'apellido' || raw.kind === 'concepto') ? raw.kind : 'nombre';
+  const id = String(raw.id || '').trim() || ('user:' + spanish[0].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+  return {
+    id,
+    spanish,
+    hebrew,
+    kind,
+    note: String(raw.note || '').trim(),
+    label: String(raw.label || spanish[0]).trim(),
+    source: 'user',
+    createdAt: raw.createdAt || null,
+    updatedAt: raw.updatedAt || null
+  };
+}
+
+function GetUserNameDictionary() {
+  return readJsonArray(USER_NAME_DICTIONARY_KEY)
+    .map(sanitizeUserNameEntry)
+    .filter(Boolean);
+}
+
+function SaveUserNameEntry(raw) {
+  const entry = sanitizeUserNameEntry(raw);
+  if (!entry) {
+    return { ok: false, error: 'Indica un alias en español y al menos 2 consonantes hebreas.', list: GetUserNameDictionary() };
+  }
+  const list = GetUserNameDictionary();
+  const idx = list.findIndex(e => e.id === entry.id);
+  const now = new Date().toISOString();
+  entry.createdAt = (idx >= 0 && list[idx].createdAt) || raw.createdAt || now;
+  entry.updatedAt = now;
+  if (idx >= 0) {
+    list[idx] = entry;
+  } else {
+    if (list.length >= MAX_USER_NAMES) {
+      return { ok: false, error: `Límite de ${MAX_USER_NAMES} nombres personales.`, list };
+    }
+    list.unshift(entry);
+  }
+  writeJson(USER_NAME_DICTIONARY_KEY, list);
+  return { ok: true, entry, list };
+}
+
+function RemoveUserNameEntry(id) {
+  const key = String(id || '');
+  const list = GetUserNameDictionary().filter(e => e.id !== key);
+  writeJson(USER_NAME_DICTIONARY_KEY, list);
+  return list;
+}
+
+function ClearUserNameDictionary() {
+  try {
+    getStore().removeItem(USER_NAME_DICTIONARY_KEY);
+  } catch (e) {}
+  return [];
 }
 
 const GematriaStorage = {
@@ -134,7 +218,12 @@ const GematriaStorage = {
   ClearELSSearchHistory,
   GetExploreHistory,
   SaveExploreHistory,
-  ClearExploreHistory
+  ClearExploreHistory,
+  GetUserNameDictionary,
+  SaveUserNameEntry,
+  RemoveUserNameEntry,
+  ClearUserNameDictionary,
+  MAX_USER_NAMES
 };
 
 if (typeof module !== 'undefined' && module.exports) {
