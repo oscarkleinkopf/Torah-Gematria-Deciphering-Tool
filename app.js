@@ -2691,7 +2691,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const g = meta.primaryGematria && meta.primaryGematria.absolute
         ? ` · Gematria: <strong>${meta.primaryGematria.absolute}</strong>`
         : (meta.numbers && meta.numbers.length ? ` · Números: ${meta.numbers.slice(0, 5).join(', ')}` : '');
-      exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g} · ${total} correlación(es)`;
+      const dictNote = meta.nameEntry
+        ? ` · Diccionario: <strong>${meta.nameEntry.source === 'user' ? 'personal' : 'base'}</strong>${meta.nameEntry.note ? ' — ' + escapeHtml(meta.nameEntry.note) : ''}`
+        : '';
+      exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g}${dictNote} · ${total} correlación(es)`;
     }
 
     if (total === 0 && !(data.suggestedELS && data.suggestedELS.length) && !data.profile) {
@@ -2971,6 +2974,197 @@ document.addEventListener('DOMContentLoaded', () => {
       runProfileBuild(example);
     });
   }
+
+  // --- Diccionario vivo (base + entradas personales persistidas) ---
+  const dictListEl = document.getElementById('dictList');
+  const dictCountEl = document.getElementById('dictCount');
+  const dictFilterEl = document.getElementById('txtDictFilter');
+  const dictPreviewEl = document.getElementById('dictPreview');
+  const dictFormStatusEl = document.getElementById('dictFormStatus');
+  const formNameDictionary = document.getElementById('formNameDictionary');
+  const txtDictSpanish = document.getElementById('txtDictSpanish');
+  const txtDictHebrew = document.getElementById('txtDictHebrew');
+  const selDictKind = document.getElementById('selDictKind');
+  const txtDictNote = document.getElementById('txtDictNote');
+  const txtDictEditId = document.getElementById('txtDictEditId');
+  const btnDictCancelEdit = document.getElementById('btnDictCancelEdit');
+  const kindLabels = { nombre: 'Nombre', apellido: 'Apellido', concepto: 'Concepto' };
+
+  function setDictFormStatus(message, kind) {
+    if (!dictFormStatusEl) return;
+    dictFormStatusEl.textContent = message || '';
+    dictFormStatusEl.classList.remove('error', 'ok');
+    if (kind) dictFormStatusEl.classList.add(kind);
+  }
+
+  function resetDictForm() {
+    if (formNameDictionary) formNameDictionary.reset();
+    if (txtDictEditId) txtDictEditId.value = '';
+    if (selDictKind) selDictKind.value = 'nombre';
+    if (btnDictCancelEdit) btnDictCancelEdit.hidden = true;
+    updateDictPreview();
+  }
+
+  function fillDictForm(entry) {
+    if (!entry) return;
+    if (txtDictSpanish) txtDictSpanish.value = (entry.spanish || []).join(', ');
+    if (txtDictHebrew) txtDictHebrew.value = entry.hebrew || '';
+    if (selDictKind) selDictKind.value = entry.kind || 'nombre';
+    if (txtDictNote) txtDictNote.value = entry.note || '';
+    if (txtDictEditId) txtDictEditId.value = entry.id || '';
+    if (btnDictCancelEdit) btnDictCancelEdit.hidden = false;
+    updateDictPreview();
+  }
+
+  function updateDictPreview() {
+    if (!dictPreviewEl || !Explore) return;
+    const spanish = (txtDictSpanish && txtDictSpanish.value) || '';
+    const hebrewInput = (txtDictHebrew && txtDictHebrew.value) || '';
+    const built = Explore.BuildUserNameEntry({
+      spanish,
+      hebrew: hebrewInput,
+      kind: (selDictKind && selDictKind.value) || 'nombre'
+    }, Engine);
+    if (!spanish.trim()) {
+      dictPreviewEl.innerHTML = 'Escribe un nombre para ver el hebreo y su gematria.';
+      return;
+    }
+    if (!built.ok) {
+      dictPreviewEl.textContent = built.error;
+      return;
+    }
+    const gem = Engine && typeof Engine.CalculateGematria === 'function'
+      ? Engine.CalculateGematria(built.entry.hebrew)
+      : null;
+    const phonetic = !hebrewInput.trim() && Engine && typeof Engine.SpanishToHebrew === 'function';
+    dictPreviewEl.innerHTML =
+      `Hebreo ${phonetic ? '(fonética)' : '(escrito)'}: <span class="he">${escapeHtml(built.entry.hebrew)}</span>` +
+      (gem && gem.lettersCount ? ` · Abs <strong>${gem.absolute}</strong> · Ord ${gem.ordinal} · Red ${gem.reduced}` : '');
+  }
+
+  function renderNameDictionary() {
+    if (!dictListEl || !Explore) return;
+    const merged = Explore.GetActiveNameDictionary();
+    const q = (dictFilterEl && dictFilterEl.value) || '';
+    const rows = Explore.SearchNameDictionary(q, merged);
+    const userCount = merged.filter(e => e.source === 'user').length;
+    if (dictCountEl) {
+      dictCountEl.textContent = q
+        ? `${rows.length} de ${merged.length} (personales: ${userCount})`
+        : `${merged.length} entradas · ${userCount} personales`;
+    }
+    if (!rows.length) {
+      dictListEl.innerHTML = '<div class="dict-empty">Ninguna entrada coincide. Añade el nombre arriba para usarlo en Explorar y en el perfil.</div>';
+      return;
+    }
+    dictListEl.innerHTML = rows.map(entry => {
+      const isUser = entry.source === 'user';
+      const gem = Engine && typeof Engine.CalculateGematria === 'function'
+        ? Engine.CalculateGematria(entry.hebrew)
+        : null;
+      const aliases = (entry.spanish || []).join(', ');
+      const exploreQ = (entry.label || (entry.spanish && entry.spanish[0]) || '').replace(/"/g, '');
+      return `<div class="dict-row${isUser ? ' user' : ''}" data-dict-id="${escapeHtml(entry.id)}">
+        <div class="dict-row-main">
+          <div class="dict-row-title">
+            <span class="dict-badge ${isUser ? 'user' : 'base'}">${isUser ? 'Personal' : 'Base'}</span>
+            ${escapeHtml(entry.label || aliases)}
+            <span class="he"> ${escapeHtml(entry.hebrew)}</span>
+          </div>
+          <div class="dict-row-meta">
+            ${escapeHtml(kindLabels[entry.kind] || entry.kind || 'Nombre')}
+            · ${escapeHtml(aliases)}
+            ${gem && gem.lettersCount ? ` · Abs ${gem.absolute}` : ''}
+            ${entry.note ? ` · ${escapeHtml(entry.note)}` : ''}
+          </div>
+        </div>
+        <div class="dict-row-actions">
+          <button type="button" class="explore-action-btn" data-dict-explore="${escapeHtml(exploreQ)}">Explorar</button>
+          ${isUser ? `<button type="button" class="explore-action-btn" data-dict-edit="${escapeHtml(entry.id)}">Editar</button>
+          <button type="button" class="explore-action-btn" data-dict-del="${escapeHtml(entry.id)}">Borrar</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if (formNameDictionary) {
+    formNameDictionary.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      if (!Explore || typeof Explore.BuildUserNameEntry !== 'function' || !Storage || !Storage.SaveUserNameEntry) {
+        setDictFormStatus('El diccionario no está disponible.', 'error');
+        return;
+      }
+      const built = Explore.BuildUserNameEntry({
+        id: (txtDictEditId && txtDictEditId.value) || '',
+        spanish: (txtDictSpanish && txtDictSpanish.value) || '',
+        hebrew: (txtDictHebrew && txtDictHebrew.value) || '',
+        kind: (selDictKind && selDictKind.value) || 'nombre',
+        note: (txtDictNote && txtDictNote.value) || ''
+      }, Engine);
+      if (!built.ok) {
+        setDictFormStatus(built.error, 'error');
+        return;
+      }
+      const saved = Storage.SaveUserNameEntry(built.entry);
+      if (!saved.ok) {
+        setDictFormStatus(saved.error, 'error');
+        return;
+      }
+      const probe = Explore.ExploreCorrelations(saved.entry.spanish[0], DB, Engine);
+      const heOk = probe && probe.meta && probe.meta.primaryHebrew === saved.entry.hebrew.replace(/[^א-ת]/g, '');
+      setDictFormStatus(
+        heOk
+          ? `Guardado: ${saved.entry.label} → ${saved.entry.hebrew}. Ya resuelve en Explorar y en el perfil.`
+          : `Guardado: ${saved.entry.label} → ${saved.entry.hebrew}.`,
+        'ok'
+      );
+      resetDictForm();
+      renderNameDictionary();
+    });
+  }
+
+  [txtDictSpanish, txtDictHebrew, selDictKind].forEach(el => {
+    if (el) el.addEventListener('input', updateDictPreview);
+  });
+  if (dictFilterEl) {
+    dictFilterEl.addEventListener('input', renderNameDictionary);
+  }
+  if (btnDictCancelEdit) {
+    btnDictCancelEdit.addEventListener('click', () => {
+      resetDictForm();
+      setDictFormStatus('');
+    });
+  }
+  if (dictListEl) {
+    dictListEl.addEventListener('click', (ev) => {
+      const exploreBtn = ev.target.closest('[data-dict-explore]');
+      if (exploreBtn) {
+        runExploreSearch(exploreBtn.getAttribute('data-dict-explore') || '');
+        return;
+      }
+      const editBtn = ev.target.closest('[data-dict-edit]');
+      if (editBtn) {
+        const id = editBtn.getAttribute('data-dict-edit');
+        const entry = (Storage.GetUserNameDictionary ? Storage.GetUserNameDictionary() : [])
+          .find(e => e.id === id);
+        if (entry) {
+          fillDictForm(entry);
+          setDictFormStatus('Editando entrada personal. Guardar sustituye la anterior.', '');
+        }
+        return;
+      }
+      const delBtn = ev.target.closest('[data-dict-del]');
+      if (delBtn) {
+        const id = delBtn.getAttribute('data-dict-del');
+        if (Storage.RemoveUserNameEntry) Storage.RemoveUserNameEntry(id);
+        if (txtDictEditId && txtDictEditId.value === id) resetDictForm();
+        setDictFormStatus('Entrada personal eliminada. Las búsquedas vuelven a la base o a la fonética.', 'ok');
+        renderNameDictionary();
+      }
+    });
+  }
+  updateDictPreview();
+  renderNameDictionary();
 
   // Añadir p-value y significancia estadística al panel de narrativa ELS
   const _origRenderNarrative = renderNarrativePanel;

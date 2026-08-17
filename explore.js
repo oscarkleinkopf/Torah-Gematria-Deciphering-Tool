@@ -80,6 +80,95 @@ function NormalizeExploreQuery(raw) {
     .replace(/\s+/g, ' ');
 }
 
+function HebrewConsonants(text) {
+  return String(text || '').replace(/[^א-ת]/g, '');
+}
+
+function LoadNameStorage(options) {
+  if (options && options.storage) return options.storage;
+  if (typeof window !== 'undefined' && window.GematriaStorage) return window.GematriaStorage;
+  if (typeof require !== 'undefined') {
+    try { return require('./storage.js'); } catch (e) { return null; }
+  }
+  return null;
+}
+
+function SlugifyNameId(spanish) {
+  const slug = NormalizeExploreQuery(spanish).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  return 'user:' + (slug || 'nombre');
+}
+
+function MergeNameDictionaries(builtin, user) {
+  const base = Array.isArray(builtin) ? builtin : NAME_DICTIONARY;
+  const extras = (Array.isArray(user) ? user : []).filter(e => {
+    return e && HebrewConsonants(e.hebrew).length >= 2 && Array.isArray(e.spanish) && e.spanish.length;
+  });
+  return extras.concat(base);
+}
+
+function GetUserNameEntries(options) {
+  if (options && Array.isArray(options.userDictionary)) return options.userDictionary;
+  const store = LoadNameStorage(options);
+  if (store && typeof store.GetUserNameDictionary === 'function') return store.GetUserNameDictionary();
+  return [];
+}
+
+function GetActiveNameDictionary(options) {
+  if (options && Array.isArray(options.nameDictionary)) return options.nameDictionary;
+  return MergeNameDictionaries(NAME_DICTIONARY, GetUserNameEntries(options));
+}
+
+function BuildUserNameEntry(input, Engine) {
+  const src = input || {};
+  const aliasRaw = Array.isArray(src.spanish) ? src.spanish.join(', ') : String(src.spanish || src.label || '');
+  const aliases = aliasRaw.split(/[,;/]/).map(a => a.trim()).filter(Boolean);
+  if (!aliases.length) return { ok: false, error: 'Indica al menos un nombre o alias en español.' };
+
+  let hebrew = String(src.hebrew || '').trim();
+  if (!HebrewConsonants(hebrew) && Engine && typeof Engine.SpanishToHebrew === 'function') {
+    hebrew = Engine.SpanishToHebrew(aliases[0]) || '';
+  }
+  hebrew = hebrew.replace(/[^\u05D0-\u05EA\s]/g, '').replace(/\s+/g, ' ').trim();
+  if (HebrewConsonants(hebrew).length < 2) {
+    return { ok: false, error: 'El hebreo debe tener al menos 2 consonantes (escríbelo o se genera por fonética).' };
+  }
+
+  const kind = (src.kind === 'apellido' || src.kind === 'concepto') ? src.kind : 'nombre';
+  const spanish = [...new Set(aliases.map(a => NormalizeExploreQuery(a)).filter(Boolean))];
+  if (!spanish.length) return { ok: false, error: 'Indica al menos un alias válido.' };
+
+  return {
+    ok: true,
+    entry: {
+      id: String(src.id || '').trim() || SlugifyNameId(aliases[0]),
+      spanish,
+      hebrew,
+      kind,
+      note: String(src.note || '').trim() || 'Entrada personal',
+      label: aliases[0],
+      source: 'user'
+    }
+  };
+}
+
+function SearchNameDictionary(raw, dictionary) {
+  const dict = dictionary || NAME_DICTIONARY;
+  const q = NormalizeExploreQuery(raw);
+  const heQ = HebrewConsonants(raw);
+  if (!q && !heQ) return dict.slice();
+  return dict.filter(entry => {
+    const he = HebrewConsonants(entry.hebrew);
+    if (heQ && he.includes(heQ)) return true;
+    if (q && NormalizeExploreQuery(entry.note || '').includes(q)) return true;
+    if (q && NormalizeExploreQuery(entry.label || '').includes(q)) return true;
+    if (q && NormalizeExploreQuery(entry.kind || '') === q) return true;
+    return (entry.spanish || []).some(alias => {
+      const a = NormalizeExploreQuery(alias);
+      return a === q || a.includes(q) || (q.length >= 3 && a.length >= 3 && q.includes(a));
+    });
+  });
+}
+
 function ApplyHebrewCalendar(result) {
   if (!result || result.year == null || result.year <= 0 || !HebrewCal) return result;
 
@@ -238,22 +327,34 @@ function ParseDateQuery(raw) {
 }
 
 function LookupNameDictionary(raw, dictionary) {
-  const dict = dictionary || NAME_DICTIONARY;
+  const dict = dictionary || GetActiveNameDictionary();
   const q = NormalizeExploreQuery(raw);
-  if (!q) return null;
+  const heQ = HebrewConsonants(raw);
+  if (!q && !heQ) return null;
 
-  // Exact alias match
-  for (const entry of dict) {
-    for (const alias of entry.spanish) {
-      if (NormalizeExploreQuery(alias) === q) return entry;
+  // Exact alias match (user entries come first in the merged dictionary)
+  if (q) {
+    for (const entry of dict) {
+      for (const alias of entry.spanish || []) {
+        if (NormalizeExploreQuery(alias) === q) return entry;
+      }
+    }
+  }
+
+  // Exact Hebrew match — searching כהן resolves the dictionary entry, not a phonetic guess
+  if (heQ.length >= 2) {
+    for (const entry of dict) {
+      if (HebrewConsonants(entry.hebrew) === heQ) return entry;
     }
   }
 
   // Contains / starts-with (e.g. "familia cohen")
-  for (const entry of dict) {
-    for (const alias of entry.spanish) {
-      const a = NormalizeExploreQuery(alias);
-      if (a.length >= 3 && (q.includes(a) || a.includes(q))) return entry;
+  if (q) {
+    for (const entry of dict) {
+      for (const alias of entry.spanish || []) {
+        const a = NormalizeExploreQuery(alias);
+        if (a.length >= 3 && (q.includes(a) || a.includes(q))) return entry;
+      }
     }
   }
 
@@ -410,7 +511,7 @@ function EnrichDateMeta(meta, dateInfo) {
  */
 function ResolveExploreQuery(raw, Engine, options) {
   const opts = options || {};
-  const dictionary = opts.nameDictionary || NAME_DICTIONARY;
+  const dictionary = GetActiveNameDictionary(opts);
   const original = String(raw || '').trim();
   const normalized = NormalizeExploreQuery(original);
 
@@ -899,6 +1000,12 @@ const GematriaExplore = {
   NormalizeExploreQuery,
   ParseDateQuery,
   LookupNameDictionary,
+  MergeNameDictionaries,
+  GetActiveNameDictionary,
+  GetUserNameEntries,
+  BuildUserNameEntry,
+  SearchNameDictionary,
+  HebrewConsonants,
   MatchHistoricalEvents,
   MatchZionistCards,
   MatchTorahVerses,
@@ -924,4 +1031,6 @@ if (typeof window !== 'undefined') {
   window.FormatCorrelationReport = FormatCorrelationReport;
   window.BuildPersonalProfile = BuildPersonalProfile;
   window.NAME_DICTIONARY = NAME_DICTIONARY;
+  window.GetActiveNameDictionary = GetActiveNameDictionary;
+  window.BuildUserNameEntry = BuildUserNameEntry;
 }
