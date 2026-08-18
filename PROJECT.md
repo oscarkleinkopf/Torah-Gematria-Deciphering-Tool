@@ -35,6 +35,8 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `FindAcrostics(text, type, targetWord, options)`: `type` is `'roshei'`, `'sofei'`, or `'both'`. Returns array of `{ phrase, cleanPhrase, word, targetWord, isRoshei, isSofei, indices, wordDetails }`
 - `CalculateELSPValue(textLength, searchWord, skipSpec, letterFrequencies)`: Returns `{ expectedMatches, pValue, statisticalSignificanceScore, logPValue }`
 - `FindELS(text, searchWord, minSkip, maxSkip)`: Returns array of matches enhanced with `{ pValue, expectedCount, significanceScore }`
+- `AssessELSHonesty(match, { text, minSkip, maxSkip, runControl })`: exploratory band `common` | `plausible` | `rare`, warnings, optional shuffled-text control. Never claims proof.
+- `ShuffleHebrewText(text, seed)` / `ELSControlAtSkip(text, word, skip, seed)`: null-model control (same letters, random order).
 
 ### `elsWorker.js`
 - Message payload: `{ action: 'searchELS', text, searchWord, minSkip, maxSkip }`
@@ -46,6 +48,7 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `RemoveFavorite(id)`: Removes item by ID (or numeric index)
 - `GetUserNameDictionary()`: Personal name entries `{ id, spanish[], hebrew, kind, note }`
 - `SaveUserNameEntry(entry)` / `RemoveUserNameEntry(id)`: persist or delete a personal name; merged at lookup time with the builtin `NAME_DICTIONARY`
+- `GetPersonalProfileForm()` / `SavePersonalProfileForm({ givenName, surname, birthDate, extra })`: last profile fields in this browser
 
 ### Export Utility (`export.js`)
 - `ExportMatrixAsPNG(canvasElement | containerId, filename, matchMeta?)`: Triggers PNG image download of ELS visual matrix or canvas element.
@@ -53,7 +56,8 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 ### `explore.js`
 - `ExploreCorrelations(query, db, Engine)`: Unified search (surname / name / date / event / number / compound). Uses builtin + user name dictionary.
 - `BuildPersonalProfile({ givenName, surname, birthDate, extra }, db, Engine)`: Personal dossier merging name, surname and birth date into one `queryType: 'profile'` report.
-- `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()`: live dictionary merge, validation and browse/filter.
+- `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()` / `SuggestNameDictionary()`: live dictionary merge, validation, browse/filter and typeahead.
+- `ExploreCorrelations` sets `meta.hebrewSource`: `dictionary` | `dictionary-user` | `phonetic` | `hebrew`.
 - `FormatCorrelationReport(data)`: Plain-text correlation / profile report for download.
 
 ### `hebrew_calendar.js`

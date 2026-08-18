@@ -208,6 +208,34 @@ function ClearUserNameDictionary() {
   return [];
 }
 
+const PERSONAL_PROFILE_KEY = 'explore_personal_profile';
+
+function GetPersonalProfileForm() {
+  try {
+    const parsed = JSON.parse(getStore().getItem(PERSONAL_PROFILE_KEY) || 'null');
+    if (!parsed || typeof parsed !== 'object') return null;
+    return {
+      givenName: String(parsed.givenName || ''),
+      surname: String(parsed.surname || ''),
+      birthDate: String(parsed.birthDate || ''),
+      extra: String(parsed.extra || '')
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function SavePersonalProfileForm(form) {
+  const entry = {
+    givenName: String((form && form.givenName) || '').trim(),
+    surname: String((form && form.surname) || '').trim(),
+    birthDate: String((form && form.birthDate) || '').trim(),
+    extra: String((form && form.extra) || '').trim()
+  };
+  writeJson(PERSONAL_PROFILE_KEY, entry);
+  return entry;
+}
+
 const GematriaStorage = {
   SaveFavorite,
   GetFavorites,
@@ -223,6 +251,8 @@ const GematriaStorage = {
   SaveUserNameEntry,
   RemoveUserNameEntry,
   ClearUserNameDictionary,
+  GetPersonalProfileForm,
+  SavePersonalProfileForm,
   MAX_USER_NAMES
 };
 

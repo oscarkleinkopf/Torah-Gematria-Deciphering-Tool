@@ -128,6 +128,50 @@ document.addEventListener('DOMContentLoaded', () => {
     secondaryMatches: []
   };
 
+  function currentElsSkipRange() {
+    const minS = numMinSkip ? parseInt(numMinSkip.value, 10) : 2;
+    const maxS = numMaxSkip ? parseInt(numMaxSkip.value, 10) : 120;
+    return {
+      minSkip: Number.isFinite(minS) ? minS : 2,
+      maxSkip: Number.isFinite(maxS) ? maxS : 120
+    };
+  }
+
+  function honestyForMatch(match, runControl) {
+    if (!match || !Engine || typeof Engine.AssessELSHonesty !== 'function') return null;
+    const range = currentElsSkipRange();
+    const text = window.TORAH_TEXT || window.TorahText || '';
+    return Engine.AssessELSHonesty(match, {
+      text,
+      minSkip: range.minSkip,
+      maxSkip: range.maxSkip,
+      runControl: !!runControl
+    });
+  }
+
+  function honestyBandChip(honesty) {
+    if (!honesty) return '';
+    const short = honesty.band === 'common' ? 'Muy común' : honesty.band === 'rare' ? 'Raro (modelo)' : 'Plausible';
+    return `<span class="els-band-chip band-${honesty.band}">${short}</span>`;
+  }
+
+  function formatHonestyHtml(honesty) {
+    if (!honesty) return '';
+    const expSkip = honesty.expectedAtSkip != null ? honesty.expectedAtSkip.toFixed(3) : '—';
+    const expRange = honesty.expectedInRange != null ? honesty.expectedInRange.toFixed(2) : '—';
+    const pSkip = honesty.pValueSkip != null ? honesty.pValueSkip.toExponential(2) : '—';
+    const ctrl = honesty.control
+      ? ` · control mezclado: ${honesty.control.controlCount}`
+      : '';
+    const warns = (honesty.warnings || []).map(w => `<li>${w}</li>`).join('');
+    return `<div class="els-honesty band-${honesty.band}">
+      <span class="els-honesty-label">${honesty.label}</span>
+      <div class="els-honesty-note">${honesty.note}</div>
+      <div class="els-honesty-meta">E(salto) ≈ ${expSkip} · E(rango) ≈ ${expRange} · p(salto) ≈ ${pSkip}${ctrl}</div>
+      ${warns ? `<ul>${warns}</ul>` : ''}
+    </div>`;
+  }
+
   // --- 1. ENRUTADOR INTERNO DE PESTAÑAS ---
   function switchTab(tabId) {
     if (!tabId) return;
@@ -2033,12 +2077,14 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const verseContext = getVerseContext(match.start, match.indices);
       const termBadgeClass = `term-badge-${match.termIndex % 4}`;
+      const honesty = honestyForMatch(match, false);
 
       item.innerHTML = `
         <div class="els-result-header-row">
-          <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
             <span class="els-result-word">${match.word}</span>
             ${termsArray && termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${match.rawQuery}</span>` : ''}
+            ${honestyBandChip(honesty)}
           </div>
           <span class="els-result-skip">Salto: ${match.skip}</span>
         </div>
@@ -2143,8 +2189,9 @@ document.addEventListener('DOMContentLoaded', () => {
     textContainer.innerHTML = `
       La palabra <span class="term-badge ${termColorClass}" style="font-family: var(--font-hebrew); font-size: 0.95rem;">${match.word}</span> 
       ${match.rawQuery ? `(búsqueda: "${match.rawQuery}")` : ''} 
-      aparece codificada en la Torá con un salto de <strong>${match.skip} letras</strong> ${skipDirection}, iniciando en la letra <strong>#${match.start}</strong> (correspondiente a <strong>${verseCtx}</strong>). 
+      aparece en la Torá con un salto de <strong>${match.skip} letras</strong> ${skipDirection}, iniciando en la letra <strong>#${match.start}</strong> (correspondiente a <strong>${verseCtx}</strong>). 
       ${crossoverNarrative}
+      ${formatHonestyHtml(honestyForMatch(match, true))}
     `;
   }
 
@@ -2372,8 +2419,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="profile">🔍 Abrir perfil</button>
         `;
       } else {
-        const sigScore = (fav.significanceScore || 0).toFixed(2);
-        const sigClass = fav.significanceScore > 5 ? 'sig-high' : fav.significanceScore > 2 ? 'sig-mid' : 'sig-low';
+        const honesty = Engine.AssessELSHonesty
+          ? Engine.AssessELSHonesty(fav, { text: window.TORAH_TEXT || '', minSkip: 2, maxSkip: 120, runControl: false })
+          : null;
+        const bandClass = honesty
+          ? (honesty.band === 'rare' ? 'sig-high' : honesty.band === 'plausible' ? 'sig-mid' : 'sig-low')
+          : 'sig-low';
         card.innerHTML = `
           <div class="favorite-card-header">
             <span class="favorite-word">${fav.word}</span>
@@ -2382,8 +2433,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="favorite-meta">
             Salto: <strong>${fav.skip}</strong> | Posición: #${fav.start} | ${fav.verse || ''}
           </div>
-          <div class="favorite-sig ${sigClass}">
-            Significancia: ${sigScore} | p-valor ≈ ${(fav.pValue || 1).toExponential(2)}
+          <div class="favorite-sig ${bandClass}">
+            ${honesty ? honesty.label : 'Exploratorio'} · p(salto) ≈ ${(fav.pValue || 1).toExponential(2)}
           </div>
           <div class="favorite-date">${new Date(fav.savedAt || fav.timestamp).toLocaleDateString()}</div>
           <button data-idx="${idx}" class="fav-reload-btn" data-fav-type="els">🔍 Volver a buscar</button>
@@ -2564,8 +2615,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (extraEl) extraEl.value = pr.extra || '';
   }
 
-  function runProfileBuild(pr) {
+  function runProfileBuild(pr, opts) {
     pr = pr || {};
+    opts = opts || {};
     const givenName = String(pr.givenName || '').trim();
     const surname = String(pr.surname || '').trim();
     const birthDate = String(pr.birthDate || '').trim();
@@ -2597,7 +2649,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }, DB, Engine);
     lastExploreData = data;
     if (Storage.SaveExploreHistory) Storage.SaveExploreHistory(data.query);
+    if (Storage.SavePersonalProfileForm && !(opts && opts.example)) {
+      Storage.SavePersonalProfileForm({ givenName, surname, birthDate, extra });
+    }
     renderExploreHistory();
+    setExampleBanner(!!(opts && opts.example));
     renderExploreResults(data);
     if (exploreResults) exploreResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -2650,9 +2706,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (Storage.SaveExploreHistory) Storage.SaveExploreHistory(query);
     renderExploreHistory();
+    hideExploreSuggest();
 
     const data = Explore.ExploreCorrelations(query, DB, Engine);
     lastExploreData = data;
+    setExampleBanner(false);
     renderExploreResults(data);
   }
 
@@ -2694,7 +2752,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const dictNote = meta.nameEntry
         ? ` · Diccionario: <strong>${meta.nameEntry.source === 'user' ? 'personal' : 'base'}</strong>${meta.nameEntry.note ? ' — ' + escapeHtml(meta.nameEntry.note) : ''}`
         : '';
-      exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g}${dictNote} · ${total} correlación(es)`;
+      const source = meta.hebrewSource;
+      const sourcePill = source === 'dictionary' || source === 'dictionary-user'
+        ? ' <span class="hebrew-source-pill dictionary">Hebreo de diccionario</span>'
+        : source === 'phonetic'
+          ? ' <span class="hebrew-source-pill phonetic">Fonética aproximada</span>'
+          : source === 'hebrew'
+            ? ' <span class="hebrew-source-pill hebrew">Hebreo escrito</span>'
+            : '';
+      exploreStatus.innerHTML = `Tipo: <strong>${typeLabels[data.queryType] || data.queryType}</strong>${he}${g}${dictNote}${sourcePill} · ${total} correlación(es)`;
     }
 
     if (total === 0 && !(data.suggestedELS && data.suggestedELS.length) && !data.profile) {
@@ -2728,6 +2794,9 @@ document.addEventListener('DOMContentLoaded', () => {
     html += `<div class="explore-actions explore-toolbar">
       <button type="button" class="explore-action-btn" id="btnExportExploreReport">📄 Exportar informe</button>
       <button type="button" class="explore-action-btn" id="btnSaveExploreFavorite">⭐ Guardar correlación</button>
+      ${meta.hebrewSource === 'phonetic' && meta.primaryHebrew ? '<button type="button" class="explore-action-btn" id="btnPinToDictionary">📌 Fijar hebreo en el diccionario</button>' : ''}
+      ${meta.primaryHebrew ? `<button type="button" class="explore-action-btn" data-explore-calc="${escapeHtml(meta.primaryHebrew)}">Abrir en calculadora</button>` : ''}
+      ${data.suggestedELS && data.suggestedELS.length ? `<button type="button" class="explore-action-btn" data-els-terms="${escapeHtml(data.suggestedELS.join(','))}">Ver matriz ELS</button>` : ''}
     </div>`;
 
     if (meta.nameEntry || meta.dateInfo || meta.primaryGematria || data.queryType === 'compound') {
@@ -2737,6 +2806,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (meta.nameEntry) {
         html += `<span>Diccionario: <strong>${escapeHtml(meta.nameEntry.note || meta.nameEntry.id)}</strong></span>`;
+      } else if (meta.hebrewSource === 'phonetic') {
+        html += '<span>Hebreo por <strong>fonética aproximada</strong> — no está en el diccionario</span>';
       }
       if (meta.dateInfo) {
         html += `<span>Año: <strong>${meta.dateInfo.year}</strong>`;
@@ -2932,15 +3003,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+
+    const btnPin = document.getElementById('btnPinToDictionary');
+    if (btnPin) {
+      btnPin.addEventListener('click', () => {
+        setExploreMode('dictionary');
+        const spanishEl = document.getElementById('txtDictSpanish');
+        const hebrewEl = document.getElementById('txtDictHebrew');
+        if (spanishEl) spanishEl.value = data.query || '';
+        if (hebrewEl) hebrewEl.value = meta.primaryHebrew || '';
+        if (typeof updateDictPreview === 'function') updateDictPreview();
+        const dictForm = document.getElementById('formNameDictionary');
+        if (dictForm) dictForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
   }
 
   if (btnExploreSearch) {
     btnExploreSearch.addEventListener('click', () => runExploreSearch());
-  }
-  if (txtExploreQuery) {
-    txtExploreQuery.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') runExploreSearch();
-    });
   }
   document.querySelectorAll('#exploreQuickChips .explore-chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -2948,6 +3028,137 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   renderExploreHistory();
+
+  const EXAMPLE_PROFILE = {
+    givenName: 'David',
+    surname: 'Cohen',
+    birthDate: '14/05/1948',
+    extra: ''
+  };
+
+  function setExampleBanner(visible) {
+    const banner = document.getElementById('exploreExampleBanner');
+    if (banner) banner.hidden = !visible;
+  }
+
+  function setExploreMode(mode) {
+    const allowed = { query: 'exploreModeQuery', profile: 'exploreModeProfile', dictionary: 'exploreModeDictionary' };
+    const key = allowed[mode] ? mode : 'query';
+    Object.keys(allowed).forEach(m => {
+      const panel = document.getElementById(allowed[m]);
+      if (panel) panel.hidden = m !== key;
+    });
+    document.querySelectorAll('.explore-mode-btn').forEach(btn => {
+      const on = btn.getAttribute('data-explore-mode') === key;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+
+  document.querySelectorAll('.explore-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => setExploreMode(btn.getAttribute('data-explore-mode')));
+  });
+  document.querySelectorAll('.explore-text-btn[data-explore-mode]').forEach(btn => {
+    btn.addEventListener('click', () => setExploreMode(btn.getAttribute('data-explore-mode')));
+  });
+
+  const exploreSuggestEl = document.getElementById('exploreSuggest');
+  let suggestActiveIndex = -1;
+
+  function hideExploreSuggest() {
+    if (!exploreSuggestEl) return;
+    exploreSuggestEl.hidden = true;
+    exploreSuggestEl.innerHTML = '';
+    suggestActiveIndex = -1;
+  }
+
+  function renderExploreSuggest(query) {
+    if (!exploreSuggestEl || !Explore || typeof Explore.SuggestNameDictionary !== 'function') return;
+    const q = String(query || '').trim();
+    if (q.length < 1) {
+      hideExploreSuggest();
+      return;
+    }
+    const hits = Explore.SuggestNameDictionary(q, Explore.GetActiveNameDictionary(), 8);
+    if (!hits.length) {
+      hideExploreSuggest();
+      return;
+    }
+    exploreSuggestEl.hidden = false;
+    exploreSuggestEl.innerHTML = hits.map((h, i) => {
+      const src = h.source === 'user' ? 'personal' : 'diccionario';
+      return `<button type="button" class="explore-suggest-item" role="option" data-suggest-q="${escapeHtml(h.alias)}" data-idx="${i}">
+        <span>${escapeHtml(h.alias)} <span class="explore-suggest-src">${src}</span></span>
+        <span class="he">${escapeHtml(h.hebrew)}</span>
+      </button>`;
+    }).join('');
+    suggestActiveIndex = -1;
+  }
+
+  if (txtExploreQuery) {
+    txtExploreQuery.addEventListener('input', () => {
+      renderExploreSuggest(txtExploreQuery.value);
+    });
+    txtExploreQuery.addEventListener('keydown', (e) => {
+      if (exploreSuggestEl && !exploreSuggestEl.hidden) {
+        const items = exploreSuggestEl.querySelectorAll('.explore-suggest-item');
+        if (e.key === 'ArrowDown' && items.length) {
+          e.preventDefault();
+          suggestActiveIndex = Math.min(items.length - 1, suggestActiveIndex + 1);
+          items.forEach((el, i) => el.classList.toggle('active', i === suggestActiveIndex));
+          return;
+        }
+        if (e.key === 'ArrowUp' && items.length) {
+          e.preventDefault();
+          suggestActiveIndex = Math.max(0, suggestActiveIndex - 1);
+          items.forEach((el, i) => el.classList.toggle('active', i === suggestActiveIndex));
+          return;
+        }
+        if (e.key === 'Escape') {
+          hideExploreSuggest();
+          return;
+        }
+        if (e.key === 'Enter' && suggestActiveIndex >= 0 && items[suggestActiveIndex]) {
+          e.preventDefault();
+          const q = items[suggestActiveIndex].getAttribute('data-suggest-q') || '';
+          hideExploreSuggest();
+          runExploreSearch(q);
+          return;
+        }
+      }
+      if (e.key === 'Enter') {
+        hideExploreSuggest();
+        runExploreSearch();
+      }
+    });
+  }
+  if (exploreSuggestEl) {
+    exploreSuggestEl.addEventListener('mousedown', (ev) => {
+      const item = ev.target.closest('[data-suggest-q]');
+      if (!item) return;
+      ev.preventDefault();
+      hideExploreSuggest();
+      runExploreSearch(item.getAttribute('data-suggest-q') || '');
+    });
+  }
+  document.addEventListener('click', (ev) => {
+    if (!exploreSuggestEl || exploreSuggestEl.hidden) return;
+    if (ev.target === txtExploreQuery || exploreSuggestEl.contains(ev.target)) return;
+    hideExploreSuggest();
+  });
+
+  function maybeShowExampleDossier() {
+    const saved = Storage.GetPersonalProfileForm ? Storage.GetPersonalProfileForm() : null;
+    const hasSaved = saved && (saved.givenName || saved.surname);
+    if (hasSaved) {
+      fillProfileForm(saved);
+      return;
+    }
+    const hist = Storage.GetExploreHistory ? Storage.GetExploreHistory() : [];
+    if (hist && hist.length) return;
+    fillProfileForm(EXAMPLE_PROFILE);
+    runProfileBuild(EXAMPLE_PROFILE, { example: true });
+  }
 
   const formPersonalProfile = document.getElementById('formPersonalProfile');
   const btnProfileExample = document.getElementById('btnProfileExample');
@@ -2964,14 +3175,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (btnProfileExample) {
     btnProfileExample.addEventListener('click', () => {
-      const example = {
-        givenName: 'David',
-        surname: 'Cohen',
-        birthDate: '14/05/1948',
-        extra: ''
-      };
-      fillProfileForm(example);
-      runProfileBuild(example);
+      fillProfileForm(EXAMPLE_PROFILE);
+      runProfileBuild(EXAMPLE_PROFILE, { example: true });
     });
   }
 
@@ -3166,32 +3371,6 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDictPreview();
   renderNameDictionary();
 
-  // Añadir p-value y significancia estadística al panel de narrativa ELS
-  const _origRenderNarrative = renderNarrativePanel;
-  renderNarrativePanel = function(match, crossovers) {
-    _origRenderNarrative(match, crossovers);
-    const textContainer = document.getElementById('elsNarrativeText');
-    if (!textContainer || !match) return;
-
-    const pVal = match.pValue;
-    const sigScore = match.significanceScore || 0;
-    let sigLabel, sigColor;
-    if (sigScore > 8) { sigLabel = '🔥 Altamente Significativo'; sigColor = '#2ecc71'; }
-    else if (sigScore > 4) { sigLabel = '⚡ Significativo'; sigColor = 'var(--gold-primary)'; }
-    else if (sigScore > 2) { sigLabel = '🔍 Moderado'; sigColor = '#00ced1'; }
-    else { sigLabel = '📊 Bajo / Casual'; sigColor = 'var(--text-secondary)'; }
-
-    const statsHtml = (pVal !== undefined && pVal !== null) ? `
-      <div style="margin-top: 0.6rem; padding: 0.5rem 0.8rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.82rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
-        <span>📈 <strong>Análisis Estadístico ELS</strong></span>
-        <span style="color: ${sigColor}; font-weight: bold;">${sigLabel}</span>
-        <span style="color: var(--text-secondary);">Score: <strong style="color: var(--text-primary);">${sigScore.toFixed(2)}</strong></span>
-        <span style="color: var(--text-secondary);">p-valor ≈ <strong style="color: var(--text-primary);">${pVal.toExponential(3)}</strong></span>
-      </div>` : '';
-
-    textContainer.insertAdjacentHTML('beforeend', statsHtml);
-  };
-
   // --- 11. INICIALIZACIÓN COMPLETA DE LA APP ---
   function init() {
     // FASE 2: Pre-calcular la gematria para todas las entradas de Grafo de Conocimiento
@@ -3204,6 +3383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderZionismGrid();
     renderReflectionTab();
     renderELSSearchHistory();
+    if (typeof maybeShowExampleDossier === 'function') maybeShowExampleDossier();
     
     processInputText('');
     

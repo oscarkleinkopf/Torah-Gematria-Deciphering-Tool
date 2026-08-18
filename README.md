@@ -17,7 +17,9 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Buscador unificado: apellido (Cohen, Herzl…), fecha (`14/05/1948` / `5 Iyar 5708` / `1948`), evento (Oslo, Balfour) o número (`708`).
   - Consultas compuestas: `Herzl + 1897`, `Cohen y 1948`.
   - **Perfil personal**: nombre + apellido + fecha de nacimiento → dossier unificado (gematria, **fecha hebrea real**, timeline, grafo, versículos, ELS).
-  - **Diccionario vivo**: léxico hebreo consultable (Cohen, Herzl, Raquel…) más nombres que tú guardas en el navegador; Explorar, el perfil y ELS los usan de inmediato.
+  - **Diccionario vivo**: léxico hebreo consultable (Cohen, Herzl, Raquel…) más nombres que tú guardas; sugerencias al escribir; se distingue **diccionario** vs **fonética aproximada**.
+  - Calendario hebreo civil (Nisán–Adar) sin heurística `año+3760`: 14/05/1948 = 5 de Iyar 5708 (ה׳תש״ח).
+  - Inicio de estudio en **Explorar** (Consulta / Mi perfil / Diccionario), con dossier de ejemplo al abrir.
   - Calendario hebreo civil (Nisán–Adar) sin heurística `año+3760`: 14/05/1948 = 5 de Iyar 5708 (ה׳תש״ח).
   - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
    - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
@@ -27,7 +29,8 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y **cancelación real** (terminate + `shouldCancel`).
    - Matriz visual responsiva en orientación **RTL** con ajuste dinámico de columnas.
   - Cada hallazgo ELS muestra la **referencia de versículo** real (p. ej. Génesis 1:1, Éxodo 20:2), no un bloque aproximado.
-   - **Crossover Density**, p-valor / significancia estadística, historial y sugerencias rápidas.
+  - Semáforo **muy común / plausible / raro** (Poisson + control en texto mezclado). Un hallazgo no se presenta como prueba.
+  - **Crossover Density**, historial y sugerencias rápidas.
    - Exportación **PNG** de la matriz y pestaña de **Favoritos** (LocalStorage).
 
 5. **Acrósticos (Roshei / Sofei Teivot)**:
