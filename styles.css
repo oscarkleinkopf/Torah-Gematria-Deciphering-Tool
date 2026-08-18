@@ -1904,7 +1904,7 @@ footer a:hover {
 .favorite-sig {
   font-size: 0.78rem;
 }
-.favorite-sig.sig-high { color: #2ecc71; }
+.favorite-sig.sig-high { color: #00ced1; }
 .favorite-sig.sig-mid { color: var(--gold-primary); }
 .favorite-sig.sig-low { color: var(--text-secondary); }
 .favorite-date {
@@ -2277,6 +2277,170 @@ footer a:hover {
   color: var(--text-secondary);
   font-style: italic;
   padding: 1.25rem 0.5rem;
+}
+
+.explore-mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-width: 960px;
+  margin: 0 auto 1rem;
+}
+.explore-mode-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+.explore-mode-btn:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  color: var(--gold-primary);
+}
+.explore-mode-btn.active {
+  background: rgba(212, 175, 55, 0.18);
+  border-color: rgba(212, 175, 55, 0.5);
+  color: var(--gold-primary);
+  font-weight: 600;
+}
+.explore-suggest-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+.explore-suggest-wrap .explore-input {
+  width: 100%;
+  min-width: 0;
+}
+.explore-suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  background: rgba(12, 10, 24, 0.97);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.explore-suggest-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+.explore-suggest-item:hover,
+.explore-suggest-item.active {
+  background: rgba(212, 175, 55, 0.12);
+}
+.explore-suggest-item .he {
+  font-family: var(--font-hebrew);
+  color: var(--gold-primary);
+  direction: rtl;
+}
+.explore-suggest-src {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.explore-example-banner {
+  max-width: 960px;
+  margin: 0 auto 1rem;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px dashed rgba(212, 175, 55, 0.35);
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.explore-text-btn {
+  background: none;
+  border: none;
+  color: var(--gold-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  font: inherit;
+  padding: 0;
+}
+.hebrew-source-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-left: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.hebrew-source-pill.dictionary {
+  color: var(--gold-primary);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+.hebrew-source-pill.phonetic {
+  color: #e0b060;
+  border-color: rgba(224, 176, 96, 0.45);
+}
+.hebrew-source-pill.hebrew {
+  color: #00ced1;
+  border-color: rgba(0, 206, 209, 0.4);
+}
+.els-honesty {
+  margin-top: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.32);
+}
+.els-honesty.band-common { border-color: rgba(255, 255, 255, 0.12); }
+.els-honesty.band-plausible { border-color: rgba(212, 175, 55, 0.35); }
+.els-honesty.band-rare { border-color: rgba(0, 206, 209, 0.4); }
+.els-honesty-label {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.els-honesty.band-common .els-honesty-label { color: var(--text-secondary); }
+.els-honesty.band-plausible .els-honesty-label { color: var(--gold-primary); }
+.els-honesty.band-rare .els-honesty-label { color: #00ced1; }
+.els-honesty-note {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+.els-honesty ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--text-secondary);
+}
+.els-honesty-meta {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.els-band-chip {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+}
+.els-band-chip.band-plausible {
+  color: var(--gold-primary);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+.els-band-chip.band-rare {
+  color: #00ced1;
+  border-color: rgba(0, 206, 209, 0.4);
 }
 
 

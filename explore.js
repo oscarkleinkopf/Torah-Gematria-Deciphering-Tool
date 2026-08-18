@@ -169,6 +169,40 @@ function SearchNameDictionary(raw, dictionary) {
   });
 }
 
+function SuggestNameDictionary(raw, dictionary, limit) {
+  const dict = dictionary || GetActiveNameDictionary();
+  const q = NormalizeExploreQuery(raw);
+  const heQ = HebrewConsonants(raw);
+  if ((!q || q.length < 1) && heQ.length < 1) return [];
+  const cap = limit || 8;
+  const hits = [];
+  for (const entry of dict) {
+    let matchedAlias = null;
+    for (const alias of entry.spanish || []) {
+      const a = NormalizeExploreQuery(alias);
+      if (q && a && (a.startsWith(q) || (q.length >= 2 && a.includes(q)))) {
+        matchedAlias = alias;
+        break;
+      }
+    }
+    if (!matchedAlias && heQ && HebrewConsonants(entry.hebrew).includes(heQ)) {
+      matchedAlias = entry.label || (entry.spanish && entry.spanish[0]) || entry.hebrew;
+    }
+    if (matchedAlias) {
+      hits.push({
+        entry,
+        alias: matchedAlias,
+        hebrew: entry.hebrew,
+        kind: entry.kind,
+        source: entry.source === 'user' ? 'user' : 'base',
+        note: entry.note || ''
+      });
+      if (hits.length >= cap) break;
+    }
+  }
+  return hits;
+}
+
 function ApplyHebrewCalendar(result) {
   if (!result || result.year == null || result.year <= 0 || !HebrewCal) return result;
 
@@ -525,7 +559,8 @@ function ResolveExploreQuery(raw, Engine, options) {
     gematriaValues: [],
     numbers: [],
     primaryHebrew: '',
-    primaryGematria: null
+    primaryGematria: null,
+    hebrewSource: null
   };
 
   if (!original) return meta;
@@ -580,6 +615,7 @@ function ResolveExploreQuery(raw, Engine, options) {
     meta.nameEntry = nameEntry;
     meta.hebrewForms.push(nameEntry.hebrew);
     meta.primaryHebrew = nameEntry.hebrew.replace(/[^א-ת]/g, '');
+    meta.hebrewSource = nameEntry.source === 'user' ? 'dictionary-user' : 'dictionary';
   }
 
   // Hebrew already?
@@ -588,7 +624,10 @@ function ResolveExploreQuery(raw, Engine, options) {
     if (he) {
       meta.hebrewForms.push(he);
       if (!meta.primaryHebrew) meta.primaryHebrew = he.replace(/[^א-ת]/g, '');
-      if (!nameEntry) meta.queryType = 'hebrew';
+      if (!nameEntry) {
+        meta.queryType = 'hebrew';
+        meta.hebrewSource = 'hebrew';
+      }
     }
   }
 
@@ -598,6 +637,7 @@ function ResolveExploreQuery(raw, Engine, options) {
     if (phonetic && phonetic.replace(/[^א-ת]/g, '').length >= 2) {
       meta.hebrewForms.push(phonetic);
       if (!meta.primaryHebrew) meta.primaryHebrew = phonetic.replace(/[^א-ת]/g, '');
+      if (!meta.hebrewSource) meta.hebrewSource = 'phonetic';
     }
   }
 
@@ -651,7 +691,8 @@ function MergeExploreResults(parts, originalQuery) {
       primaryHebrew: '',
       primaryGematria: null,
       nameEntry: null,
-      dateInfo: null
+      dateInfo: null,
+      hebrewSource: null
     },
     knowledge: [],
     events: [],
@@ -674,6 +715,7 @@ function MergeExploreResults(parts, originalQuery) {
     if (!merged.meta.primaryGematria && p.meta.primaryGematria) merged.meta.primaryGematria = p.meta.primaryGematria;
     if (!merged.meta.nameEntry && p.meta.nameEntry) merged.meta.nameEntry = p.meta.nameEntry;
     if (!merged.meta.dateInfo && p.meta.dateInfo) merged.meta.dateInfo = p.meta.dateInfo;
+    if (!merged.meta.hebrewSource && p.meta.hebrewSource) merged.meta.hebrewSource = p.meta.hebrewSource;
 
     (p.knowledge || []).forEach(c => {
       const id = c.entry && c.entry.id;
@@ -1005,6 +1047,7 @@ const GematriaExplore = {
   GetUserNameEntries,
   BuildUserNameEntry,
   SearchNameDictionary,
+  SuggestNameDictionary,
   HebrewConsonants,
   MatchHistoricalEvents,
   MatchZionistCards,

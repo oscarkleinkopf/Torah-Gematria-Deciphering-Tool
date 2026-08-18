@@ -510,6 +510,56 @@ async function runAllTests() {
   const afterDelete = Explore.ExploreCorrelations('Qwertyname', DB, Engine);
   assert(afterDelete.meta.primaryHebrew !== 'כהן', "Tras borrar, Qwertyname ya no resuelve a כהן");
 
+  assert(Explore.ExploreCorrelations('Cohen', DB, Engine).meta.hebrewSource === 'dictionary', "Cohen se etiqueta como hebreo de diccionario");
+  const phoneticName = Explore.ExploreCorrelations('Xylophone', DB, Engine);
+  assert(phoneticName.meta.hebrewSource === 'phonetic', "Un nombre ausente del léxico se etiqueta como fonética aproximada");
+  const suggestions = Explore.SuggestNameDictionary('coh');
+  assert(suggestions.some(h => h.hebrew === 'כהן'), "SuggestNameDictionary('coh') propone Cohen → כהן");
+
+  Storage.SavePersonalProfileForm({ givenName: 'David', surname: 'Cohen', birthDate: '14/05/1948' });
+  const savedProfileForm = Storage.GetPersonalProfileForm();
+  assert(savedProfileForm && savedProfileForm.givenName === 'David' && savedProfileForm.surname === 'Cohen', "El formulario de perfil persiste en storage");
+
+  console.log("\n=== SECCIÓN 21: HONESTIDAD ESTADÍSTICA ELS (no es una prueba) ===");
+  assert(typeof Engine.AssessELSHonesty === 'function', "gematria.js exporta AssessELSHonesty");
+  assert(typeof Engine.ShuffleHebrewText === 'function' && typeof Engine.ELSControlAtSkip === 'function', "Exporta shuffle y control de texto mezclado");
+
+  const sample = TORAH_TEXT.slice(0, 2500);
+  const shuffled = Engine.ShuffleHebrewText(sample, 42);
+  const countsA = Engine.CalculateLetterFrequencies(sample).counts;
+  const countsB = Engine.CalculateLetterFrequencies(shuffled).counts;
+  let sameCounts = true;
+  Object.keys(countsA).forEach(k => { if (countsA[k] !== countsB[k]) sameCounts = false; });
+  Object.keys(countsB).forEach(k => { if (countsA[k] !== countsB[k]) sameCounts = false; });
+  assert(sameCounts && shuffled !== sample, "ShuffleHebrewText conserva conteos de letras y cambia el orden");
+
+  const chaiHonesty = Engine.AssessELSHonesty(
+    { word: 'חי', skip: 10, expectedCount: 5, pValue: 0.99 },
+    { text: TORAH_TEXT, minSkip: 2, maxSkip: 120, runControl: false }
+  );
+  assert(chaiHonesty.band === 'common', "חי (2 letras) se clasifica como muy común");
+  assert(chaiHonesty.exploratory === true && /exploratorio/i.test(chaiHonesty.note), "El veredicto declara que el modelo es exploratorio");
+  assert(chaiHonesty.warnings.some(w => /2 letras/.test(w)), "Advierte que la palabra es demasiado corta");
+  assert(!/altamente significativo/i.test(chaiHonesty.label), "No etiqueta un hallazgo común como altamente significativo");
+
+  const toraClassic = Engine.FindELS(TORAH_TEXT, 'תורה', 50, 50).find(m => m.start === 5 && m.skip === 50);
+  assert(toraClassic, "Existe el ELS clásico תורה salto 50 en letra #5");
+  const toraHonesty = Engine.AssessELSHonesty(toraClassic, {
+    text: TORAH_TEXT,
+    minSkip: 2,
+    maxSkip: 120,
+    runControl: true
+  });
+  assert(toraHonesty.band === 'common' || toraHonesty.band === 'plausible', `תורה en rango 2–120 no se vende como prueba (banda: ${toraHonesty.band})`);
+  assert(toraHonesty.control && typeof toraHonesty.control.controlCount === 'number', "El control en texto mezclado se ejecuta de verdad");
+  assert(toraHonesty.warnings.some(w => /azar|rango|mezclado/i.test(w)), "Advierte expectativa por azar o control mezclado");
+
+  const hugeSkip = Engine.AssessELSHonesty(
+    { word: 'שלום', skip: 120, expectedCount: 0.05, pValue: 0.05 },
+    { text: TORAH_TEXT, minSkip: 2, maxSkip: 120, runControl: false }
+  );
+  assert(hugeSkip.warnings.some(w => /Salto grande/.test(w)), "Advierte cuando el salto es grande (elegido a posteriori)");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

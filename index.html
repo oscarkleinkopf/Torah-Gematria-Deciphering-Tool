@@ -15,7 +15,7 @@
     <!-- Encabezado -->
     <header>
       <h1>DECODIFICADOR DE GEMATRIA</h1>
-      <p>Explora el entrelazado místico del alfabeto hebreo, las correspondencias numéricas de la Torá y los hitos del Sionismo a través del lente de la numerología espiritual.</p>
+      <p>Estudio de gematria, calendario hebreo y ELS. Empieza aquí: un nombre, una fecha o un evento. El resto de pestañas profundiza un resultado, no es el punto de partida.</p>
       
       <!-- Banner de Dedicatoria -->
       <div class="idf-dedication-banner">
@@ -27,7 +27,7 @@
 
     <!-- Navegación Principal -->
     <nav>
-      <button class="nav-btn active" data-tab="explore">Explorar</button>
+      <button class="nav-btn active" data-tab="explore">Inicio · Explorar</button>
       <button class="nav-btn" data-tab="calculator">Calculadora de Gematria</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
       <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
@@ -41,16 +41,24 @@
 
     <!-- SECCIÓN: EXPLORAR CORRELACIONES -->
     <div id="explore" class="tab-content active">
-      <div class="glass-card explore-panel">
+      <div class="explore-mode-tabs" role="tablist" aria-label="Modos de estudio">
+        <button type="button" class="explore-mode-btn active" data-explore-mode="query" role="tab" aria-selected="true">Consulta</button>
+        <button type="button" class="explore-mode-btn" data-explore-mode="profile" role="tab" aria-selected="false">Mi perfil</button>
+        <button type="button" class="explore-mode-btn" data-explore-mode="dictionary" role="tab" aria-selected="false">Diccionario</button>
+      </div>
+
+      <div class="glass-card explore-panel" id="exploreModeQuery">
         <h3 class="input-title">Explorar correlaciones</h3>
         <p class="explore-lead">
-          Busca un <strong>apellido</strong>, <strong>nombre</strong>, <strong>fecha</strong> o <strong>evento</strong>
-          y descubre resonancias en el grafo de conocimiento, la línea de tiempo y la Torá.
-          Los nombres del diccionario (base + los que tú guardas) se usan de verdad en gematria, correlaciones y ELS.
+          Busca un <strong>apellido</strong>, <strong>nombre</strong>, <strong>fecha</strong> o <strong>evento</strong>.
+          Si el término está en el diccionario se usa ese hebreo; si no, se marca como <strong>fonética aproximada</strong>.
         </p>
 
         <div class="explore-search-row">
-          <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, 5 Iyar 5708, Oslo…" autocomplete="off">
+          <div class="explore-suggest-wrap">
+            <input type="text" id="txtExploreQuery" class="explore-input" placeholder="Ej: Cohen, 14/05/1948, 5 Iyar 5708, Oslo…" autocomplete="off" aria-autocomplete="list" aria-controls="exploreSuggest">
+            <div id="exploreSuggest" class="explore-suggest" hidden role="listbox"></div>
+          </div>
           <button type="button" id="btnExploreSearch" class="explore-search-btn">Buscar</button>
         </div>
 
@@ -69,7 +77,7 @@
         <div id="exploreHistory" class="explore-history" style="display:none;"></div>
       </div>
 
-      <div class="glass-card explore-panel profile-panel">
+      <div class="glass-card explore-panel profile-panel" id="exploreModeProfile" hidden>
         <h3 class="input-title">Mi perfil personal</h3>
         <p class="explore-lead">
           Nombre, apellido y fecha de nacimiento → un informe único: gematria, fecha hebrea real,
@@ -99,7 +107,7 @@
         </form>
       </div>
 
-      <div class="glass-card explore-panel dictionary-panel">
+      <div class="glass-card explore-panel dictionary-panel" id="exploreModeDictionary" hidden>
         <h3 class="input-title">Diccionario de nombres</h3>
         <p class="explore-lead">
           Consulta el léxico hebreo de la app y añade los tuyos. Lo que guardas queda en este navegador
@@ -139,6 +147,12 @@
           <span id="dictCount" class="dict-count"></span>
         </div>
         <div id="dictList" class="dict-list"></div>
+      </div>
+
+      <div id="exploreExampleBanner" class="explore-example-banner" hidden>
+        Estás viendo el dossier de ejemplo <strong>David Cohen · 14/05/1948</strong> (5 Iyar 5708).
+        No es tu perfil — ábrelo en <button type="button" class="explore-text-btn" data-explore-mode="profile">Mi perfil</button>
+        o busca otro término.
       </div>
 
       <div class="glass-card explore-panel explore-output-panel" id="exploreOutputPanel">
@@ -402,7 +416,9 @@
         <div class="glass-card biblecode-inputs-panel">
           <h3 class="input-title">Código de la Biblia (ELS)</h3>
           <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
-            Ingresa palabras en español o hebreo (separadas por coma para multi-búsqueda):
+            Búsqueda exploratoria de secuencias equidistantes. Un hallazgo <strong>no es una prueba</strong>:
+            palabras cortas y rangos de salto anchos producen coincidencias por azar. El semáforo (muy común / plausible / raro)
+            usa el modelo de Poisson y un control en texto mezclado.
           </p>
 
           <div class="search-bar-wrapper" style="margin-bottom: 1rem;">
