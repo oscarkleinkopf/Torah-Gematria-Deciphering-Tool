@@ -474,6 +474,26 @@ function MatchHistoricalEvents(queryMeta, events) {
   return hits;
 }
 
+/** Picks a timeline event for study handoff (year and/or title). Same object as in HISTORICAL_EVENTS. */
+function PickHistoricalEvent(events, spec) {
+  const list = events || [];
+  if (!spec || !list.length) return null;
+  const year = spec.year != null ? spec.year : null;
+  const title = spec.title ? NormalizeExploreQuery(spec.title) : '';
+  let candidates = list.slice();
+  if (year != null) candidates = candidates.filter(e => e.year === year);
+  if (title) {
+    const exact = candidates.find(e => NormalizeExploreQuery(e.title || '') === title);
+    if (exact) return exact;
+    const partial = candidates.find(e => {
+      const t = NormalizeExploreQuery(e.title || '');
+      return t.includes(title) || (title.length >= 4 && title.includes(t.split(' ')[0]));
+    });
+    if (partial) return partial;
+  }
+  return candidates[0] || null;
+}
+
 function MatchZionistCards(queryMeta, cards) {
   const list = cards || [];
   const hits = [];
@@ -1050,6 +1070,7 @@ const GematriaExplore = {
   SuggestNameDictionary,
   HebrewConsonants,
   MatchHistoricalEvents,
+  PickHistoricalEvent,
   MatchZionistCards,
   MatchTorahVerses,
   ResolveExploreQuery,

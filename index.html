@@ -26,18 +26,29 @@
     </header>
 
     <!-- Navegación Principal -->
-    <nav>
-      <button class="nav-btn active" data-tab="explore">Inicio · Explorar</button>
-      <button class="nav-btn" data-tab="calculator">Calculadora de Gematria</button>
-      <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
-      <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
-      <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
-      <button class="nav-btn" data-tab="zionism">Correlación Sionista</button>
-      <button class="nav-btn" data-tab="comparison">Comparador Místico</button>
-      <button class="nav-btn" data-tab="letters">Espejo de Letras</button>
-      <button class="nav-btn" data-tab="favorites">⭐ Favoritos</button>
-      <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
+    <nav class="app-nav" aria-label="Estudio">
+      <div class="nav-primary">
+        <button class="nav-btn active" data-tab="explore">Inicio</button>
+        <button class="nav-btn" data-tab="calculator">Calculadora</button>
+        <button class="nav-btn" data-tab="biblecode">Código ELS</button>
+        <button class="nav-btn" data-tab="favorites">Favoritos</button>
+      </div>
+      <div class="nav-more-wrap">
+        <button type="button" class="nav-more-toggle" id="btnNavMore" aria-expanded="false" aria-controls="navMoreMenu">Más</button>
+        <div id="navMoreMenu" class="nav-more-menu" hidden>
+          <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
+          <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
+          <button class="nav-btn" data-tab="zionism">Línea de tiempo</button>
+          <button class="nav-btn" data-tab="comparison">Comparador</button>
+          <button class="nav-btn" data-tab="letters">Espejo de letras</button>
+          <button class="nav-btn" data-tab="reflection">Reflexión</button>
+        </div>
+      </div>
     </nav>
+    <div id="studyReturnBar" class="study-return-bar" hidden>
+      <button type="button" class="study-return-btn" id="btnReturnToStudy">← Volver al estudio</button>
+      <span id="studyReturnQuery" class="study-return-query"></span>
+    </div>
 
     <!-- SECCIÓN: EXPLORAR CORRELACIONES -->
     <div id="explore" class="tab-content active">

@@ -20,7 +20,7 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
   - **Diccionario vivo**: léxico hebreo consultable (Cohen, Herzl, Raquel…) más nombres que tú guardas; sugerencias al escribir; se distingue **diccionario** vs **fonética aproximada**.
   - Calendario hebreo civil (Nisán–Adar) sin heurística `año+3760`: 14/05/1948 = 5 de Iyar 5708 (ה׳תש״ח).
   - Inicio de estudio en **Explorar** (Consulta / Mi perfil / Diccionario), con dossier de ejemplo al abrir.
-  - Calendario hebreo civil (Nisán–Adar) sin heurística `año+3760`: 14/05/1948 = 5 de Iyar 5708 (ה׳תש״ח).
+  - Navegación compacta: **Inicio / Calculadora / Código ELS / Favoritos**, y el resto bajo **Más**. Desde un resultado se profundiza (timeline enfocada, Torá por valor, comparador, matriz ELS) y se vuelve al estudio.
   - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
    - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
 

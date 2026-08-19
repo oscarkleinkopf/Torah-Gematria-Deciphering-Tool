@@ -10,9 +10,9 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `export.js`: PNG/Report export utility for ELS matrix and Gematria breakdown visuals.
 - `storage.js`: LocalStorage manager for Favorites, Explore history, and the user name dictionary (`GetUserNameDictionary` / `SaveUserNameEntry` / `RemoveUserNameEntry`).
 - `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
-- `app.js`: UI Controller, DOM event bindings, Cyber-Mystic navigation, visual animations, Canvas renderers, and Explore tab.
+- `app.js`: UI Controller, DOM event bindings, compact study navigation, visual animations, Canvas renderers, and Explore tab (handoffs: focused timeline, Torah search by value, comparator).
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
-- `index.html`: Responsive layout with navigation tabs for Explore, Calculator, Torah, ELS Code, Zionism, Comparator, Acrostics, Letter Mirror, Favorites.
+- `index.html`: Compact study nav (Inicio, Calculadora, ELS, Favoritos + Más) with a return-to-study bar; Explore remains the home.
 - `test.js`: Automated unit test suite run via `node test.js`.
 - `adversarial_test.js`: Stress / cipher / acrostic / ELS adversarial suite.
 
@@ -55,6 +55,7 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 
 ### `explore.js`
 - `ExploreCorrelations(query, db, Engine)`: Unified search (surname / name / date / event / number / compound). Uses builtin + user name dictionary.
+- `PickHistoricalEvent(events, { year, title })`: Resolves a timeline hit for study handoff; returns the original event object or `null`.
 - `BuildPersonalProfile({ givenName, surname, birthDate, extra }, db, Engine)`: Personal dossier merging name, surname and birth date into one `queryType: 'profile'` report.
 - `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()` / `SuggestNameDictionary()`: live dictionary merge, validation, browse/filter and typeahead.
 - `ExploreCorrelations` sets `meta.hebrewSource`: `dictionary` | `dictionary-user` | `phonetic` | `hebrew`.

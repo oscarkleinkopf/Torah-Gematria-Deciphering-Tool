@@ -104,7 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hebrewProcessedText: '',
     gematriaResult: null,
     activeReflectionIndex: 0,
-    bestAutoELS: null
+    bestAutoELS: null,
+    studyQuery: ''
   };
 
   // --- Estado del comparador ---
@@ -117,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Estado de la línea de tiempo ---
   let timelineState = {
     selectedEvent: null,
+    focusEvent: null,
     mouse: { x: null, y: null }
   };
 
@@ -173,6 +175,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- 1. ENRUTADOR INTERNO DE PESTAÑAS ---
+  const SECONDARY_TABS = {
+    torah: true,
+    acrostics: true,
+    zionism: true,
+    comparison: true,
+    letters: true,
+    reflection: true
+  };
+
+  function closeNavMore() {
+    const menu = document.getElementById('navMoreMenu');
+    const toggle = document.getElementById('btnNavMore');
+    if (menu) menu.hidden = true;
+    if (toggle) {
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function updateStudyChrome(tabId) {
+    const toggle = document.getElementById('btnNavMore');
+    if (toggle) toggle.classList.toggle('active-group', !!SECONDARY_TABS[tabId]);
+    const bar = document.getElementById('studyReturnBar');
+    const qEl = document.getElementById('studyReturnQuery');
+    const show = tabId !== 'explore' && !!(appState.studyQuery);
+    if (bar) bar.hidden = !show;
+    if (qEl) qEl.textContent = appState.studyQuery || '';
+    closeNavMore();
+  }
+
   function switchTab(tabId) {
     if (!tabId) return;
 
@@ -185,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tab) tab.classList.add('active');
 
     appState.currentTab = tabId;
+    updateStudyChrome(tabId);
 
     if (tabId === 'calculator') {
       resizeCanvas();
@@ -207,6 +240,27 @@ document.addEventListener('DOMContentLoaded', () => {
       switchTab(button.getAttribute('data-tab'));
     });
   });
+
+  const btnNavMore = document.getElementById('btnNavMore');
+  const navMoreMenu = document.getElementById('navMoreMenu');
+  if (btnNavMore && navMoreMenu) {
+    btnNavMore.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const willOpen = navMoreMenu.hidden;
+      navMoreMenu.hidden = !willOpen;
+      btnNavMore.classList.toggle('open', willOpen);
+      btnNavMore.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('click', (ev) => {
+    const wrap = document.querySelector('.nav-more-wrap');
+    if (!wrap || wrap.contains(ev.target)) return;
+    closeNavMore();
+  });
+  const btnReturnToStudy = document.getElementById('btnReturnToStudy');
+  if (btnReturnToStudy) {
+    btnReturnToStudy.addEventListener('click', () => switchTab('explore'));
+  }
 
   // --- 2. CONFIGURACIÓN DEL INPUT E IDIOMAS ---
   btnHebrewInput.addEventListener('click', () => {
@@ -1405,6 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     timelineCanvas.addEventListener('click', () => {
       if (timelineState.selectedEvent) {
+        timelineState.focusEvent = timelineState.selectedEvent;
         showTimelineEventDetails(timelineState.selectedEvent);
       }
     });
@@ -1477,6 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isMatch = activeValue && event.gematriaMatches.includes(activeValue);
 
       let isHovered = false;
+      const isFocused = timelineState.focusEvent === event;
       if (timelineState.mouse.x !== null && timelineState.mouse.y !== null) {
         const dist = Math.hypot(x - timelineState.mouse.x, y - timelineState.mouse.y);
         if (dist < 15) {
@@ -1495,7 +1551,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fillColor = '#ffd700';
         strokeColor = '#ffffff';
         glowColor = 'rgba(255, 215, 0, 0.6)';
-      } else if (isHovered) {
+      } else if (isHovered || isFocused) {
         radius = 10;
         fillColor = '#8e44ad';
         strokeColor = '#ffd700';
@@ -1518,13 +1574,13 @@ document.addEventListener('DOMContentLoaded', () => {
       timelineCtx.stroke();
 
       // Año arriba
-      timelineCtx.fillStyle = isMatch ? '#ffd700' : (isHovered ? '#ffd700' : '#a4b0be');
-      timelineCtx.font = isMatch || isHovered ? 'bold 12px var(--font-serif)' : '10px var(--font-serif)';
+      timelineCtx.fillStyle = isMatch ? '#ffd700' : ((isHovered || isFocused) ? '#ffd700' : '#a4b0be');
+      timelineCtx.font = isMatch || isHovered || isFocused ? 'bold 12px var(--font-serif)' : '10px var(--font-serif)';
       timelineCtx.textAlign = 'center';
       timelineCtx.fillText(event.label, x, y - 20);
 
       // Título abreviado abajo
-      timelineCtx.fillStyle = isMatch ? '#ffffff' : '#888899';
+      timelineCtx.fillStyle = isMatch ? '#ffffff' : ((isHovered || isFocused) ? '#ffd700' : '#888899');
       timelineCtx.font = '8.5px var(--font-sans)';
       let shortTitle = event.title.split(' ').slice(0, 2).join(' ');
       if (event.title.split(' ').length > 2) shortTitle += '...';
@@ -2603,6 +2659,44 @@ document.addEventListener('DOMContentLoaded', () => {
   const exploreHistoryEl = document.getElementById('exploreHistory');
   let lastExploreData = null;
 
+  function rememberStudyQuery(data) {
+    if (!data || data.error) {
+      appState.studyQuery = '';
+      return;
+    }
+    appState.studyQuery = String(data.query || '').trim();
+  }
+
+  function openTimelineFromExplore(yearAttr, title) {
+    const year = parseInt(yearAttr, 10);
+    const spec = {
+      year: Number.isFinite(year) ? year : null,
+      title: title || ''
+    };
+    const picker = Explore && Explore.PickHistoricalEvent;
+    const picked = picker ? picker(DB.HISTORICAL_EVENTS, spec) : null;
+    timelineState.focusEvent = picked;
+    switchTab('zionism');
+    if (picked) showTimelineEventDetails(picked);
+  }
+
+  function openTorahFromExplore(value) {
+    if (value == null || value === '') return;
+    switchTab('torah');
+    if (txtSearchTorah) {
+      txtSearchTorah.value = String(value);
+      executeTorahSearch();
+    }
+  }
+
+  function openCompareFromExplore(textA, textB) {
+    if (!textA || !textB) return;
+    switchTab('comparison');
+    if (txtCompareA) txtCompareA.value = textA;
+    if (txtCompareB) txtCompareB.value = textB;
+    handleComparison();
+  }
+
   function fillProfileForm(pr) {
     pr = pr || {};
     const givenEl = document.getElementById('txtProfileGiven');
@@ -2731,10 +2825,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (data.error) {
+      rememberStudyQuery(null);
       if (exploreStatus) exploreStatus.textContent = data.error;
       exploreResults.innerHTML = `<div class="explore-empty">${escapeHtml(data.error)}</div>`;
       return;
     }
+
+    rememberStudyQuery(data);
 
     const knowledge = data.knowledge || [];
     const events = data.events || [];
@@ -2796,6 +2893,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <button type="button" class="explore-action-btn" id="btnSaveExploreFavorite">⭐ Guardar correlación</button>
       ${meta.hebrewSource === 'phonetic' && meta.primaryHebrew ? '<button type="button" class="explore-action-btn" id="btnPinToDictionary">📌 Fijar hebreo en el diccionario</button>' : ''}
       ${meta.primaryHebrew ? `<button type="button" class="explore-action-btn" data-explore-calc="${escapeHtml(meta.primaryHebrew)}">Abrir en calculadora</button>` : ''}
+      ${data.profile && data.profile.givenHebrew && data.profile.surnameHebrew
+        ? `<button type="button" class="explore-action-btn" data-explore-compare-a="${escapeHtml(data.profile.givenHebrew)}" data-explore-compare-b="${escapeHtml(data.profile.surnameHebrew)}">Comparar nombre y apellido</button>`
+        : ''}
+      ${meta.primaryGematria && meta.primaryGematria.absolute
+        ? `<button type="button" class="explore-action-btn" data-explore-torah="${meta.primaryGematria.absolute}">Versículos con este valor</button>`
+        : ''}
       ${data.suggestedELS && data.suggestedELS.length ? `<button type="button" class="explore-action-btn" data-els-terms="${escapeHtml(data.suggestedELS.join(','))}">Ver matriz ELS</button>` : ''}
     </div>`;
 
@@ -2833,7 +2936,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="reasons">${escapeHtml((hit.reasons || []).join(' · '))}</div>
             <div class="explore-actions">
               <button type="button" class="explore-action-btn" data-explore-els="${idx}" data-els-terms="${escapeHtml((ev.searchTerms || []).join(','))}">Buscar ELS</button>
-              <button type="button" class="explore-action-btn" data-explore-zionism="1">Ver timeline</button>
+              <button type="button" class="explore-action-btn" data-explore-zionism="1" data-year="${ev.year}" data-title="${escapeHtml(ev.title)}">Ver timeline</button>
             </div>
           </div>`;
       });
@@ -2871,6 +2974,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="meta">Gematria ${c.gematria}</div>
             <div class="meta">${escapeHtml((c.mysticalConnection || '').slice(0, 160))}…</div>
             <div class="reasons">${escapeHtml((hit.reasons || []).join(' · '))}</div>
+            <div class="explore-actions">
+              <button type="button" class="explore-action-btn" data-explore-calc="${escapeHtml(c.hebrew)}">Abrir en calculadora</button>
+            </div>
           </div>`;
       });
       html += '</div></div>';
@@ -2886,6 +2992,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="he">${escapeHtml(v.hebrew)}</div>
             <div class="meta">${escapeHtml(v.translation)}</div>
             <div class="reasons">Gematria ${v.gematria}</div>
+            <div class="explore-actions">
+              <button type="button" class="explore-action-btn" data-explore-torah="${v.gematria}">Buscar en la Torá</button>
+            </div>
           </div>`;
       });
       html += '</div></div>';
@@ -2989,7 +3098,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     exploreResults.querySelectorAll('[data-explore-zionism]').forEach(btn => {
-      btn.addEventListener('click', () => switchTab('zionism'));
+      btn.addEventListener('click', () => {
+        openTimelineFromExplore(btn.getAttribute('data-year'), btn.getAttribute('data-title') || '');
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-torah]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openTorahFromExplore(btn.getAttribute('data-explore-torah'));
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-compare-a]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openCompareFromExplore(
+          btn.getAttribute('data-explore-compare-a') || '',
+          btn.getAttribute('data-explore-compare-b') || ''
+        );
+      });
     });
 
     exploreResults.querySelectorAll('[data-explore-calc]').forEach(btn => {

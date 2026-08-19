@@ -560,6 +560,22 @@ async function runAllTests() {
   );
   assert(hugeSkip.warnings.some(w => /Salto grande/.test(w)), "Advierte cuando el salto es grande (elegido a posteriori)");
 
+  console.log("\n=== SECCIÓN 22: HILO DE ESTUDIO (PickHistoricalEvent) ===");
+  assert(typeof Explore.PickHistoricalEvent === 'function', "explore.js exporta PickHistoricalEvent");
+  const israel48 = Explore.PickHistoricalEvent(DB.HISTORICAL_EVENTS, { year: 1948 });
+  assert(israel48 && israel48.title === 'Declaración del Estado de Israel', "1948 selecciona la Declaración del Estado de Israel");
+  const israelByTitle = Explore.PickHistoricalEvent(DB.HISTORICAL_EVENTS, {
+    year: 1948,
+    title: 'Declaración del Estado de Israel'
+  });
+  assert(israelByTitle === israel48, "Año + título exacto devuelve el mismo objeto del corpus");
+  const osloHit = Explore.PickHistoricalEvent(DB.HISTORICAL_EVENTS, { title: 'Oslo' });
+  assert(osloHit && /oslo/i.test(osloHit.title), "Título parcial 'Oslo' encuentra los Acuerdos de Oslo");
+  const basilea = Explore.PickHistoricalEvent(DB.HISTORICAL_EVENTS, { year: 1897, title: 'Basilea' });
+  assert(basilea && basilea.year === 1897, "1897 + 'Basilea' selecciona el Congreso de Basilea");
+  assert(Explore.PickHistoricalEvent(DB.HISTORICAL_EVENTS, { year: 9999 }) === null, "Un año ausente no inventa un hito");
+  assert(Explore.PickHistoricalEvent([], { year: 1948 }) === null, "Una lista vacía no selecciona nada");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");
