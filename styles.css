@@ -703,6 +703,15 @@ nav {
   text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
 }
 
+.letter-card.study-focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.28);
+}
+
+.letter-card.study-focus .letter-card-char {
+  color: var(--gold-primary);
+}
+
 .letter-card-name {
   font-family: var(--font-serif);
   font-size: 1.05rem;

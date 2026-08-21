@@ -576,6 +576,15 @@ async function runAllTests() {
   assert(Explore.PickHistoricalEvent(DB.HISTORICAL_EVENTS, { year: 9999 }) === null, "Un año ausente no inventa un hito");
   assert(Explore.PickHistoricalEvent([], { year: 1948 }) === null, "Una lista vacía no selecciona nada");
 
+  assert(typeof Explore.PickDailyReflection === 'function', "explore.js exporta PickDailyReflection");
+  const amorRef = Explore.PickDailyReflection(DB.DAILY_REFLECTIONS, 'amor');
+  assert(amorRef && /Amor y Unidad/.test(amorRef.topic.title), "La consulta 'amor' abre la reflexión de Amor y Unidad");
+  const tikvaRef = Explore.PickDailyReflection(DB.DAILY_REFLECTIONS, 'Hatikvah');
+  assert(tikvaRef && /Hatikvah|Esperanza/i.test(tikvaRef.topic.title), "Hatikvah selecciona la reflexión de la esperanza");
+  const emptyRef = Explore.PickDailyReflection(DB.DAILY_REFLECTIONS, '');
+  assert(emptyRef && emptyRef.index === 0, "Sin consulta, la reflexión cae en el primer tema");
+  assert(Explore.PickDailyReflection([], 'amor') === null, "Una lista vacía de reflexiones no inventa un tema");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");
