@@ -494,6 +494,28 @@ function PickHistoricalEvent(events, spec) {
   return candidates[0] || null;
 }
 
+/** Picks a reflection topic from the study query. Returns { topic, index } or null. */
+function PickDailyReflection(reflections, query) {
+  const list = reflections || [];
+  if (!list.length) return null;
+  const q = NormalizeExploreQuery(query || '');
+  if (!q) return { topic: list[0], index: 0 };
+  const tokens = q.split(/[^a-z0-9]+/).filter(t => t.length >= 4);
+  let bestIdx = 0;
+  let bestScore = 0;
+  list.forEach((topic, idx) => {
+    const hay = NormalizeExploreQuery((topic.title || '') + ' ' + (topic.text || ''));
+    let score = 0;
+    if (hay.includes(q)) score += 3;
+    tokens.forEach(t => { if (hay.includes(t)) score += 1; });
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = idx;
+    }
+  });
+  return { topic: list[bestIdx], index: bestIdx };
+}
+
 function MatchZionistCards(queryMeta, cards) {
   const list = cards || [];
   const hits = [];
@@ -1071,6 +1093,7 @@ const GematriaExplore = {
   HebrewConsonants,
   MatchHistoricalEvents,
   PickHistoricalEvent,
+  PickDailyReflection,
   MatchZionistCards,
   MatchTorahVerses,
   ResolveExploreQuery,

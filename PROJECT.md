@@ -28,6 +28,7 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 | M3 | Export System & LocalStorage Favorites | Implement PNG visual export for matrix/breakdowns and LocalStorage persistence for favorites/searches | M1, M2 | DONE |
 | M4 | Cyber-Mystic UI Polish & Module Integration | Integrate Acrostics UI, ELS P-Value indicators, Worker progress UI, Export buttons, Favorites tab, and CSS polish across all tabs | M1, M2, M3 | DONE |
 | M5 | Final E2E Test Pass & Forensic Integrity Audit | Validate 100% test suite passing (`node test.js`), UI error-free execution, and full Forensic Integrity verification | M1, M2, M3, M4 | DONE |
+| M6 | Study thread (Explore as home) | Compact nav, personal profile, live dictionary, real Hebrew calendar, verse map, ELS honesty, and handoffs from a result into the rest of the tools | M5 | DONE |
 
 ## Interface Contracts
 ### `gematria.js`
@@ -56,6 +57,7 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 ### `explore.js`
 - `ExploreCorrelations(query, db, Engine)`: Unified search (surname / name / date / event / number / compound). Uses builtin + user name dictionary.
 - `PickHistoricalEvent(events, { year, title })`: Resolves a timeline hit for study handoff; returns the original event object or `null`.
+- `PickDailyReflection(reflections, query)`: Resolves a reflection topic from the study query; returns `{ topic, index }` or `null`.
 - `BuildPersonalProfile({ givenName, surname, birthDate, extra }, db, Engine)`: Personal dossier merging name, surname and birth date into one `queryType: 'profile'` report.
 - `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()` / `SuggestNameDictionary()`: live dictionary merge, validation, browse/filter and typeahead.
 - `ExploreCorrelations` sets `meta.hebrewSource`: `dictionary` | `dictionary-user` | `phonetic` | `hebrew`.

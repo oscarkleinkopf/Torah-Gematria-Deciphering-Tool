@@ -968,6 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
       val.className = 'letter-card-val';
       val.innerHTML = `Val: <strong>${letter.value}</strong> | Ord: <strong>${letter.ordinal}</strong>`;
       
+      card.setAttribute('data-letter', letter.char);
       card.appendChild(char);
       card.appendChild(name);
       card.appendChild(val);
@@ -1072,22 +1073,15 @@ document.addEventListener('DOMContentLoaded', () => {
   relationCanvas.addEventListener('click', () => {
     if (selectedNode) {
       if (selectedNode.type === 'letter') {
-        openLetterDetails(selectedNode.label);
+        openLettersFromExplore(selectedNode.label);
       } else if (selectedNode.type === 'concept') {
         if (selectedNode.category === 'sefirah') {
-          const reflectionTabBtn = document.querySelector('[data-tab="reflection"]');
-          if (reflectionTabBtn) reflectionTabBtn.click();
+          openReflectionFromExplore(selectedNode.label || selectedNode.desc || '');
         } else {
-          const zionTabBtn = document.querySelector('[data-tab="zionism"]');
-          if (zionTabBtn) zionTabBtn.click();
+          switchTab('zionism');
         }
       } else if (selectedNode.type === 'verse') {
-        const torahTabBtn = document.querySelector('[data-tab="torah"]');
-        if (torahTabBtn) {
-          torahTabBtn.click();
-          txtSearchTorah.value = selectedNode.value;
-          executeTorahSearch();
-        }
+        openTorahFromExplore(selectedNode.value);
       }
     }
   });
@@ -2513,12 +2507,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fav.type === 'profile' || btn.getAttribute('data-fav-type') === 'profile') {
           const pr = (fav.data && fav.data.profile) || {};
           switchTab('explore');
+          setExploreMode('profile');
           fillProfileForm(pr);
           runProfileBuild(pr);
           return;
         }
         if (fav.type === 'explore' || btn.getAttribute('data-fav-type') === 'explore') {
           switchTab('explore');
+          setExploreMode('query');
           runExploreSearch(fav.title || fav.word);
           return;
         }
@@ -2697,6 +2693,50 @@ document.addEventListener('DOMContentLoaded', () => {
     handleComparison();
   }
 
+  const SOFIT_TO_REGULAR = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+
+  function regularHebrewLetters(hebrew) {
+    return String(hebrew || '')
+      .replace(/[^א-ת]/g, '')
+      .split('')
+      .map(ch => SOFIT_TO_REGULAR[ch] || ch);
+  }
+
+  function highlightStudyLetters(hebrew) {
+    if (!lettersGrid) return;
+    const wanted = new Set(regularHebrewLetters(hebrew));
+    lettersGrid.querySelectorAll('.letter-card').forEach(card => {
+      const ch = card.getAttribute('data-letter') || '';
+      card.classList.toggle('study-focus', wanted.has(ch));
+    });
+    const first = lettersGrid.querySelector('.letter-card.study-focus');
+    if (first && typeof first.scrollIntoView === 'function') {
+      first.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function openLettersFromExplore(hebrew) {
+    if (!hebrew) return;
+    switchTab('letters');
+    highlightStudyLetters(hebrew);
+  }
+
+  function openAcrosticsFromExplore(targetHebrew, sourceText) {
+    switchTab('acrostics');
+    if (txtAcrosticsTarget) txtAcrosticsTarget.value = targetHebrew || '';
+    if (txtAcrosticsInput && sourceText) txtAcrosticsInput.value = sourceText;
+  }
+
+  function openReflectionFromExplore(query) {
+    const picker = Explore && Explore.PickDailyReflection;
+    const picked = picker ? picker(DB.DAILY_REFLECTIONS, query || appState.studyQuery) : null;
+    if (picked && typeof picked.index === 'number') {
+      appState.activeReflectionIndex = picked.index;
+    }
+    switchTab('reflection');
+    renderReflectionTab();
+  }
+
   function fillProfileForm(pr) {
     pr = pr || {};
     const givenEl = document.getElementById('txtProfileGiven');
@@ -2723,6 +2763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (!givenName && !surname) {
       lastExploreData = null;
+      setExploreMode('profile');
       renderExploreResults({
         query: '',
         queryType: 'profile',
@@ -2746,6 +2787,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Storage.SavePersonalProfileForm && !(opts && opts.example)) {
       Storage.SavePersonalProfileForm({ givenName, surname, birthDate, extra });
     }
+    setExploreMode('profile');
     renderExploreHistory();
     setExampleBanner(!!(opts && opts.example));
     renderExploreResults(data);
@@ -2791,6 +2833,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const query = (rawQuery != null ? rawQuery : (txtExploreQuery && txtExploreQuery.value) || '').trim();
     if (txtExploreQuery) txtExploreQuery.value = query;
+    setExploreMode('query');
     if (!query) {
       if (exploreStatus) exploreStatus.textContent = 'Escribe un apellido, fecha, evento o número. También: «Herzl + 1897».';
       if (exploreResults) exploreResults.innerHTML = '';
@@ -2900,6 +2943,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `<button type="button" class="explore-action-btn" data-explore-torah="${meta.primaryGematria.absolute}">Versículos con este valor</button>`
         : ''}
       ${data.suggestedELS && data.suggestedELS.length ? `<button type="button" class="explore-action-btn" data-els-terms="${escapeHtml(data.suggestedELS.join(','))}">Ver matriz ELS</button>` : ''}
+      ${meta.primaryHebrew ? `<button type="button" class="explore-action-btn" data-explore-letters="${escapeHtml(meta.primaryHebrew)}">Espejo de letras</button>` : ''}
+      ${meta.primaryHebrew ? `<button type="button" class="explore-action-btn" data-explore-acrostics="${escapeHtml(meta.primaryHebrew)}" data-acrostic-text="${escapeHtml((verses[0] && verses[0].verse && verses[0].verse.hebrew) || '')}">Acrósticos</button>` : ''}
+      <button type="button" class="explore-action-btn" data-explore-reflection="${escapeHtml(data.query || '')}">Reflexión</button>
     </div>`;
 
     if (meta.nameEntry || meta.dateInfo || meta.primaryGematria || data.queryType === 'compound') {
@@ -3127,6 +3173,27 @@ document.addEventListener('DOMContentLoaded', () => {
           txtInput.value = he;
           processInputText(he);
         }
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-letters]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openLettersFromExplore(btn.getAttribute('data-explore-letters') || '');
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-acrostics]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openAcrosticsFromExplore(
+          btn.getAttribute('data-explore-acrostics') || '',
+          btn.getAttribute('data-acrostic-text') || ''
+        );
+      });
+    });
+
+    exploreResults.querySelectorAll('[data-explore-reflection]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openReflectionFromExplore(btn.getAttribute('data-explore-reflection') || data.query || '');
       });
     });
 
