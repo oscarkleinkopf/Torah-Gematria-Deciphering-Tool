@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Torá Gematria & Decodificador Místico</title>
   <meta name="description" content="Explora los secretos numéricos de la Torá y el Sionismo usando el antiguo arte de la Gematria. Calcula equivalencias en hebreo y español, y reflexiona sobre sus conexiones históricas.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#d4af37">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,13 +18,23 @@
   <div class="stars"></div>
 
   <div class="app-container">
-    <!-- Header con Botón Móvil -->
+    <!-- Header con Botón Móvil y PWA -->
     <header>
+      <!-- Banner Offline -->
+      <div id="offlineBanner" class="offline-status-banner" style="display: none;">
+        <span>📡 <strong>Modo Offline Activo:</strong> Estás navegando sin conexión con los motores y textos locales operativos.</span>
+      </div>
+
       <div class="header-top-row">
         <h1>DECODIFICADOR DE GEMATRIA</h1>
-        <button class="mobile-nav-toggle" id="btnMobileNavToggle" aria-label="Abrir menú de navegación">
-          <span></span><span></span><span></span>
-        </button>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button class="pwa-install-btn" id="btnInstallApp" style="display: none;" title="Instalar como aplicación nativa en tu dispositivo">
+            <span>📲</span> Instalar App
+          </button>
+          <button class="mobile-nav-toggle" id="btnMobileNavToggle" aria-label="Abrir menú de navegación">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
       </div>
       <p>Explora el entrelazado místico del alfabeto hebreo, las correspondencias numéricas de la Torá y los hitos del Sionismo a través del lente de la numerología espiritual.</p>
       
@@ -123,7 +139,10 @@
         <div class="glass-card results-panel">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 class="results-header" style="border: none; padding: 0; margin: 0;">Valores Calculados</h3>
-            <button id="btnShareCalc" class="share-trigger-btn" title="Generar tarjeta de imagen de este hallazgo para compartir en redes">📤 Compartir Tarjeta</button>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button id="btnGenerateReport" class="share-trigger-btn report-btn" title="Generar un reporte ceremonial de este término en PDF / Imprimible">📑 Reporte PDF</button>
+              <button id="btnShareCalc" class="share-trigger-btn" title="Generar tarjeta de imagen de este hallazgo para compartir en redes">📤 Compartir Tarjeta</button>
+            </div>
           </div>
           
           <div class="results-grid">
@@ -837,6 +856,22 @@
     </div>
   </div>
 
+  <!-- Modal para Reporte Ceremonial en PDF / Imprimible (Característica 3) -->
+  <div class="modal-overlay report-modal-overlay" id="reportPreviewModal" style="display: none;">
+    <div class="modal-content report-modal-content">
+      <div class="report-modal-header no-print">
+        <h3 style="color: var(--gold-primary); font-family: var(--font-serif); margin: 0; font-size: 1.15rem;">Vista Previa del Reporte Ceremonial</h3>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="share-act-btn btn-download-png" id="btnPrintReport" style="padding: 0.35rem 0.8rem; font-size: 0.8rem;">🖨️ Imprimir / Guardar PDF</button>
+          <button class="modal-close" id="btnCloseReport">&times;</button>
+        </div>
+      </div>
+      <div class="report-sheet-wrapper" id="reportSheetContent">
+        <!-- Renderizado dinámico del reporte -->
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts de Datos y Motor -->
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
@@ -851,6 +886,8 @@
   <script src="js/modules/bibleCodeView.js"></script>
   <script src="js/modules/shareCard.js"></script>
   <script src="js/modules/tourModal.js"></script>
+  <script src="js/modules/reportGenerator.js"></script>
+  <script src="js/modules/pwaManager.js"></script>
 
   <!-- Orquestador Principal -->
   <script src="app.js"></script>

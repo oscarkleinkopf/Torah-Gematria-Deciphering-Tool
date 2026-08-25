@@ -137,6 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.shareCard) Modules.shareCard.init(appContext);
     if (Modules.tourModal) Modules.tourModal.init(appContext);
     if (Modules.dailySync) Modules.dailySync.init(appContext);
+    if (Modules.reportGenerator) Modules.reportGenerator.init(appContext);
+    if (Modules.pwaManager) Modules.pwaManager.init(appContext);
 
     // Estado inicial
     processInputText('שלום');

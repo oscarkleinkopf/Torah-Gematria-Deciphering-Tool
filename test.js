@@ -446,6 +446,22 @@ async function runAllTests() {
   const sortedByPos = Engine.SortELSResults(unsortedMatches, 'position');
   assert(sortedByPos[0].word === 'C' && sortedByPos[0].start === 50, "Ordenamiento por posición bíblica coloca inicio #50 primero");
 
+  console.log("\n=== SECCIÓN 26: VALIDACIÓN DE PWA Y MANIFEST (CARACTERÍSTICA 4) ===");
+  const fs = require('fs');
+  const manifestRaw = fs.readFileSync('./manifest.json', 'utf8');
+  const manifest = JSON.parse(manifestRaw);
+  assert(manifest.name && manifest.name.includes('Gematria'), "manifest.json contiene nombre de aplicación válido");
+  assert(manifest.display === 'standalone', "manifest.json está configurado como 'standalone' para instalación nativa");
+  assert(Array.isArray(manifest.icons) && manifest.icons.length > 0, "manifest.json incluye iconos de aplicación");
+  assert(fs.existsSync('./icons/icon.svg'), "El icono vectorial SVG existe en el sistema");
+  assert(fs.existsSync('./sw.js'), "El archivo de Service Worker sw.js existe");
+
+  console.log("\n=== SECCIÓN 27: COMPILACIÓN DE REPORTE CEREMONIAL (CARACTERÍSTICA 3) ===");
+  const reportGenFile = fs.readFileSync('./js/modules/reportGenerator.js', 'utf8');
+  assert(reportGenFile.includes('buildReportHTML'), "El módulo reportGenerator implementa buildReportHTML");
+  assert(reportGenFile.includes('DEDICADO A LOS HÉROES DE LAS FUERZAS DE DEFENSA DE ISRAEL'), "El reporte ceremonial incluye la dedicatoria de honor a las FDI");
+  assert(reportGenFile.includes('window.print'), "El módulo de reporte soporta disparo nativo de impresión / PDF");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

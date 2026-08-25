@@ -3001,6 +3001,292 @@ footer a:hover {
   }
 }
 
+/* ==========================================================================
+   FASE 9: REPORTE CEREMONIAL PDF & PROGRESSIVE WEB APP (CARACTERÍSTICAS 3 Y 4)
+   ========================================================================== */
+
+/* PWA INSTALL BUTTON & OFFLINE BANNER */
+.pwa-install-btn {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(0, 206, 209, 0.25) 100%);
+  border: 1px solid var(--gold-primary);
+  color: var(--gold-primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+.pwa-install-btn:hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.4) 0%, rgba(0, 206, 209, 0.4) 100%);
+  transform: translateY(-1px);
+}
+
+.offline-status-banner {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.5);
+  color: #ff7675;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-bottom: 0.8rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* REPORTE CEREMONIAL PREVIEW MODAL */
+.report-modal-content {
+  max-width: 860px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f0c1f;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9);
+}
+
+.report-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.report-sheet-wrapper {
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-primary) rgba(255, 255, 255, 0.05);
+}
+
+.report-ceremonial-sheet {
+  background: linear-gradient(145deg, rgba(20, 16, 38, 0.9) 0%, rgba(10, 8, 22, 0.9) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  padding: 2.2rem;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.report-header {
+  text-align: center;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-title-top {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  color: var(--gold-primary);
+  margin-bottom: 0.3rem;
+}
+
+.report-main-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.report-dedication {
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: #2ecc71;
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.5px;
+}
+
+.report-date-badge {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.report-word-hero {
+  text-align: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px dashed rgba(212, 175, 55, 0.35);
+  border-radius: 12px;
+  padding: 1.4rem;
+  margin-bottom: 1.8rem;
+}
+
+.report-hebrew-word {
+  font-family: var(--font-hebrew);
+  font-size: 3.5rem;
+  color: #ffd700;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+  line-height: 1.2;
+}
+
+.report-concept-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  color: #ffffff;
+  margin-top: 0.4rem;
+  font-weight: bold;
+}
+
+.report-concept-meaning {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.report-section {
+  margin-bottom: 1.6rem;
+}
+
+.report-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  color: var(--gold-primary);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.report-table th {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold-primary);
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  font-family: var(--font-serif);
+}
+
+.report-table td {
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.report-footer {
+  text-align: center;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+/* ESTILOS DE IMPRESIÓN Y EXPORTACIÓN A PDF (@media print) */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .stars,
+  .app-container,
+  .no-print,
+  .modal-close,
+  #btnEduModalClose,
+  #btnTourClose {
+    display: none !important;
+  }
+
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .report-modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .report-ceremonial-sheet {
+    background: #ffffff !important;
+    border: 2px solid #b8860b !important;
+    color: #111111 !important;
+    padding: 1.5cm !important;
+    box-shadow: none !important;
+  }
+
+  .report-title-top {
+    color: #8b6508 !important;
+  }
+
+  .report-main-title {
+    color: #111111 !important;
+  }
+
+  .report-dedication {
+    color: #1e824c !important;
+  }
+
+  .report-word-hero {
+    background: #fdfaf0 !important;
+    border: 1px dashed #b8860b !important;
+  }
+
+  .report-hebrew-word {
+    color: #8b6508 !important;
+    text-shadow: none !important;
+  }
+
+  .report-concept-title {
+    color: #111111 !important;
+  }
+
+  .report-concept-meaning {
+    color: #444444 !important;
+  }
+
+  .report-section-title {
+    color: #8b6508 !important;
+    border-bottom: 1px solid #b8860b !important;
+  }
+
+  .report-table th {
+    background: #fdfaf0 !important;
+    color: #8b6508 !important;
+    border-bottom: 1px solid #b8860b !important;
+  }
+
+  .report-table td {
+    color: #111111 !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+  }
+
+  .report-table tr[style*="background"] {
+    background: #fef9e7 !important;
+  }
+
+  .report-footer {
+    color: #666666 !important;
+    border-top: 1px solid #b8860b !important;
+  }
+}
+
+
 
 
 

@@ -1,0 +1,20 @@
+{
+  "name": "Torah Gematria & Deciphering Tool",
+  "short_name": "GematriaTorah",
+  "description": "Herramienta de descifrado y decodificación mística de la Torá: Gematria, Código Bíblico ELS, Acrósticos y Correlación Sionista.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05040e",
+  "theme_color": "#d4af37",
+  "orientation": "any",
+  "categories": ["education", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
