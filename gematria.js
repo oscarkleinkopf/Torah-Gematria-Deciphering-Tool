@@ -731,8 +731,30 @@ function CalculateELSPValue(textLength, searchWord, skipSpec, letterFrequencies)
 }
 
 /**
+ * Reduce arbitrary Hebrew (or mixed) text to consonantal letters only (U+05D0–U+05EA).
+ * Strips spaces, niqqud, maqaf, punctuation, and foreign glyphs. Used to keep the
+ * Torah corpus ELS-safe at load time and when ingesting new excerpts.
+ */
+function SanitizeHebrewConsonants(text) {
+  if (!text || typeof text !== 'string') return '';
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const code = c.charCodeAt(0);
+    // Common OCR corruption: Thai "บ" → Hebrew bet
+    if (code === 0x0E1A) {
+      out += 'ב';
+      continue;
+    }
+    if (code >= 0x05D0 && code <= 0x05EA) out += c;
+  }
+  return out;
+}
+
+/**
  * Busca secuencias de letras equidistantes (ELS) para una palabra en un texto.
  * Soporta callback de progreso a través de options.onProgress o 5º argumento callback.
+ * options.shouldCancel(): if returns true, aborts early and returns partial results.
  */
 function FindELS(text, searchWord, minSkip, maxSkip, options = {}) {
   const results = [];
@@ -740,6 +762,7 @@ function FindELS(text, searchWord, minSkip, maxSkip, options = {}) {
   if (!text || wordLen < 2) return results;
 
   const onProgress = typeof options === 'function' ? options : (options && typeof options.onProgress === 'function' ? options.onProgress : null);
+  const shouldCancel = options && typeof options.shouldCancel === 'function' ? options.shouldCancel : null;
 
   const freqData = CalculateLetterFrequencies(text);
   const firstChar = searchWord[0];
@@ -758,6 +781,11 @@ function FindELS(text, searchWord, minSkip, maxSkip, options = {}) {
   let processedSkips = 0;
 
   for (let skip = -effectiveMax; skip <= effectiveMax; skip++) {
+    if (shouldCancel && shouldCancel()) {
+      results.sort((a, b) => Math.abs(a.skip) - Math.abs(b.skip));
+      return results;
+    }
+
     const absSkip = Math.abs(skip);
     if (absSkip < effectiveMin) continue;
 
