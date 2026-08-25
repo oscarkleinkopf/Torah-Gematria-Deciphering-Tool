@@ -12,10 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Estado Global de la Aplicación
   const appState = {
-    currentTab: 'calculator',
+    currentTab: 'explore',
     currentLanguage: 'hebrew',
     inputText: '',
-    gematriaResult: null
+    gematriaResult: null,
+    studyQuery: ''
   };
 
   // Contexto Compartido para los Módulos
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab: switchTab,
     setLanguage: setLanguage,
     processInputText: processInputText,
+    setStudyQuery: setStudyQuery,
     setTorahSearchMode: (mode) => {
       if (Modules.calculatorView) Modules.calculatorView.currentSearchMode = mode;
     },
@@ -34,7 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- NAVEGACIÓN ENTRE PESTAÑAS (TABS) ---
   const navButtons = document.querySelectorAll('.nav-btn');
-  const tabPanes = document.querySelectorAll('.tab-pane');
+  const tabPanes = document.querySelectorAll('.tab-content, .tab-pane');
+
+  function setStudyQuery(query) {
+    appState.studyQuery = String(query || '').trim();
+    updateStudyReturnBar();
+  }
+
+  function updateStudyReturnBar() {
+    const bar = document.getElementById('studyReturnBar');
+    const qEl = document.getElementById('studyReturnQuery');
+    if (!bar) return;
+    const show = appState.currentTab !== 'explore' && !!appState.studyQuery;
+    bar.hidden = !show;
+    if (qEl) qEl.textContent = appState.studyQuery || '';
+  }
 
   function switchTab(tabId) {
     appState.currentTab = tabId;
@@ -46,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tabPanes.forEach(pane => {
       pane.classList.toggle('active', pane.id === tabId);
     });
+
+    updateStudyReturnBar();
 
     // Redimensionar Canvas activos
     setTimeout(() => {
@@ -65,6 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabId) switchTab(tabId);
     });
   });
+
+  const btnReturnToStudy = document.getElementById('btnReturnToStudy');
+  if (btnReturnToStudy) {
+    btnReturnToStudy.addEventListener('click', () => switchTab('explore'));
+  }
 
   // --- CONFIGURACIÓN DE IDIOMA Y PROCESAMIENTO DE TEXTO ---
   function setLanguage(lang) {
@@ -133,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.galaxyCanvas) Modules.galaxyCanvas.init(appContext);
     if (Modules.comparatorView) Modules.comparatorView.init(appContext);
     if (Modules.timelineView) Modules.timelineView.init(appContext);
+    if (Modules.exploreView) Modules.exploreView.init(appContext);
     if (Modules.bibleCodeView) Modules.bibleCodeView.init(appContext);
     if (Modules.shareCard) Modules.shareCard.init(appContext);
     if (Modules.tourModal) Modules.tourModal.init(appContext);

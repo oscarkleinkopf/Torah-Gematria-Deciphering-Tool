@@ -746,6 +746,56 @@ async function runAllTests() {
   assert(emptyRef && emptyRef.index === 0, "Sin consulta, la reflexión cae en el primer tema");
   assert(Explore.PickDailyReflection([], 'amor') === null, "Una lista vacía de reflexiones no inventa un tema");
 
+  console.log("\n=== SECCIÓN 23: ACRÓSTICOS SOBRE FRASES CURADAS ===");
+  assert(typeof Engine.GetAcrosticPhraseCorpus === 'function', "gematria.js exporta GetAcrosticPhraseCorpus");
+  assert(typeof Engine.FindAcrosticsInPhrases === 'function', "gematria.js exporta FindAcrosticsInPhrases");
+  const acrosticPhrases = Engine.GetAcrosticPhraseCorpus(DB);
+  assert(acrosticPhrases.length >= 2, "Hay al menos dos frases curadas con espacios de palabra");
+  assert(acrosticPhrases.every(p => p.hebrew && p.hebrew.trim().split(/\s+/).length >= 2),
+    "Cada frase curada tiene al menos 2 palabras");
+  assert(acrosticPhrases.some(p => /30:12/.test(p.reference)),
+    "Deuteronomio 30:12 está en el corpus de frases");
+  assert(Engine.FindAcrosticsInPhrases(acrosticPhrases, '', 'roshei').length === 0,
+    "Un objetivo vacío no busca acrósticos en el corpus");
+  assert(Engine.FindAcrosticsInPhrases(acrosticPhrases, 'א', 'roshei').length === 0,
+    "Una sola letra no busca (demasiado corta para un acróstico)");
+
+  const deut3012 = DB.TORAH_VERSES.find(v => /30:12/.test(v.reference));
+  assert(deut3012, "El versículo Deuteronomio 30:12 existe en TORAH_VERSES");
+  assert(Engine.CalculateGematria(deut3012.hebrew).absolute === deut3012.gematria,
+    `Gematria almacenada de Dt 30:12 coincide con el motor (${deut3012.gematria})`);
+  const deut323 = DB.TORAH_VERSES.find(v => /32:3/.test(v.reference));
+  assert(deut323 && deut323.gematria === 708,
+    "Deuteronomio 32:3 conserva el valor 708 (resonancia con 5708 / 1948)");
+
+  const biluHits = Engine.FindAcrosticsInPhrases(acrosticPhrases, 'בילו', 'roshei');
+  assert(biluHits.length >= 1, "BILU aparece como Roshei Teivot en las frases curadas");
+  assert(biluHits.some(h => /2:5/.test(h.reference) && h.type === 'roshei'),
+    "BILU apunta a Isaías 2:5");
+
+  const milahHits = Engine.FindAcrosticsInPhrases(acrosticPhrases, 'מילה', 'roshei');
+  assert(milahHits.some(h => /30:12/.test(h.reference)),
+    "מילה es rashei tevot de Deuteronomio 30:12");
+
+  const yhvhHits = Engine.FindAcrosticsInPhrases(acrosticPhrases, 'יהוה', 'sofei');
+  assert(yhvhHits.some(h => /30:12/.test(h.reference) && h.type === 'sofei'),
+    "יהוה es sofei tevot de Deuteronomio 30:12");
+
+  const examples = DB.ACROSTIC_EXAMPLES || [];
+  assert(examples.length === 3, "Hay tres ejemplos clásicos de acrósticos");
+  assert(examples.some(e => e.id === 'bilu' && e.type === 'roshei' && e.target === 'בילו'), "Ejemplo BILU");
+  assert(examples.some(e => e.id === 'milah' && e.type === 'roshei' && e.target === 'מילה'), "Ejemplo milá");
+  assert(examples.some(e => e.id === 'yhvh' && e.type === 'sofei' && e.target === 'יהוה'), "Ejemplo YHVH sofei");
+
+  const exploreViewSrc = fs.readFileSync('./js/modules/exploreView.js', 'utf8');
+  assert(exploreViewSrc.includes('searchFromStudy'), "Explorar hace handoff real a acrósticos en frases curadas");
+  assert(exploreViewSrc.includes('FindAcrosticsInPhrases'), "El dossier de Explorar consulta el corpus de frases");
+  const indexSrc = fs.readFileSync('./index.html', 'utf8');
+  assert(indexSrc.includes('data-acrostic-ex="bilu"'), "Hay chip clásico BILU");
+  assert(indexSrc.includes('data-acrostic-ex="milah"'), "Hay chip clásico מילה");
+  assert(indexSrc.includes('data-acrostic-ex="yhvh"'), "Hay chip clásico יהוה");
+  assert(indexSrc.includes('btnAcrosticsCorpus'), "Hay botón para buscar en frases curadas");
+
   console.log("\n=== SECCIÓN 28: SALMOS (TEHILIM), PLEGARIAS Y SONIFICACIÓN (CARACTERÍSTICAS 1 Y 2) ===");
   assert(Array.isArray(DB.TEHILIM_PSALMS) && DB.TEHILIM_PSALMS.length >= 5, `TEHILIM_PSALMS contiene al menos 5 salmos estructurados (actual: ${DB.TEHILIM_PSALMS.length})`);
   assert(DB.TEHILIM_PSALMS.some(p => p.number === 23), "La base de datos incluye el Salmo 23");

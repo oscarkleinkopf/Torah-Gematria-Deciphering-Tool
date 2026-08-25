@@ -98,6 +98,12 @@ const diacriticPhrase = 'בְּרֵאשִׁית-בָּרָא אֱלֹהִים א
 const rosheiDiacritic = Engine.FindAcrostics(diacriticPhrase, 'roshei');
 assert(rosheiDiacritic.length === 1 && rosheiDiacritic[0].word === 'בבאאה', `Handles diacritics and maqaf correctly in Roshei Teivot`);
 
+const DB = require('./database.js');
+assert(Engine.FindAcrosticsInPhrases([], 'בילו', 'roshei').length === 0, `FindAcrosticsInPhrases on empty corpus returns []`);
+assert(Engine.FindAcrosticsInPhrases(Engine.GetAcrosticPhraseCorpus(DB), 'א', 'roshei').length === 0, `FindAcrosticsInPhrases rejects 1-letter targets`);
+const phraseBilu = Engine.FindAcrosticsInPhrases(Engine.GetAcrosticPhraseCorpus(DB), 'בילו', 'roshei');
+assert(phraseBilu.some(h => /2:5/.test(h.reference)), `FindAcrosticsInPhrases finds BILU in Isaías 2:5`);
+
 // -------------------------------------------------------------
 // SECTION 3: STATISTICAL ELS & P-VALUE (CalculateELSPValue)
 // -------------------------------------------------------------

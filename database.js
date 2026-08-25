@@ -73,6 +73,38 @@ const TORAH_VERSES = [
     translation: 'Porque proclamaré el nombre del Señor; dad grandeza a nuestro Dios.',
     gematria: 708,
     commentary: 'El valor numérico de este versículo central es 708, coincidiendo de forma asombrosa con el año hebreo 5708 (תש"ח - 1948), año del nacimiento del Estado de Israel.'
+  },
+  {
+    reference: 'Deuteronomio 30:12',
+    hebrew: 'מִי יַעֲלֶה לָּנוּ הַשָּׁמַיְמָה',
+    transliteration: 'Mi ya\'aleh lanu hashamaymah',
+    translation: '¿Quién subirá por nosotros al cielo?',
+    gematria: 651,
+    commentary: 'Las iniciales forman מילה (circuncisión / palabra) y las finales יהוה. Ejemplo clásico de Roshei y Sofei Teivot en cuatro palabras.'
+  }
+];
+
+const ACROSTIC_EXAMPLES = [
+  {
+    id: 'bilu',
+    label: 'BILU · Isaías 2:5',
+    type: 'roshei',
+    target: 'בילו',
+    reference: 'Isaías 2:5'
+  },
+  {
+    id: 'milah',
+    label: 'מילה · Deut. 30:12',
+    type: 'roshei',
+    target: 'מילה',
+    reference: 'Deuteronomio 30:12'
+  },
+  {
+    id: 'yhvh',
+    label: 'יהוה · Deut. 30:12 (finales)',
+    type: 'sofei',
+    target: 'יהוה',
+    reference: 'Deuteronomio 30:12'
   }
 ];
 
@@ -1171,7 +1203,8 @@ if (typeof module !== 'undefined' && module.exports) {
     LEGENDARY_PAIRS,
     SPANISH_HEBREW_DICT,
     TEHILIM_PSALMS,
-    SACRED_PRAYERS
+    SACRED_PRAYERS,
+    ACROSTIC_EXAMPLES
   };
 } else {
   window.GematriaDB = { 
@@ -1184,7 +1217,8 @@ if (typeof module !== 'undefined' && module.exports) {
     LEGENDARY_PAIRS,
     SPANISH_HEBREW_DICT,
     TEHILIM_PSALMS,
-    SACRED_PRAYERS
+    SACRED_PRAYERS,
+    ACROSTIC_EXAMPLES
   };
 }
 
