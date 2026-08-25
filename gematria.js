@@ -1477,6 +1477,176 @@ function SortELSResults(matches, sortBy = 'significance') {
   }
 }
 
+function HashStringSeed(str) {
+  let h = 2166136261;
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function Mulberry32(seed) {
+  let s = (seed >>> 0) || 1;
+  return function next() {
+    s |= 0;
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Fisher–Yates shuffle of a consonantal string. Preserves letter counts (null model).
+ */
+function ShuffleHebrewText(text, seed) {
+  const src = String(text || '');
+  const arr = new Array(src.length);
+  for (let i = 0; i < src.length; i++) arr[i] = src[i];
+  const rand = Mulberry32(seed == null ? 1 : seed);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr.join('');
+}
+
+function CountELSAtSkip(text, searchWord, skip) {
+  const word = String(searchWord || '');
+  const k = word.length;
+  const n = text ? text.length : 0;
+  if (!text || k < 2 || !skip || skip === 0) return 0;
+  let count = 0;
+  const first = word[0];
+  for (let i = 0; i < n; i++) {
+    if (text[i] !== first) continue;
+    let ok = true;
+    for (let c = 1; c < k; c++) {
+      const j = i + c * skip;
+      if (j < 0 || j >= n || text[j] !== word[c]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) count++;
+  }
+  return count;
+}
+
+/**
+ * Control: same letters, random order. If the word still appears at this skip,
+ * the hit is not distinctive of the original sequence.
+ */
+function ELSControlAtSkip(text, searchWord, skip, seed) {
+  const originalCount = CountELSAtSkip(text, searchWord, skip);
+  const usedSeed = seed == null ? HashStringSeed(`${searchWord}|${skip}`) : seed;
+  const shuffled = ShuffleHebrewText(text, usedSeed);
+  const controlCount = CountELSAtSkip(shuffled, searchWord, skip);
+  return {
+    originalCount,
+    controlCount,
+    seed: usedSeed,
+    sameLength: shuffled.length === (text ? text.length : 0)
+  };
+}
+
+const ELS_HONESTY_LABELS = {
+  common: 'Muy común (esperado por azar)',
+  plausible: 'Plausible — no es una prueba',
+  rare: 'Raro en este modelo (sigue siendo exploratorio)'
+};
+
+/**
+ * Honest, exploratory reading of an ELS hit. Never claims proof.
+ */
+function AssessELSHonesty(match, options) {
+  const opts = options || {};
+  const word = String((match && (match.word || match.searchWord)) || '');
+  const k = word.replace(/[^א-ת]/g, '').length || word.length;
+  const skip = match && typeof match.skip === 'number' ? match.skip : 0;
+  const absSkip = Math.abs(skip);
+  const text = opts.text || '';
+  const N = text.length || opts.textLength || 0;
+  const freqs = opts.letterFrequencies || (text ? CalculateLetterFrequencies(text) : null);
+
+  let expectedAtSkip = typeof match.expectedCount === 'number' ? match.expectedCount : null;
+  let pValueSkip = typeof match.pValue === 'number' ? match.pValue : null;
+  if ((expectedAtSkip == null || pValueSkip == null) && N && freqs && k >= 2 && skip) {
+    const stats = CalculateELSPValue(N, word, skip, freqs.frequencies || freqs);
+    if (expectedAtSkip == null) expectedAtSkip = stats.expectedMatches;
+    if (pValueSkip == null) pValueSkip = stats.pValue;
+  }
+
+  let expectedInRange = null;
+  let pValueRange = null;
+  if (N && freqs && k >= 2 && (opts.minSkip != null || opts.maxSkip != null)) {
+    const minS = opts.minSkip != null ? opts.minSkip : absSkip;
+    const maxS = opts.maxSkip != null ? opts.maxSkip : absSkip;
+    const rangeStats = CalculateELSPValue(N, word, { minSkip: minS, maxSkip: maxS }, freqs.frequencies || freqs);
+    expectedInRange = rangeStats.expectedMatches;
+    pValueRange = rangeStats.pValue;
+  }
+
+  let control = null;
+  if (opts.runControl && text && k >= 2 && skip) {
+    control = ELSControlAtSkip(text, word, skip, opts.controlSeed);
+  }
+
+  const warnings = [];
+  if (k <= 2) {
+    warnings.push('Palabra de 2 letras: en un texto largo aparecen coincidencias ELS con casi cualquier salto.');
+  } else if (k === 3) {
+    warnings.push('Palabra corta (3 letras): el modelo espera varios hallazgos; no es un cifrado raro.');
+  }
+  if (absSkip >= 80) {
+    warnings.push('Salto grande: hay muchos saltos posibles y este se eligió después de mirar los datos.');
+  }
+  if (expectedInRange != null && expectedInRange >= 1) {
+    warnings.push(`En el rango de saltos buscado se esperan ≈ ${expectedInRange.toFixed(2)} coincidencias por azar.`);
+  }
+  if (control && control.controlCount > 0) {
+    warnings.push(`Control: en texto mezclado (mismas letras, orden aleatorio) también aparece ${control.controlCount} vez/veces con salto ${skip}.`);
+  }
+
+  const controlCount = control ? control.controlCount : 0;
+  let band = 'plausible';
+  const rangeCommon = (expectedInRange != null && expectedInRange >= 3) || (pValueRange != null && pValueRange >= 0.5);
+  const skipCommon = expectedAtSkip != null && expectedAtSkip >= 1;
+  if (k <= 2 || rangeCommon || skipCommon) {
+    band = 'common';
+  } else if (
+    k >= 4 &&
+    absSkip < 80 &&
+    (pValueRange == null || pValueRange < 0.05) &&
+    (expectedAtSkip == null || expectedAtSkip < 0.15) &&
+    controlCount === 0
+  ) {
+    band = 'rare';
+  }
+
+  if (k <= 3 && band === 'rare') band = 'plausible';
+  if (controlCount > 0 && band === 'rare') band = 'plausible';
+
+  return {
+    band,
+    label: ELS_HONESTY_LABELS[band],
+    exploratory: true,
+    note: 'Modelo exploratorio (Poisson sobre frecuencias de letras). No demuestra diseño intencional ni un “código” oculto.',
+    wordLength: k,
+    skip,
+    expectedAtSkip: expectedAtSkip,
+    expectedInRange: expectedInRange,
+    pValueSkip: pValueSkip,
+    pValueRange: pValueRange,
+    control: control,
+    warnings
+  };
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -1506,7 +1676,13 @@ const _exportedEngine = {
   FormatSignificanceMetrics,
   EDUCATIONAL_TOOLTIPS,
   GematriaSearchCache,
-  SortELSResults
+  SortELSResults,
+  SanitizeHebrewConsonants,
+  ShuffleHebrewText,
+  CountELSAtSkip,
+  ELSControlAtSkip,
+  AssessELSHonesty,
+  ELS_HONESTY_LABELS
 };
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -1515,6 +1691,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
 if (_globalScope) {
   _globalScope.GematriaEngine = _exportedEngine;
+  _globalScope.SanitizeHebrewConsonants = SanitizeHebrewConsonants;
 }
 
 

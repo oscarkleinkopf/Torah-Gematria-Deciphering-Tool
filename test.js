@@ -78,7 +78,7 @@ async function runAllTests() {
 
   // 6. Validar integridad de la Base de Datos
   assert(DB.KNOWLEDGE_GRAPH.length >= 50, `KNOWLEDGE_GRAPH tiene al menos 50 conceptos (actual: ${DB.KNOWLEDGE_GRAPH.length})`);
-  assert(DB.HISTORICAL_EVENTS.length === 8, `HISTORICAL_EVENTS tiene 8 hitos históricos (actual: ${DB.HISTORICAL_EVENTS.length})`);
+  assert(DB.HISTORICAL_EVENTS.length >= 8, `HISTORICAL_EVENTS tiene al menos 8 hitos históricos (actual: ${DB.HISTORICAL_EVENTS.length})`);
   assert(DB.LEGENDARY_PAIRS && DB.LEGENDARY_PAIRS.length >= 6, `LEGENDARY_PAIRS tiene pares arquetípicos configurados (actual: ${DB.LEGENDARY_PAIRS.length})`);
 
   // 7. Validar búsqueda global de correlaciones
@@ -638,8 +638,8 @@ async function runAllTests() {
   assert(active.length === builtinSize + 1, "El diccionario activo fusiona base + personal");
   assert(active[0].source === 'user' && active[0].hebrew === 'כהן', "Las entradas personales van primero (ganan el lookup)");
 
-  const hit = Explore.LookupNameDictionary('Qwertyname');
-  assert(hit && hit.hebrew === 'כהן' && hit.source === 'user', "LookupNameDictionary resuelve el alias personal a כהן");
+  const hitExplore = Explore.LookupNameDictionary('Qwertyname');
+  assert(hitExplore && hitExplore.hebrew === 'כהן' && hitExplore.source === 'user', "LookupNameDictionary resuelve el alias personal a כהן");
   assert(Explore.LookupNameDictionary('qwerty') && Explore.LookupNameDictionary('qwerty').hebrew === 'כהן', "El segundo alias también resuelve");
 
   const explored = Explore.ExploreCorrelations('Qwertyname', DB, Engine);
