@@ -930,6 +930,235 @@ const SPANISH_HEBREW_DICT = [
   { spanish: 'hermano', hebrew: 'אח', transliteration: 'Ach', gematria: 9, category: 'familia', tags: ['fraternidad', 'companero'] }
 ];
 
+// ==========================================================================
+// COLECCIÓN DE SALMOS (TEHILIM) Y PLEGARIAS SAGRADAS (CARACTERÍSTICA 2)
+// ==========================================================================
+
+const TEHILIM_PSALMS = [
+  {
+    id: 'psalm-23',
+    number: 23,
+    title: 'Salmo 23 (Mizmor LeDavid)',
+    hebrewTitle: 'מזמור לדוד יהוה רעי',
+    category: 'confianza',
+    intention: 'Confianza, Sustento y Paz Interior',
+    verses: [
+      {
+        verseNum: 1,
+        hebrew: 'מזמור לדוד יהוה רעי לא אחסר',
+        spanish: 'Salmo de David. El Señor es mi pastor; nada me faltará.',
+        gematria: 923
+      },
+      {
+        verseNum: 2,
+        hebrew: 'בנאות דשא ירביצני על מי מנוחות ינהלני',
+        spanish: 'En lugares de delicados pastos me hará descansar; junto a aguas de reposo me pastoreará.',
+        gematria: 1374
+      },
+      {
+        verseNum: 3,
+        hebrew: 'נפשי ישובב ינחני במעגלי צדק למען שמו',
+        spanish: 'Confortará mi alma; me guiará por sendas de justicia por amor de su nombre.',
+        gematria: 1076
+      },
+      {
+        verseNum: 4,
+        hebrew: 'גם כי אלך בגיא צלמות לא אירא רע כי אתה עמדי שבטך ומשענתך המה ינחמני',
+        spanish: 'Aunque ande en valle de sombra de muerte, no temeré mal alguno, porque tú estarás conmigo; tu vara y tu cayado me infundirán aliento.',
+        gematria: 2348
+      },
+      {
+        verseNum: 5,
+        hebrew: 'תערך לפני שלחן נגד צררי דשנת בשמן ראשי כוסי רויה',
+        spanish: 'Aderezas mesa delante de mí en presencia de mis angustiadores; unges mi cabeza con aceite; mi copa está rebosando.',
+        gematria: 2217
+      },
+      {
+        verseNum: 6,
+        hebrew: 'אך טוב וחסד ירדפוני כל ימי חיי ושבתי בבית יהוה לארך ימים',
+        spanish: 'Ciertamente el bien y la misericordia me seguirán todos los días de mi vida, y en la casa del Señor moraré por largos días.',
+        gematria: 1533
+      }
+    ],
+    totalGematria: 9471,
+    mysticalNotes: 'Uno de los salmos más recitados para abrir las puertas del sustento (Parnasá) y disipar la ansiedad espiritual.'
+  },
+  {
+    id: 'psalm-91',
+    number: 91,
+    title: 'Salmo 91 (Shir Shel Pegaim - Salmo de Protección)',
+    hebrewTitle: 'ישב בסתר עליון בצל שדי יתלונן',
+    category: 'proteccion',
+    intention: 'Máxima Protección Espiritual y Amparo Divino',
+    verses: [
+      {
+        verseNum: 1,
+        hebrew: 'ישב בסתר עליון בצל שדי יתלונן',
+        spanish: 'El que habita al abrigo del Altísimo morará bajo la sombra del Omnipotente.',
+        gematria: 1475
+      },
+      {
+        verseNum: 2,
+        hebrew: 'אמר ליהוה מחסי ומצודתי אלהי אבטח בו',
+        spanish: 'Diré yo al Señor: Esperanza mía, y castillo mío; mi Dios, en quien confiaré.',
+        gematria: 852
+      },
+      {
+        verseNum: 4,
+        hebrew: 'באברתו יסך לך ותחת כנפיו תחסה צנה וסחרה אמתו',
+        spanish: 'Con sus plumas te cubrirá, y debajo de sus alas estarás seguro; escudo y adarga es su verdad.',
+        gematria: 2471
+      },
+      {
+        verseNum: 11,
+        hebrew: 'כי מלאכיו יצוה לך לשמרך בכל דרכיך',
+        spanish: 'Pues a sus ángeles mandará acerca de ti, que te guarden en todos tus caminos.',
+        gematria: 876
+      }
+    ],
+    totalGematria: 5674,
+    mysticalNotes: 'El salmo supremo de protección utilizado tradicionalmente por los soldados de Israel y antes del descanso nocturno.'
+  },
+  {
+    id: 'psalm-121',
+    number: 121,
+    title: 'Salmo 121 (Shir LaMaalot - Cántico Gradual)',
+    hebrewTitle: 'שיר למעלות אשא עיני אל ההרים',
+    category: 'elevacion',
+    intention: 'Auxilio Celestial en Momentos de Prueba',
+    verses: [
+      {
+        verseNum: 1,
+        hebrew: 'שיר למעלות אשא עיני אל ההרים מאין יבא עזרי',
+        spanish: 'Cántico gradual. Alzaré mis ojos a los montes; ¿de dónde vendrá mi socorro?',
+        gematria: 1530
+      },
+      {
+        verseNum: 2,
+        hebrew: 'עזרי מעם יהוה עשה שמים וארץ',
+        spanish: 'Mi socorro viene del Señor, que hizo los cielos y la tierra.',
+        gematria: 1137
+      },
+      {
+        verseNum: 4,
+        hebrew: 'הנה לא ינום ולא יישן שומר ישראל',
+        spanish: 'He aquí, no se adormecerá ni dormirá el que guarda a Israel.',
+        gematria: 1339
+      },
+      {
+        verseNum: 8,
+        hebrew: 'יהוה ישמר צאתך ובואך מעתה ועד עולם',
+        spanish: 'El Señor guardará tu salida y tu entrada desde ahora y para siempre.',
+        gematria: 1238
+      }
+    ],
+    totalGematria: 5244,
+    mysticalNotes: 'Cántico de ascenso espiritual que conecta con el Guardián de Israel (Shomer Yisrael).'
+  },
+  {
+    id: 'psalm-130',
+    number: 130,
+    title: 'Salmo 130 (MiMaamakim - De lo Profundo)',
+    hebrewTitle: 'שיר המעלות ממעמקים קראתיך יהוה',
+    category: 'sanacion',
+    intention: 'Sanación, Perdón y Elevación del Alma',
+    verses: [
+      {
+        verseNum: 1,
+        hebrew: 'שיר המעלות ממעמקים קראתיך יהוה',
+        spanish: 'Cántico gradual. De lo profundo, oh Señor, a ti clamo.',
+        gematria: 1515
+      },
+      {
+        verseNum: 5,
+        hebrew: 'קויתי יהוה קותה נפשי ולדברו הוחלתי',
+        spanish: 'Esperé yo al Señor, esperó mi alma; en su palabra he esperado.',
+        gematria: 1047
+      },
+      {
+        verseNum: 7,
+        hebrew: 'יחל ישראל אל יהוה כי עם יהוה החסד והרבה עמו פדות',
+        spanish: 'Espere Israel al Señor, porque en el Señor hay misericordia, y abundante redención con él.',
+        gematria: 1729
+      }
+    ],
+    totalGematria: 4291,
+    mysticalNotes: 'Recitado en momentos de introspección profunda (Teshuva) y curación de aflicciones.'
+  },
+  {
+    id: 'psalm-150',
+    number: 150,
+    title: 'Salmo 150 (Haleluya - Culminación)',
+    hebrewTitle: 'הללויה הללו אל בקדשו',
+    category: 'gratitud',
+    intention: 'Alabanza Pura, Gozo y Gratitud Cósmica',
+    verses: [
+      {
+        verseNum: 1,
+        hebrew: 'הללויה הללו אל בקדשו הללוהו ברקיע עזו',
+        spanish: 'Alabad a Dios en su santuario; alabadle en la magnificencia de su firmamento.',
+        gematria: 846
+      },
+      {
+        verseNum: 6,
+        hebrew: 'כל הנשמה תהלל יה הללויה',
+        spanish: 'Todo lo que respira alabe al Señor. ¡Aleluya!',
+        gematria: 565
+      }
+    ],
+    totalGematria: 1411,
+    mysticalNotes: 'El cierre triunfal del libro de Tehilim donde cada respiración (Neshama) se convierte en alabanza.'
+  }
+];
+
+const SACRED_PRAYERS = [
+  {
+    id: 'shema',
+    name: 'Shemá Israel (Declaración de Unidad)',
+    hebrew: 'שמע ישראל יהוה אלהינו יהוה אחד',
+    transliteration: 'Shemá Yisrael, Adonai Eloheinu, Adonai Ejad',
+    spanish: 'Escucha, Israel: el Señor es nuestro Dios, el Señor uno es.',
+    source: 'Deuteronomio 6:4',
+    letterCount: 25,
+    gematria: 1118,
+    reduced: 2,
+    purpose: 'La proclamación fundamental de la Unicidad divina y devoción suprema.'
+  },
+  {
+    id: 'birkat-kohanim',
+    name: 'Birkat Kohanim (Bendición Sacerdotal Triple)',
+    hebrew: 'יברכך יהוה וישמרך יאר יהוה פניו אליך ויחנך ישא יהוה פניו אליך וישם לך שלום',
+    transliteration: 'Yevarejeja Adonai veyishmereja, Yaer Adonai panav eleja vijuneka, Yisa Adonai panav eleja veyasem leja Shalom',
+    source: 'Números 6:24-26',
+    letterCount: 60,
+    gematria: 2680,
+    reduced: 7,
+    purpose: 'Canalizar bendición de protección, gracia divina y paz integral (Shalom).'
+  },
+  {
+    id: 'ana-bekoach',
+    name: 'Ana Bekoaj (Oración Cabalística de 42 Letras)',
+    hebrew: 'אנא בכח גדלת ימינך תתיר צרורה',
+    transliteration: 'Ana Bejoaj Guedulat Yeminja Tatir Tzerurah',
+    source: 'Atribuida al Rabino Nejunjá ben HaKaná',
+    letterCount: 42,
+    gematria: 1891,
+    reduced: 1,
+    purpose: 'Elevar oraciones y desatar bloqueos kármicos conectando con el Nombre de 42 Letras.'
+  },
+  {
+    id: 'shir-hashirim',
+    name: 'Cantar de los Cantares (Shir HaShirim 8:6)',
+    hebrew: 'שימני כחותם על לבך כחותם על זרועך כי עזה כמות אהבה',
+    transliteration: 'Simeni jajotam al libeja jajotam al zeroeja ki azah jamavet ahavah',
+    source: 'Cantar de los Cantares 8:6',
+    letterCount: 43,
+    gematria: 2196,
+    reduced: 9,
+    purpose: 'El sello de amor eterno entre el alma y lo Divino, más fuerte que la muerte.'
+  }
+];
+
 // Exportación compatible tanto con módulos ES6 como con scripts convencionales del navegador
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
@@ -940,7 +1169,9 @@ if (typeof module !== 'undefined' && module.exports) {
     KNOWLEDGE_GRAPH,
     HISTORICAL_EVENTS,
     LEGENDARY_PAIRS,
-    SPANISH_HEBREW_DICT
+    SPANISH_HEBREW_DICT,
+    TEHILIM_PSALMS,
+    SACRED_PRAYERS
   };
 } else {
   window.GematriaDB = { 
@@ -951,8 +1182,11 @@ if (typeof module !== 'undefined' && module.exports) {
     KNOWLEDGE_GRAPH,
     HISTORICAL_EVENTS,
     LEGENDARY_PAIRS,
-    SPANISH_HEBREW_DICT
+    SPANISH_HEBREW_DICT,
+    TEHILIM_PSALMS,
+    SACRED_PRAYERS
   };
 }
+
 
 

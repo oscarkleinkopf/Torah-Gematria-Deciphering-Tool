@@ -746,6 +746,33 @@ async function runAllTests() {
   assert(emptyRef && emptyRef.index === 0, "Sin consulta, la reflexión cae en el primer tema");
   assert(Explore.PickDailyReflection([], 'amor') === null, "Una lista vacía de reflexiones no inventa un tema");
 
+  console.log("\n=== SECCIÓN 28: SALMOS (TEHILIM), PLEGARIAS Y SONIFICACIÓN (CARACTERÍSTICAS 1 Y 2) ===");
+  assert(Array.isArray(DB.TEHILIM_PSALMS) && DB.TEHILIM_PSALMS.length >= 5, `TEHILIM_PSALMS contiene al menos 5 salmos estructurados (actual: ${DB.TEHILIM_PSALMS.length})`);
+  assert(DB.TEHILIM_PSALMS.some(p => p.number === 23), "La base de datos incluye el Salmo 23");
+  assert(DB.TEHILIM_PSALMS.some(p => p.number === 91), "La base de datos incluye el Salmo 91 de Protección");
+  assert(DB.TEHILIM_PSALMS.some(p => p.number === 121), "La base de datos incluye el Salmo 121 de Elevación");
+  assert(DB.TEHILIM_PSALMS.some(p => p.number === 130), "La base de datos incluye el Salmo 130 de Sanación");
+  assert(DB.TEHILIM_PSALMS.some(p => p.number === 150), "La base de datos incluye el Salmo 150 de Gratitud");
+
+  assert(Array.isArray(DB.SACRED_PRAYERS) && DB.SACRED_PRAYERS.length >= 4, `SACRED_PRAYERS contiene oraciones sagradas (actual: ${DB.SACRED_PRAYERS.length})`);
+  assert(DB.SACRED_PRAYERS.some(pr => pr.id === 'shema'), "Incluye la plegaria Shemá Israel");
+  assert(DB.SACRED_PRAYERS.some(pr => pr.id === 'birkat-kohanim'), "Incluye la Bendición Sacerdotal Birkat Kohanim");
+  assert(DB.SACRED_PRAYERS.some(pr => pr.id === 'ana-bekoach'), "Incluye la plegaria cabalística Ana Bekoaj");
+
+  assert(typeof Engine.FindResonantPsalms === 'function', "gematria.js exporta FindResonantPsalms");
+  const resonantShalom = Engine.FindResonantPsalms(376, DB.TEHILIM_PSALMS, 1);
+  assert(Array.isArray(resonantShalom) && resonantShalom.length > 0, "FindResonantPsalms encuentra versículos resonantes para 'Shalom' (376)");
+  assert(resonantShalom[0].score > 0 && resonantShalom[0].reasons.length > 0, "Los resultados resonantes incluyen puntuación y justificación espiritual");
+
+  const audioModuleFile = fs.readFileSync('./js/modules/mysticAudio.js', 'utf8');
+  assert(audioModuleFile.includes('LETTER_FREQUENCIES'), "mysticAudio.js define el mapa de frecuencias de las 22 letras");
+  assert(audioModuleFile.includes('playWordHarmonics'), "mysticAudio.js implementa síntesis armónica polifónica de palabras");
+  assert(audioModuleFile.includes('toggleMeditationDrone'), "mysticAudio.js implementa tono continuo de meditación");
+
+  const tehilimModuleFile = fs.readFileSync('./js/modules/tehilimView.js', 'utf8');
+  assert(tehilimModuleFile.includes('renderPsalms'), "tehilimView.js implementa renderizado dinámico de salmos");
+  assert(tehilimModuleFile.includes('renderPrayers'), "tehilimView.js implementa renderizado de plegarias sagradas");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

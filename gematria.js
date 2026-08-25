@@ -1647,6 +1647,72 @@ function AssessELSHonesty(match, options) {
   };
 }
 
+/**
+ * Búsqueda de resonancia mística en Salmos (Tehilim) y Plegarias Sagradas
+ */
+function FindResonantPsalms(targetValue, psalmsList = [], tolerance = 0) {
+  const target = Number(targetValue) || 0;
+  if (target <= 0 || !Array.isArray(psalmsList)) return [];
+
+  const results = [];
+  const targetRoot = target % 9 || 9;
+
+  psalmsList.forEach(psalm => {
+    (psalm.verses || []).forEach(v => {
+      const vVal = v.gematria || 0;
+      const vRoot = vVal % 9 || 9;
+      let score = 0;
+      const reasons = [];
+
+      // 1. Coincidencia exacta o con Colel
+      const diff = Math.abs(vVal - target);
+      if (diff === 0) {
+        score += 100;
+        reasons.push('Coincidencia Exacta de Gematria');
+      } else if (diff <= Math.max(tolerance, 1)) {
+        score += 85;
+        reasons.push(`Colel (Diferencia de ±${diff})`);
+      }
+
+      // 2. Relación de múltiplos / submúltiplos
+      if (vVal > target && vVal % target === 0) {
+        const mult = vVal / target;
+        score += Math.max(30, 70 - mult * 2);
+        reasons.push(`Múltiplo Armónico (x${mult})`);
+      } else if (target > vVal && target % vVal === 0) {
+        const div = target / vVal;
+        score += Math.max(30, 70 - div * 2);
+        reasons.push(`Submúltiplo Sagrado (1/${div})`);
+      }
+
+      // 3. Misma raíz digital sefirótica
+      if (targetRoot === vRoot) {
+        score += 20;
+        reasons.push(`Misma Raíz Sefirótica (Mispar Katan: ${targetRoot})`);
+      }
+
+      if (score > 0) {
+        results.push({
+          psalmNumber: psalm.number,
+          psalmTitle: psalm.title,
+          psalmCategory: psalm.category,
+          psalmIntention: psalm.intention,
+          verseNum: v.verseNum,
+          hebrew: v.hebrew,
+          spanish: v.spanish,
+          gematria: vVal,
+          targetValue: target,
+          score: score,
+          reasons: reasons,
+          reference: `${psalm.title} - Versículo ${v.verseNum}`
+        });
+      }
+    });
+  });
+
+  return results.sort((a, b) => b.score - a.score);
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -1682,7 +1748,8 @@ const _exportedEngine = {
   CountELSAtSkip,
   ELSControlAtSkip,
   AssessELSHonesty,
-  ELS_HONESTY_LABELS
+  ELS_HONESTY_LABELS,
+  FindResonantPsalms
 };
 
 if (typeof module !== 'undefined' && module.exports) {

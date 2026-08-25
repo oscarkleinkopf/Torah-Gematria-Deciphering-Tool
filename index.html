@@ -79,6 +79,7 @@
     <!-- Navegación Principal -->
     <nav>
       <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
+      <button class="nav-btn" data-tab="tehilim">📜 Salmos & Plegarias</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
       <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
       <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
@@ -266,6 +267,8 @@
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 class="results-header" style="border: none; padding: 0; margin: 0;">Valores Calculados</h3>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button id="btnPlayWordAudio" class="share-trigger-btn audio-btn" title="Escuchar acorde armónico sagrado de las letras (Web Audio)">🎵 Escuchar</button>
+              <button id="btnMeditationAudio" class="share-trigger-btn audio-btn" title="Activar/desactivar tono armónico de meditación">🧘 Meditación</button>
               <button id="btnGenerateReport" class="share-trigger-btn report-btn" title="Generar un reporte ceremonial de este término en PDF / Imprimible">📑 Reporte PDF</button>
               <button id="btnShareCalc" class="share-trigger-btn" title="Generar tarjeta de imagen de este hallazgo para compartir en redes">📤 Compartir Tarjeta</button>
             </div>
@@ -866,6 +869,50 @@
       </div>
     </div>
 
+    <!-- SECCIÓN: SALMOS (TEHILIM) Y PLEGARIAS SAGRADAS (CARACTERÍSTICA 2) -->
+    <div id="tehilim" class="tab-content">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h2 class="input-title" style="font-size: 1.4rem; color: var(--gold-primary); margin-bottom: 0.4rem;">📜 Salmos de David (Tehilim) & Plegarias Sagradas</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 780px; margin: 0 auto;">
+            Descubre versículos protectores, cánticos de alabanza y plegarias ancestrales según su resonancia numérica, intención espiritual y afinación sagrada.
+          </p>
+        </div>
+
+        <!-- Barra de Búsqueda y Filtros de Intención -->
+        <div class="tehilim-controls-row">
+          <div class="tehilim-search-box">
+            <input type="text" id="txtTehilimSearch" class="compare-text-input" placeholder="Busca por número (ej. 13, 26, 708) o palabra hebrea/español...">
+            <button id="btnTehilimSearch" class="share-act-btn btn-copy-image">🔍 Buscar Resonancia</button>
+          </div>
+          <div class="tehilim-categories-bar">
+            <button class="tehilim-cat-filter active" data-cat="all">Todos</button>
+            <button class="tehilim-cat-filter" data-cat="proteccion">🛡️ Protección (Salmo 91)</button>
+            <button class="tehilim-cat-filter" data-cat="confianza">🕊️ Confianza & Paz (Salmo 23)</button>
+            <button class="tehilim-cat-filter" data-cat="elevacion">⛰️ Elevación (Salmo 121)</button>
+            <button class="tehilim-cat-filter" data-cat="sanacion">🌿 Sanación (Salmo 130)</button>
+            <button class="tehilim-cat-filter" data-cat="gratitud">✨ Gratitud (Salmo 150)</button>
+          </div>
+        </div>
+
+        <!-- Contenedor Dinámico de Salmos y Versículos Resonantes -->
+        <div id="tehilimResultsContainer">
+          <!-- Cargado dinámicamente por tehilimView.js -->
+        </div>
+      </div>
+
+      <!-- Sección de Plegarias Sagradas -->
+      <div class="glass-card">
+        <h3 class="input-title" style="font-size: 1.2rem; color: var(--gold-primary); margin-bottom: 0.5rem;">✡️ Plegarias Sagradas de la Tradición</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.2rem;">
+          Oraciones cabalísticas y declaraciones de fe con sus firmas gemátricas y acordes armónicos.
+        </p>
+        <div id="sacredPrayersContainer">
+          <!-- Renderizado de oraciones -->
+        </div>
+      </div>
+    </div>
+
     <!-- Pie de Página -->
     <footer>
       <p>Desarrollado para la reflexión, la educación y el estudio de las correspondencias numéricas en la Torá.</p>
@@ -1014,6 +1061,8 @@
   <script src="js/modules/tourModal.js"></script>
   <script src="js/modules/reportGenerator.js"></script>
   <script src="js/modules/pwaManager.js"></script>
+  <script src="js/modules/mysticAudio.js"></script>
+  <script src="js/modules/tehilimView.js"></script>
 
   <!-- Orquestador Principal -->
   <script src="app.js"></script>

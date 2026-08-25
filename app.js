@@ -139,6 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.dailySync) Modules.dailySync.init(appContext);
     if (Modules.reportGenerator) Modules.reportGenerator.init(appContext);
     if (Modules.pwaManager) Modules.pwaManager.init(appContext);
+    if (Modules.mysticAudio) Modules.mysticAudio.init(appContext);
+    if (Modules.tehilimView) Modules.tehilimView.init(appContext);
 
     // Estado inicial
     processInputText('שלום');
