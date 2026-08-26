@@ -52,7 +52,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (qEl) qEl.textContent = appState.studyQuery || '';
   }
 
+  const SECONDARY_TABS = {
+    tehilim: true,
+    torah: true,
+    acrostics: true,
+    zionism: true,
+    comparison: true,
+    letters: true,
+    reflection: true
+  };
+
+  function closeNavMore() {
+    const menu = document.getElementById('navMoreMenu');
+    const toggle = document.getElementById('btnNavMore');
+    if (menu) menu.hidden = true;
+    if (toggle) {
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function updateStudyChrome(tabId) {
+    const toggle = document.getElementById('btnNavMore');
+    if (toggle) toggle.classList.toggle('active-group', !!SECONDARY_TABS[tabId]);
+    updateStudyReturnBar();
+    closeNavMore();
+  }
+
   function switchTab(tabId) {
+    if (!tabId) return;
     appState.currentTab = tabId;
 
     navButtons.forEach(btn => {
@@ -63,7 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
       pane.classList.toggle('active', pane.id === tabId);
     });
 
-    updateStudyReturnBar();
+    updateStudyChrome(tabId);
+
+    if (tabId === 'favorites' && Modules.favoritesView && typeof Modules.favoritesView.render === 'function') {
+      Modules.favoritesView.render();
+    }
 
     // Redimensionar Canvas activos
     setTimeout(() => {
@@ -82,6 +114,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const tabId = btn.getAttribute('data-tab');
       if (tabId) switchTab(tabId);
     });
+  });
+
+  const btnNavMore = document.getElementById('btnNavMore');
+  const navMoreMenu = document.getElementById('navMoreMenu');
+  if (btnNavMore && navMoreMenu) {
+    btnNavMore.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const willOpen = navMoreMenu.hidden;
+      navMoreMenu.hidden = !willOpen;
+      btnNavMore.classList.toggle('open', willOpen);
+      btnNavMore.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('click', (ev) => {
+    const wrap = document.querySelector('.nav-more-wrap');
+    if (!wrap || wrap.contains(ev.target)) return;
+    closeNavMore();
   });
 
   const btnReturnToStudy = document.getElementById('btnReturnToStudy');
@@ -157,6 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.comparatorView) Modules.comparatorView.init(appContext);
     if (Modules.timelineView) Modules.timelineView.init(appContext);
     if (Modules.exploreView) Modules.exploreView.init(appContext);
+    if (Modules.lettersView) Modules.lettersView.init(appContext);
+    if (Modules.reflectionView) Modules.reflectionView.init(appContext);
+    if (Modules.favoritesView) Modules.favoritesView.init(appContext);
     if (Modules.bibleCodeView) Modules.bibleCodeView.init(appContext);
     if (Modules.shareCard) Modules.shareCard.init(appContext);
     if (Modules.tourModal) Modules.tourModal.init(appContext);

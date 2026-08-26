@@ -115,6 +115,49 @@
       // Paginación y Ordenamiento
       this.initPagination();
       this.renderSearchHistory();
+      this.initFavoriteAndExport(context);
+    },
+
+    toggleElsActionButtons: function(show) {
+      const btnPNG = document.getElementById('btnExportMatrixPNG');
+      const btnFav = document.getElementById('btnSaveELSFavorite');
+      if (btnPNG) btnPNG.style.display = show ? 'inline-block' : 'none';
+      if (btnFav) btnFav.style.display = show ? 'inline-block' : 'none';
+    },
+
+    initFavoriteAndExport: function(context) {
+      const Storage = global.GematriaStorage;
+      const self = this;
+      const btnExport = document.getElementById('btnExportMatrixPNG');
+      const btnFav = document.getElementById('btnSaveELSFavorite');
+
+      if (btnExport) {
+        btnExport.addEventListener('click', () => {
+          const match = self.state.activeMatch;
+          if (typeof global.ExportMatrixAsPNG !== 'function') return;
+          global.ExportMatrixAsPNG('matrixContainer', undefined, match || null);
+        });
+      }
+      if (btnFav) {
+        btnFav.addEventListener('click', () => {
+          const match = self.state.activeMatch;
+          if (!match || !Storage || !Storage.SaveFavorite) return;
+          const before = Storage.GetFavorites().length;
+          Storage.SaveFavorite({
+            word: match.word,
+            skip: match.skip,
+            start: match.start,
+            indices: match.indices,
+            pValue: match.pValue,
+            significanceScore: match.significanceScore,
+            verse: self.getVerseContext(match.start),
+            savedAt: new Date().toISOString()
+          });
+          const after = Storage.GetFavorites().length;
+          btnFav.textContent = after === before ? '✅ Ya guardado' : '✅ Guardado';
+          setTimeout(() => { btnFav.textContent = '⭐ Guardar'; }, 2000);
+        });
+      }
     },
 
     initPagination: function() {
@@ -364,6 +407,7 @@
         if (paginationControls) paginationControls.style.display = 'none';
         if (matrixEmptyState) matrixEmptyState.style.display = 'block';
         if (matrixContainer) matrixContainer.style.display = 'none';
+        this.toggleElsActionButtons(false);
         return;
       }
 
@@ -446,6 +490,7 @@
       if (matrixEmptyState) matrixEmptyState.style.display = 'none';
       if (matrixContainer) matrixContainer.style.display = 'block';
       if (matrixWidthController) matrixWidthController.style.display = 'flex';
+      this.toggleElsActionButtons(true);
 
       const text = this.getActiveTorahText();
       const w = this.state.matrixWidth;

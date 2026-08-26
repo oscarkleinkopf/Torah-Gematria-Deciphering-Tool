@@ -33,32 +33,40 @@
       DB.HISTORICAL_EVENTS.forEach(event => {
         const card = document.createElement('div');
         card.className = 'history-card glass-card';
-        const gem = Engine ? Engine.CalculateGematria(event.hebrew) : { absolute: 0 };
+        const hebrew = (event.searchTerms && event.searchTerms[0]) || event.hebrew || '';
+        const gem = Engine && hebrew ? Engine.CalculateGematria(hebrew) : { absolute: 0 };
 
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <span style="font-size:0.8rem; font-weight:bold; color:var(--gold-primary);">${event.year} (${event.hebrewYear})</span>
-            <span style="font-family:var(--font-hebrew); font-size:1.3rem; color:#00ced1;">${event.hebrew}</span>
+            <span style="font-size:0.8rem; font-weight:bold; color:var(--gold-primary);">${event.year} (${event.hebrewYear || event.label || ''})</span>
+            <span style="font-family:var(--font-hebrew); font-size:1.3rem; color:#00ced1;">${hebrew}</span>
           </div>
-          <h4 style="font-family:var(--font-serif); color:var(--text-primary); margin-bottom:0.4rem;">${event.event}</h4>
-          <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5;">${event.biblicalCorrelation || event.significance}</p>
+          <h4 style="font-family:var(--font-serif); color:var(--text-primary); margin-bottom:0.4rem;">${event.title || event.event || ''}</h4>
+          <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5;">${event.desc || event.biblicalCorrelation || event.significance || ''}</p>
           <div style="margin-top:0.6rem; font-size:0.75rem; color:var(--gold-primary);">
-            Valor: <strong>${gem.absolute}</strong> • Sefirá: <strong>${event.sefirah || 'Maljut'}</strong>
+            ${gem.absolute ? `Gematria <strong>${gem.absolute}</strong>` : (event.label || '')}
           </div>
         `;
 
         card.addEventListener('click', () => {
-          if (context && context.switchTab && context.processInputText) {
-            context.switchTab('calculator');
-            const txtInput = document.getElementById('txtInput');
-            if (txtInput) txtInput.value = event.hebrew;
-            context.setLanguage('hebrew');
-            context.processInputText(event.hebrew);
-          }
+          TimelineView.focusEvent(event);
         });
 
         container.appendChild(card);
       });
+    },
+
+    focusEvent: function(event) {
+      const panel = document.getElementById('timelineDetailPanel');
+      if (!panel || !event) return;
+      const hebrew = (event.searchTerms && event.searchTerms[0]) || event.hebrew || '';
+      panel.style.display = 'block';
+      panel.innerHTML = `
+        <h4 style="font-family:var(--font-serif); color:var(--gold-primary); margin:0 0 0.4rem;">${event.title || event.event || ''}</h4>
+        <p style="color:var(--text-secondary); font-size:0.85rem; margin:0 0 0.5rem;">${event.label || event.year} · ${event.hebrewYear || ''}</p>
+        <p style="color:var(--text-primary); font-size:0.9rem; line-height:1.5; margin:0;">${event.desc || ''}</p>
+        ${hebrew ? `<p style="font-family:var(--font-hebrew); font-size:1.4rem; color:#00ced1; margin:0.6rem 0 0; direction:rtl;">${hebrew}</p>` : ''}
+      `;
     },
 
     initAcrostics: function(context) {
