@@ -589,6 +589,37 @@ function FindAcrostics(text, type = 'roshei', targetWord = null, options = {}) {
   return results;
 }
 
+function GetAcrosticPhraseCorpus(db) {
+  const verses = (db && db.TORAH_VERSES) || [];
+  return verses.filter(v => v && v.hebrew && ExtractWordsForAcrostics(v.hebrew).length >= 2);
+}
+
+/**
+ * Busca un objetivo como Roshei/Sofei Teivot en frases con espacios (versículos curados).
+ * No usa TORAH_TEXT: esa cinta no tiene palabras.
+ */
+function FindAcrosticsInPhrases(phrases, targetWord, type, options) {
+  const list = phrases || [];
+  const cleanTarget = String(targetWord || '').replace(/[^\u05D0-\u05EA]/g, '');
+  if (cleanTarget.length < 2) return [];
+  const typeUse = type || 'both';
+  const results = [];
+  list.forEach((p, idx) => {
+    const text = typeof p === 'string' ? p : (p && p.hebrew) || '';
+    if (!text) return;
+    const hits = FindAcrostics(text, typeUse, cleanTarget, options);
+    hits.forEach(hit => {
+      results.push(Object.assign({}, hit, {
+        sourceIndex: idx,
+        reference: (p && p.reference) || null,
+        translation: (p && p.translation) || null,
+        sourceHebrew: text
+      }));
+    });
+  });
+  return results;
+}
+
 // === MÓDULO DE ESTADÍSTICA ELS Y P-VALUE ===
 
 /**
@@ -1731,6 +1762,8 @@ const _exportedEngine = {
   NormalizeHebrewLetter,
   NormalizeHebrewString,
   FindAcrostics,
+  GetAcrosticPhraseCorpus,
+  FindAcrosticsInPhrases,
   CalculateLetterFrequencies,
   CalculateELSPValue,
   NumberToHebrewLetters,

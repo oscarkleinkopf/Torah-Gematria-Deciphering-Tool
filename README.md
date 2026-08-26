@@ -34,7 +34,10 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Exportación **PNG** de la matriz y pestaña de **Favoritos** (LocalStorage).
 
 5. **Acrósticos (Roshei / Sofei Teivot)**:
-   - Búsqueda de acrósticos de inicio/final de palabra sobre texto hebreo libre.
+   - Búsqueda sobre texto propio **o sobre las frases curadas** (`TORAH_VERSES`, con espacios de palabra). No se busca en `TORAH_TEXT` (esa cinta no tiene cortes de palabra).
+   - Ejemplos clásicos: BILU (Isaías 2:5), מילה / יהוה (Deuteronomio 30:12).
+   - Desde **Inicio**, el hebreo del dossier se puede mandar al buscador de acrósticos en el corpus de frases.
+   - Nota de honestidad: un objetivo corto puede aparecer por azar en pocas palabras.
 
 6. **Línea de Tiempo del Sionismo & Comparador de Dos Palabras**:
    - Canvas interactivo de sincronías históricas (Sinaí → Oslo, 13 hitos).

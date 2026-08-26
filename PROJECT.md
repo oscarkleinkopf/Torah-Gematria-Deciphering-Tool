@@ -34,6 +34,9 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 ### `gematria.js`
 - `CalculateGematria(hebrewText)`: Returns `{ originalText, cleanText, lettersCount, absolute, absoluteGadol, ordinal, reduced, atbashText, atbashValue, albamText, albamValue, avgadText, avgadValue, breakdown }`
 - `FindAcrostics(text, type, targetWord, options)`: `type` is `'roshei'`, `'sofei'`, or `'both'`. Returns array of `{ phrase, cleanPhrase, word, targetWord, isRoshei, isSofei, indices, wordDetails }`
+- `GetAcrosticPhraseCorpus(db)`: verses in `TORAH_VERSES` with ≥2 Hebrew words (never `TORAH_TEXT`).
+- `FindAcrosticsInPhrases(phrases, targetWord, type, options)`: Roshei/Sofei search over curated spaced phrases; attaches `reference`, `translation`, `sourceHebrew`. Targets shorter than 2 letters return `[]`.
+- `ACROSTIC_EXAMPLES`: classic chips — BILU (Isaías 2:5, roshei), מילה / יהוה (Deuteronomio 30:12, roshei / sofei).
 - `CalculateELSPValue(textLength, searchWord, skipSpec, letterFrequencies)`: Returns `{ expectedMatches, pValue, statisticalSignificanceScore, logPValue }`
 - `FindELS(text, searchWord, minSkip, maxSkip)`: Returns array of matches enhanced with `{ pValue, expectedCount, significanceScore }`
 - `AssessELSHonesty(match, { text, minSkip, maxSkip, runControl })`: exploratory band `common` | `plausible` | `rare`, warnings, optional shuffled-text control. Never claims proof.

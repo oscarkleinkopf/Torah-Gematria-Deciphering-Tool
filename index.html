@@ -78,7 +78,8 @@
 
     <!-- Navegación Principal -->
     <nav>
-      <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
+      <button class="nav-btn active" data-tab="explore">Inicio</button>
+      <button class="nav-btn" data-tab="calculator">Calculadora de Gematria</button>
       <button class="nav-btn" data-tab="tehilim">📜 Salmos & Plegarias</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
       <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
@@ -823,9 +824,17 @@
     <div id="acrostics" class="tab-content">
       <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
         <h3 class="input-title">Buscador de Acrósticos (ראשי תיבות / סופי תיבות)</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-          Detecta si las <strong>iniciales (Roshei Teivot)</strong> o las <strong>finales (Sofei Teivot)</strong> de las palabras en un texto hebreo forman una palabra oculta. Una técnica milenaria de exégesis cabalística.
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+          Detecta si las <strong>iniciales (Roshei Teivot)</strong> o las <strong>finales (Sofei Teivot)</strong>
+          de las palabras forman una palabra oculta. Se busca en el texto pegado o en
+          <strong>frases curadas con espacios</strong> (versículos), no en el corpus ELS.
         </p>
+
+        <div class="acrostic-chips" id="acrosticExampleChips">
+          <button type="button" class="explore-chip" data-acrostic-ex="bilu">BILU · Isaías 2:5</button>
+          <button type="button" class="explore-chip" data-acrostic-ex="milah">מילה · Deut. 30:12</button>
+          <button type="button" class="explore-chip" data-acrostic-ex="yhvh">יהוה · Deut. 30:12 (finales)</button>
+        </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
           <div>
@@ -842,6 +851,7 @@
               <button class="els-quick-chip acrostic-type-btn" data-type="both">Ambos</button>
             </div>
             <button id="btnFindAcrostics" class="search-btn" style="width: 100%; margin-top: 1rem;">🔍 Buscar Acróstico</button>
+            <button type="button" id="btnAcrosticsCorpus" class="explore-action-btn" style="width: 100%; margin-top: 0.5rem;">📜 Buscar en frases curadas</button>
           </div>
         </div>
 
@@ -1048,7 +1058,10 @@
   <!-- Scripts de Datos y Motor -->
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
+  <script src="hebrew_calendar.js"></script>
+  <script src="storage.js"></script>
   <script src="gematria.js"></script>
+  <script src="explore.js"></script>
 
   <!-- Módulos de la Aplicación -->
   <script src="js/modules/dailySync.js"></script>
@@ -1063,6 +1076,7 @@
   <script src="js/modules/pwaManager.js"></script>
   <script src="js/modules/mysticAudio.js"></script>
   <script src="js/modules/tehilimView.js"></script>
+  <script src="js/modules/exploreView.js"></script>
 
   <!-- Orquestador Principal -->
   <script src="app.js"></script>
