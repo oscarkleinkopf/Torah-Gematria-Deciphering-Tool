@@ -3,7 +3,7 @@
  * Contract (PROJECT.md): ExportMatrixAsPNG(canvasElement | containerId, filename)
  */
 
-function ExportMatrixAsPNG(canvasElementOrContainerId, filename) {
+function ExportMatrixAsPNG(canvasElementOrContainerId, filename, matchMeta) {
   const filenameSafe = filename || 'ELS_matrix.png';
 
   // Direct canvas path
@@ -31,9 +31,9 @@ function ExportMatrixAsPNG(canvasElementOrContainerId, filename) {
     return false;
   }
 
-  const matchMeta = arguments.length > 2 ? arguments[2] : null;
-  const wordLabel = (matchMeta && matchMeta.word) || 'matriz';
-  const skipLabel = matchMeta && matchMeta.skip != null ? matchMeta.skip : '?';
+  const meta = matchMeta || null;
+  const wordLabel = (meta && meta.word) || 'matriz';
+  const skipLabel = meta && meta.skip != null ? meta.skip : '?';
 
   const W = table.offsetWidth + 40;
   const H = table.offsetHeight + 80;

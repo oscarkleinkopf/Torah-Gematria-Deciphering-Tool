@@ -4361,6 +4361,17 @@ footer a:hover {
 }
 .els-control-panel p { margin: 0; }
 
+.els-narrative-warn {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.els-narrative-source {
+  margin: 0.4rem 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 640px) {
   .els-gallery-grid {
     grid-template-columns: 1fr;

@@ -1301,7 +1301,7 @@ function SearchSpanishSemantic(query, dictionary = [], knowledgeGraph = [], limi
  */
 function ScanTopographicELS(corpusText, skip, wordsList = [], options = {}) {
   if (!corpusText || !skip || !wordsList || wordsList.length === 0) return [];
-  const maxMatchesPerWord = options.maxMatchesPerWord || 3;
+  const maxMatchesPerWord = options.maxMatchesPerWord || options.maxMatches || 3;
   const palette = [
     '#ffd700', // Oro
     '#00ced1', // Cian

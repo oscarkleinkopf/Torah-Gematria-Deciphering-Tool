@@ -131,6 +131,15 @@
             return;
           }
           if (ctx && ctx.switchTab) ctx.switchTab('biblecode');
+          if (Modules.bibleCodeView && typeof Modules.bibleCodeView.restoreSearch === 'function') {
+            Modules.bibleCodeView.restoreSearch({
+              word: fav.word || '',
+              skip: fav.skip,
+              start: fav.start,
+              indices: fav.indices
+            }, ctx);
+            return;
+          }
           const txtSearchELS = document.getElementById('txtSearchELS');
           if (txtSearchELS) txtSearchELS.value = fav.word || '';
           if (Modules.bibleCodeView && typeof Modules.bibleCodeView.handleSearch === 'function') {

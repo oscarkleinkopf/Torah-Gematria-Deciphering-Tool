@@ -894,6 +894,42 @@ async function runAllTests() {
   assert(comparatorSrc.includes('openPairFromStudy'), "El comparador abre pares desde la galería");
   assert(comparatorSrc.includes('pair.wordA'), "Los chips legendarios usan wordA/wordB");
 
+  console.log("\n=== SECCIÓN 30: CONTROLES ELS (TOPOGRÁFICO, NARRATIVA, CITA, FAVORITOS) ===");
+  const bibleSrcCtl = fs.readFileSync('./js/modules/bibleCodeView.js', 'utf8');
+  const indexCtl = fs.readFileSync('./index.html', 'utf8');
+  assert(indexCtl.includes('id="btnToggleTopographicELS"'), "El HTML tiene el botón de modo topográfico");
+  assert(bibleSrcCtl.includes('btnToggleTopographicELS'), "bibleCodeView enlaza btnToggleTopographicELS");
+  assert(bibleSrcCtl.includes('handleTopographicScan'), "El escaneo topográfico está implementado");
+  assert(bibleSrcCtl.includes('maxMatches: 8'), "El escaneo pasa maxMatches al motor");
+  assert(bibleSrcCtl.includes('elsTopographicChips'), "Los chips topográficos usan el id del HTML");
+  assert(bibleSrcCtl.includes('applyMatrixWidth'), "Un chip topográfico fija el ancho de matriz al salto");
+  assert(bibleSrcCtl.includes('btnShareELS'), "toggleElsActionButtons contempla Compartir");
+  assert(bibleSrcCtl.includes('btnCopyELSCitation'), "Hay botón de copiar cita");
+  assert(indexCtl.includes('id="btnCopyELSCitation"'), "index.html incluye Copiar cita");
+  assert(bibleSrcCtl.includes('fillNarrativePanel'), "La narrativa del hallazgo se rellena");
+  assert(bibleSrcCtl.includes('fillSecondaryPanel'), "El panel de cruces secundarios se rellena");
+  assert(bibleSrcCtl.includes('restoreSearch'), "Favoritos/Explorar pueden restaurar skip y match");
+  assert(bibleSrcCtl.includes('clearSearchHistory'), "Limpiar historial ELS está cableado");
+  assert(bibleSrcCtl.includes('btnClearELSHistory'), "El botón Limpiar del historial se enlaza");
+  assert(bibleSrcCtl.includes('formatCitation'), "formatCitation arma palabra + salto + letra + versículo");
+
+  const scanSrc = fs.readFileSync('./gematria.js', 'utf8');
+  assert(/maxMatchesPerWord \|\| options\.maxMatches/.test(scanSrc),
+    "ScanTopographicELS acepta maxMatches como alias de maxMatchesPerWord");
+  const topoAlias = Engine.ScanTopographicELS(TORAH_TEXT, 2, ['אל'], { maxMatches: 1 });
+  assert(Array.isArray(topoAlias) && topoAlias.length === 1,
+    "maxMatches: 1 limita a una cohabitación de אל a salto 2");
+  const topoNamed = Engine.ScanTopographicELS(TORAH_TEXT, 2, ['אל'], { maxMatchesPerWord: 1 });
+  assert(topoNamed.length === 1, "maxMatchesPerWord: 1 sigue limitando igual");
+
+  const favCtl = fs.readFileSync('./js/modules/favoritesView.js', 'utf8');
+  assert(favCtl.includes('restoreSearch'), "Favoritos reabre un ELS con restoreSearch (skip + start)");
+  const exploreCtl = fs.readFileSync('./js/modules/exploreView.js', 'utf8');
+  assert(exploreCtl.includes('restoreSearch'), "Explorar abre ELS con restoreSearch");
+  const exportCtl = fs.readFileSync('./export.js', 'utf8');
+  assert(/function ExportMatrixAsPNG\([^)]*matchMeta/.test(exportCtl),
+    "ExportMatrixAsPNG declara matchMeta como tercer argumento");
+
   console.log("\n=== SECCIÓN 28: SALMOS (TEHILIM), PLEGARIAS Y SONIFICACIÓN (CARACTERÍSTICAS 1 Y 2) ===");
   assert(Array.isArray(DB.TEHILIM_PSALMS) && DB.TEHILIM_PSALMS.length >= 5, `TEHILIM_PSALMS contiene al menos 5 salmos estructurados (actual: ${DB.TEHILIM_PSALMS.length})`);
   assert(DB.TEHILIM_PSALMS.some(p => p.number === 23), "La base de datos incluye el Salmo 23");

@@ -205,6 +205,10 @@
 
       function openElsFromExplore(terms) {
         if (!terms) return;
+        if (Modules.bibleCodeView && typeof Modules.bibleCodeView.restoreSearch === 'function') {
+          Modules.bibleCodeView.restoreSearch({ word: terms }, context);
+          return;
+        }
         if (context && context.switchTab) context.switchTab('biblecode');
         const txtSearchELS = document.getElementById('txtSearchELS');
         if (txtSearchELS) txtSearchELS.value = terms;
