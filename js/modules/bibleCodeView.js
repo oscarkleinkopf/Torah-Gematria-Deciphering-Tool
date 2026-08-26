@@ -6,14 +6,26 @@
 (function(global) {
   'use strict';
 
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   const BibleCodeView = {
     state: {
       activeMatch: null,
       primaryWord: '',
       matrixWidth: 50,
       isTopographic: false,
-      topographicWords: []
+      topographicWords: [],
+      pendingSelect: null,
+      pendingMatrixWidth: null,
+      activeExampleId: null
     },
+    _context: null,
 
     pagination: {
       currentPage: 1,
@@ -33,6 +45,7 @@
       const Engine = global.GematriaEngine;
       const self = this;
 
+      this._context = context;
       this.cache = new Engine.GematriaSearchCache(100);
 
       const txtSearchELS = document.getElementById('txtSearchELS');
@@ -78,8 +91,8 @@
         });
       }
 
-      // Quick Chips
-      const quickChips = document.querySelectorAll('.els-quick-chip');
+      // Quick Chips (exclude acrostic type buttons that reuse the class)
+      const quickChips = document.querySelectorAll('#elsQuickPicks .els-quick-chip');
       quickChips.forEach(chip => {
         chip.addEventListener('click', () => {
           const query = chip.getAttribute('data-query');
@@ -89,6 +102,14 @@
           }
         });
       });
+
+      this.renderClassicGallery();
+      this.bindClassicTriggers(context);
+
+      const btnShuffle = document.getElementById('btnElsShuffledControl');
+      if (btnShuffle) {
+        btnShuffle.addEventListener('click', () => self.runShuffledControl());
+      }
 
       // Compartir ELS
       if (btnShareELS) {
@@ -106,7 +127,7 @@
               number: Engine.CalculateGematria(match.word).absolute,
               subtitle: `Encontrado en ${self.selectedBook.toUpperCase()} a salto ${match.skip}`,
               context: `Codificado a intervalos equidistantes de ${match.skip} letras, iniciando en la posición #${match.start}.`,
-              verse: self.getVerseContext(match.start)
+              verse: self.formatVerseLabel(match.start, match.indices)
             });
           }
         });
@@ -121,8 +142,11 @@
     toggleElsActionButtons: function(show) {
       const btnPNG = document.getElementById('btnExportMatrixPNG');
       const btnFav = document.getElementById('btnSaveELSFavorite');
-      if (btnPNG) btnPNG.style.display = show ? 'inline-block' : 'none';
-      if (btnFav) btnFav.style.display = show ? 'inline-block' : 'none';
+      const btnShuffle = document.getElementById('btnElsShuffledControl');
+      const display = show ? 'inline-block' : 'none';
+      if (btnPNG) btnPNG.style.display = display;
+      if (btnFav) btnFav.style.display = display;
+      if (btnShuffle) btnShuffle.style.display = display;
     },
 
     initFavoriteAndExport: function(context) {
@@ -150,7 +174,7 @@
             indices: match.indices,
             pValue: match.pValue,
             significanceScore: match.significanceScore,
-            verse: self.getVerseContext(match.start),
+            verse: self.formatVerseLabel(match.start, match.indices),
             savedAt: new Date().toISOString()
           });
           const after = Storage.GetFavorites().length;
@@ -223,7 +247,32 @@
       return torahText || '';
     },
 
+    getBookOffset: function() {
+      if (this.selectedBook === 'all') return 0;
+      const offsets = global.TORAH_BOOK_OFFSETS || [];
+      const book = offsets.find(b => b.key === this.selectedBook);
+      return book ? book.offset : 0;
+    },
+
+    getGlobalIndex: function(localIdx) {
+      return this.getBookOffset() + (localIdx | 0);
+    },
+
     getVerseContext: function(pos) {
+      return this.formatVerseLabel(pos);
+    },
+
+    formatVerseLabel: function(localIdx, indices) {
+      const Lookup = global.LookupTorahVerse;
+      const LookupSpan = global.LookupTorahVerseSpan;
+      if (Array.isArray(indices) && indices.length && typeof LookupSpan === 'function') {
+        const span = LookupSpan(indices.map(i => this.getGlobalIndex(i)));
+        if (span) return span;
+      }
+      if (typeof Lookup === 'function') {
+        const v = Lookup(this.getGlobalIndex(localIdx));
+        if (v && v.reference) return v.reference;
+      }
       const bookNames = {
         genesis: 'Génesis',
         exodus: 'Éxodo',
@@ -233,7 +282,31 @@
         all: 'Torá'
       };
       const book = bookNames[this.selectedBook] || 'Torá';
-      return `${book} • Letra #${pos}`;
+      return book + ' · Letra #' + localIdx;
+    },
+
+    setSelectedBook: function(bookKey) {
+      const key = bookKey || 'all';
+      this.selectedBook = key;
+      document.querySelectorAll('.book-pill').forEach(p => {
+        p.classList.toggle('active', (p.getAttribute('data-book') || 'all') === key);
+      });
+    },
+
+    honestyBadgeHtml: function(match) {
+      const Engine = global.GematriaEngine;
+      if (!Engine || typeof Engine.AssessELSHonesty !== 'function') return '';
+      const numMinSkip = document.getElementById('numMinSkip');
+      const numMaxSkip = document.getElementById('numMaxSkip');
+      const honesty = Engine.AssessELSHonesty(match, {
+        text: this.getActiveTorahText(),
+        minSkip: numMinSkip ? parseInt(numMinSkip.value, 10) : 2,
+        maxSkip: numMaxSkip ? parseInt(numMaxSkip.value, 10) : 120,
+        runControl: false
+      });
+      const band = honesty.band || 'common';
+      const title = escapeHtml((honesty.label || '') + ' — ' + (honesty.note || ''));
+      return `<span class="honesty-badge ${escapeHtml(band)}" title="${title}">${escapeHtml(honesty.label)}</span>`;
     },
 
     getWorker: function() {
@@ -364,6 +437,9 @@
       this.pagination.searchedQuery = searchedQuery;
       this.pagination.termsArray = termsArray;
       this.pagination.currentPage = 1;
+      if (!this.state.pendingSelect) {
+        this.state.activeMatch = null;
+      }
 
       const numMinSkip = document.getElementById('numMinSkip');
       const numMaxSkip = document.getElementById('numMaxSkip');
@@ -380,6 +456,31 @@
       this.renderPaginatedResults();
     },
 
+    applyPendingSelect: function(sortedMatches) {
+      const hint = this.state.pendingSelect;
+      if (!hint || !sortedMatches.length) return;
+      const idx = sortedMatches.findIndex(m => m.start === hint.start && m.skip === hint.skip);
+      this.state.pendingSelect = null;
+      if (idx < 0) return;
+      const match = sortedMatches[idx];
+      this.state.activeMatch = match;
+      this.state.primaryWord = match.word;
+      const pageSize = this.pagination.pageSize || 15;
+      this.pagination.currentPage = Math.floor(idx / pageSize) + 1;
+      const width = this.state.pendingMatrixWidth || Math.min(150, Math.max(10, Math.abs(match.skip)));
+      this.state.pendingMatrixWidth = null;
+      this.applyMatrixWidth(width);
+    },
+
+    applyMatrixWidth: function(width) {
+      const w = Math.min(150, Math.max(10, width | 0));
+      this.state.matrixWidth = w;
+      const rangeMatrixWidth = document.getElementById('rangeMatrixWidth');
+      const lblMatrixWidth = document.getElementById('lblMatrixWidth');
+      if (rangeMatrixWidth) rangeMatrixWidth.value = w;
+      if (lblMatrixWidth) lblMatrixWidth.textContent = w;
+    },
+
     renderPaginatedResults: function() {
       const Engine = global.GematriaEngine;
       const resultsList = document.getElementById('elsResultsList');
@@ -390,8 +491,6 @@
       const countBadge = document.getElementById('elsResultCountBadge');
       const matrixEmptyState = document.getElementById('matrixEmptyState');
       const matrixContainer = document.getElementById('matrixContainer');
-      const rangeMatrixWidth = document.getElementById('rangeMatrixWidth');
-      const lblMatrixWidth = document.getElementById('lblMatrixWidth');
 
       if (!resultsList || !Engine) return;
       resultsList.innerHTML = '';
@@ -402,7 +501,7 @@
       if (totalMatches === 0) {
         resultsList.innerHTML = `
           <div style="color: var(--text-secondary); text-align: center; padding: 2rem 0; font-size: 0.9rem;">
-            No se encontraron secuencias ELS para "${this.pagination.searchedQuery}" en el libro seleccionado (${this.selectedBook.toUpperCase()}) y rango de saltos.
+            No se encontraron secuencias ELS para "${escapeHtml(this.pagination.searchedQuery)}" en el libro seleccionado (${escapeHtml(this.selectedBook.toUpperCase())}) y rango de saltos.
           </div>`;
         if (paginationControls) paginationControls.style.display = 'none';
         if (matrixEmptyState) matrixEmptyState.style.display = 'block';
@@ -412,6 +511,8 @@
       }
 
       const sortedMatches = Engine.SortELSResults(this.pagination.allMatches, this.pagination.sortBy);
+      this.applyPendingSelect(sortedMatches);
+
       const pageSize = this.pagination.pageSize;
       const totalPages = Math.max(1, Math.ceil(totalMatches / pageSize));
       const currentPage = Math.min(this.pagination.currentPage, totalPages);
@@ -426,25 +527,26 @@
       if (btnNext) btnNext.disabled = currentPage >= totalPages;
 
       const self = this;
+      const active = this.state.activeMatch;
       pageMatches.forEach((match, idx) => {
         const item = document.createElement('div');
         item.className = 'els-result-item';
-        const verseContext = self.getVerseContext(match.start);
-        const termBadgeClass = `term-badge-${match.termIndex % 4}`;
-        const sig = Engine.FormatSignificanceMetrics(match);
+        const verseContext = self.formatVerseLabel(match.start, match.indices);
+        const termBadgeClass = `term-badge-${(match.termIndex || 0) % 4}`;
+        const isActive = active && active.start === match.start && active.skip === match.skip && active.word === match.word;
 
         item.innerHTML = `
           <div class="els-result-header-row">
             <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-              <span class="els-result-word">${match.word}</span>
-              ${self.pagination.termsArray && self.pagination.termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${match.rawQuery}</span>` : ''}
-              ${sig ? `<span class="significance-badge ${sig.level}" title="${sig.explanation} (${sig.probabilityDesc})">${sig.badgeText}</span>` : ''}
+              <span class="els-result-word">${escapeHtml(match.word)}</span>
+              ${self.pagination.termsArray && self.pagination.termsArray.length > 1 ? `<span class="term-badge ${termBadgeClass}">${escapeHtml(match.rawQuery || '')}</span>` : ''}
+              ${self.honestyBadgeHtml(match)}
             </div>
             <span class="els-result-skip">Salto: ${match.skip}</span>
           </div>
           <div class="els-result-context" style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.3rem;">
             <span>Inicio: Letra #${match.start}</span>
-            <span>${verseContext}</span>
+            <span>${escapeHtml(verseContext)}</span>
           </div>
         `;
 
@@ -453,30 +555,50 @@
           item.classList.add('active');
           self.state.activeMatch = match;
           self.state.primaryWord = match.word;
-
-          const defaultWidth = Math.min(150, Math.max(10, Math.abs(match.skip)));
-          if (rangeMatrixWidth) rangeMatrixWidth.value = defaultWidth;
-          if (lblMatrixWidth) lblMatrixWidth.textContent = defaultWidth;
-          self.state.matrixWidth = defaultWidth;
+          self.applyMatrixWidth(Math.abs(match.skip));
           self.renderMatrix();
         });
 
-        if (idx === 0 && currentPage === 1) {
+        if (isActive || (!active && idx === 0 && currentPage === 1)) {
           item.classList.add('active');
           self.state.activeMatch = match;
           self.state.primaryWord = match.word;
-          const defaultWidth = Math.min(150, Math.max(10, Math.abs(match.skip)));
-          if (rangeMatrixWidth) rangeMatrixWidth.value = defaultWidth;
-          if (lblMatrixWidth) lblMatrixWidth.textContent = defaultWidth;
-          self.state.matrixWidth = defaultWidth;
+          if (!active) {
+            self.applyMatrixWidth(Math.abs(match.skip));
+          }
         }
 
         resultsList.appendChild(item);
       });
 
-      if (this.state.activeMatch && currentPage === 1) {
+      if (this.state.activeMatch) {
         this.renderMatrix();
       }
+    },
+
+    showMatrixVerseHover: function(localIdx) {
+      const hint = document.getElementById('matrixVerseHint');
+      if (!hint) return;
+      const verse = this.formatVerseLabel(localIdx);
+      const globalIdx = this.getGlobalIndex(localIdx);
+      hint.textContent = verse + ' · letra #' + globalIdx;
+      hint.hidden = false;
+    },
+
+    bindMatrixHover: function(table) {
+      if (!table || table._verseBound) return;
+      const self = this;
+      table.addEventListener('mouseover', (e) => {
+        const td = e.target.closest('td');
+        if (!td || !table.contains(td) || td.dataset.idx == null) return;
+        self.showMatrixVerseHover(parseInt(td.dataset.idx, 10));
+      });
+      table.addEventListener('focusin', (e) => {
+        const td = e.target.closest('td');
+        if (!td || td.dataset.idx == null) return;
+        self.showMatrixVerseHover(parseInt(td.dataset.idx, 10));
+      });
+      table._verseBound = true;
     },
 
     renderMatrix: function() {
@@ -491,6 +613,7 @@
       if (matrixContainer) matrixContainer.style.display = 'block';
       if (matrixWidthController) matrixWidthController.style.display = 'flex';
       this.toggleElsActionButtons(true);
+      this.bindMatrixHover(matrixGrid);
 
       const text = this.getActiveTorahText();
       const w = this.state.matrixWidth;
@@ -501,25 +624,30 @@
       const minRow = Math.max(0, startRow - 4);
       const maxRow = Math.min(Math.floor((text.length - 1) / w), endRow + 4);
 
-      matrixGrid.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
       matrixGrid.innerHTML = '';
-
       const matchSet = new Set(match.indices);
+      const hint = document.getElementById('matrixVerseHint');
+      if (hint) {
+        hint.textContent = this.formatVerseLabel(match.start, match.indices) +
+          ' · pasa el cursor por una letra';
+        hint.hidden = false;
+      }
 
       for (let r = minRow; r <= maxRow; r++) {
+        const tr = document.createElement('tr');
         for (let c = 0; c < w; c++) {
           const idx = r * w + c;
           if (idx >= text.length) break;
-
-          const cell = document.createElement('div');
-          cell.className = 'matrix-cell';
-          cell.textContent = text[idx];
-
-          if (matchSet.has(idx)) {
-            cell.classList.add('highlight-primary');
-          }
-          matrixGrid.appendChild(cell);
+          const td = document.createElement('td');
+          td.textContent = text[idx];
+          td.dataset.idx = String(idx);
+          td.tabIndex = 0;
+          const verse = this.formatVerseLabel(idx);
+          td.title = verse + ' · letra #' + this.getGlobalIndex(idx);
+          if (matchSet.has(idx)) td.classList.add('highlight-primary');
+          tr.appendChild(td);
         }
+        matrixGrid.appendChild(tr);
       }
     },
 
@@ -537,7 +665,7 @@
 
     renderTopographicResults: function(foundWords, skip) {
       const legendBox = document.getElementById('elsTopographicLegend');
-      const chipsContainer = document.getElementById('topographicChipsContainer');
+      const chipsContainer = document.getElementById('topographicChipsContainer') || document.getElementById('elsTopographicChips');
       const lblSkip = document.getElementById('lblTopographicSkip');
       const lblCount = document.getElementById('lblTopographicCount');
       if (!legendBox || !chipsContainer) return;
@@ -642,6 +770,152 @@
           container.appendChild(chip);
         });
       } catch (e) {}
+    },
+
+    renderClassicGallery: function() {
+      const grid = document.getElementById('elsClassicGalleryGrid');
+      const DB = global.GematriaDB;
+      if (!DB || !DB.ELS_CLASSIC_EXAMPLES) return;
+      const biblio = document.getElementById('elsBibliographyList');
+      if (biblio && DB.ELS_BIBLIOGRAPHY) {
+        biblio.innerHTML = DB.ELS_BIBLIOGRAPHY.map(item =>
+          `<li><strong>${escapeHtml(item.author)}</strong>, <em>${escapeHtml(item.title)}</em> (${escapeHtml(item.year)}) — ${escapeHtml(item.note)}</li>`
+        ).join('');
+      }
+      if (!grid) return;
+      grid.innerHTML = '';
+      const self = this;
+      DB.ELS_CLASSIC_EXAMPLES.forEach(ex => {
+        const card = document.createElement('article');
+        card.className = 'els-gallery-card' + (ex.reproducible ? '' : ' is-note');
+        card.setAttribute('data-els-classic', ex.id);
+        const actionLabel = ex.kind === 'els' && ex.reproducible
+          ? 'Ver en esta Torá'
+          : ex.kind === 'acrostic'
+            ? 'Abrir acróstico'
+            : ex.kind === 'gematria'
+              ? 'Abrir comparador'
+              : 'Leer nota';
+        card.innerHTML = `
+          <h5 class="els-gallery-card-title">${escapeHtml(ex.title)}</h5>
+          <p class="els-gallery-card-context">${escapeHtml(ex.context || '')}</p>
+          <p class="els-gallery-card-note">${escapeHtml(ex.corpusNote || '')}</p>
+          <p class="els-gallery-card-sources">${escapeHtml((ex.sources || []).join(' · '))}</p>
+          <button type="button" class="els-gallery-open" data-els-classic="${escapeHtml(ex.id)}">${actionLabel}</button>
+        `;
+        card.addEventListener('click', (ev) => {
+          if (ev.target.closest('button')) return;
+          self.openClassicExample(ex.id);
+        });
+        const openBtn = card.querySelector('.els-gallery-open');
+        if (openBtn) {
+          openBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            self.openClassicExample(ex.id);
+          });
+        }
+        grid.appendChild(card);
+      });
+    },
+
+    bindClassicTriggers: function(context) {
+      const self = this;
+      document.querySelectorAll('[data-els-classic]').forEach(el => {
+        if (el.closest('#elsClassicGalleryGrid')) return;
+        el.addEventListener('click', () => {
+          self.openClassicExample(el.getAttribute('data-els-classic'), context);
+        });
+      });
+    },
+
+    showClassicCaption: function(example) {
+      const box = document.getElementById('elsClassicCaption');
+      if (!box || !example) return;
+      box.hidden = false;
+      box.innerHTML = `
+        <strong>${escapeHtml(example.title)}</strong>
+        <span>${escapeHtml(example.context || '')}</span>
+        <span class="els-classic-caption-note">${escapeHtml(example.corpusNote || '')}</span>
+        <span class="els-classic-caption-sources">${escapeHtml((example.sources || []).join(' · '))}</span>
+      `;
+    },
+
+    openClassicExample: function(id, context) {
+      const DB = global.GematriaDB;
+      const ctx = context || this._context;
+      const examples = (DB && DB.ELS_CLASSIC_EXAMPLES) || [];
+      const example = examples.find(e => e.id === id);
+      if (!example) return;
+      this.state.activeExampleId = id;
+      this.showClassicCaption(example);
+
+      if (example.kind === 'acrostic') {
+        const tv = global.AppModules && global.AppModules.timelineView;
+        const ac = (DB.ACROSTIC_EXAMPLES || []).find(a => a.id === example.acrosticId);
+        if (tv && typeof tv.loadAcrosticExample === 'function' && ac) {
+          if (ctx && ctx.switchTab) ctx.switchTab('acrostics');
+          tv.loadAcrosticExample(ac);
+          return;
+        }
+        if (tv && typeof tv.searchFromStudy === 'function') {
+          tv.searchFromStudy(example.hebrew);
+        }
+        return;
+      }
+
+      if (example.kind === 'gematria') {
+        const cv = global.AppModules && global.AppModules.comparatorView;
+        if (cv && typeof cv.openPairFromStudy === 'function') {
+          cv.openPairFromStudy(example.wordA, example.wordB, ctx);
+        } else if (ctx && ctx.switchTab) {
+          ctx.switchTab('comparison');
+          const a = document.getElementById('txtCompareA');
+          const b = document.getElementById('txtCompareB');
+          if (a) a.value = example.wordA || '';
+          if (b) b.value = example.wordB || '';
+        }
+        return;
+      }
+
+      if (example.kind === 'note' || !example.reproducible) {
+        if (ctx && ctx.switchTab) ctx.switchTab('biblecode');
+        return;
+      }
+
+      if (ctx && ctx.switchTab) ctx.switchTab('biblecode');
+      this.setSelectedBook(example.book || 'all');
+      const txtSearchELS = document.getElementById('txtSearchELS');
+      const numMinSkip = document.getElementById('numMinSkip');
+      const numMaxSkip = document.getElementById('numMaxSkip');
+      if (txtSearchELS) txtSearchELS.value = example.hebrew || '';
+      if (numMinSkip) numMinSkip.value = example.skipMin != null ? example.skipMin : 50;
+      if (numMaxSkip) numMaxSkip.value = example.skipMax != null ? example.skipMax : 50;
+      this.pagination.sortBy = 'position';
+      const selSort = document.getElementById('selELSSort');
+      if (selSort) selSort.value = 'position';
+      if (example.matchHint) {
+        this.state.pendingSelect = { start: example.matchHint.start, skip: example.matchHint.skip };
+      }
+      this.state.pendingMatrixWidth = example.matrixWidth || example.skipMin || 50;
+      this.applyMatrixWidth(this.state.pendingMatrixWidth);
+      this.handleSearch(ctx);
+    },
+
+    runShuffledControl: function() {
+      const Engine = global.GematriaEngine;
+      const panel = document.getElementById('elsControlPanel');
+      const resultEl = document.getElementById('elsControlResult');
+      const match = this.state.activeMatch;
+      if (!Engine || typeof Engine.ELSControlAtSkip !== 'function' || !match) return;
+      const text = this.getActiveTorahText();
+      const ctrl = Engine.ELSControlAtSkip(text, match.word, match.skip);
+      if (panel) panel.hidden = false;
+      if (!resultEl) return;
+      const skip = match.skip;
+      resultEl.innerHTML = `En este corpus, <span class="he">${escapeHtml(match.word)}</span> a salto ${skip} aparece
+        <strong>${ctrl.originalCount}</strong> vez/veces. Con las mismas letras en orden aleatorio (semilla ${ctrl.seed}):
+        <strong>${ctrl.controlCount}</strong> vez/veces. Si también sale barajado, el salto no es distintivo de esta secuencia
+        (McKay et al., 1999).`;
     }
   };
 

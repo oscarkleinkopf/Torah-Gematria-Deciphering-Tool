@@ -30,13 +30,12 @@
         DB.LEGENDARY_PAIRS.forEach(pair => {
           const chip = document.createElement('button');
           chip.className = 'pair-chip';
-          chip.innerHTML = `<span style="font-family:var(--font-hebrew); font-weight:bold;">${pair.a}</span> ⚡ <span style="font-family:var(--font-hebrew); font-weight:bold;">${pair.b}</span> <span style="font-size:0.7rem; color:var(--text-secondary);">(${pair.desc})</span>`;
+          const wordA = pair.wordA || pair.a;
+          const wordB = pair.wordB || pair.b;
+          const label = pair.title || pair.desc || '';
+          chip.innerHTML = `<span style="font-family:var(--font-hebrew); font-weight:bold;">${wordA}</span> ⚡ <span style="font-family:var(--font-hebrew); font-weight:bold;">${wordB}</span> <span style="font-size:0.7rem; color:var(--text-secondary);">(${label})</span>`;
           chip.addEventListener('click', () => {
-            if (txtCompareA && txtCompareB) {
-              txtCompareA.value = pair.a;
-              txtCompareB.value = pair.b;
-              self.executeComparison(context);
-            }
+            self.openPairFromStudy(wordA, wordB, context);
           });
           legendaryPairsChips.appendChild(chip);
         });
@@ -53,6 +52,15 @@
       });
 
       this.animate();
+    },
+
+    openPairFromStudy: function(wordA, wordB, context) {
+      if (context && context.switchTab) context.switchTab('comparison');
+      const txtCompareA = document.getElementById('txtCompareA');
+      const txtCompareB = document.getElementById('txtCompareB');
+      if (txtCompareA) txtCompareA.value = wordA || '';
+      if (txtCompareB) txtCompareB.value = wordB || '';
+      this.executeComparison(context);
     },
 
     executeComparison: function(context) {

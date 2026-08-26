@@ -221,6 +221,19 @@
         <div id="exploreStatus" class="explore-status" aria-live="polite"></div>
         <div id="exploreResults" class="explore-results"></div>
       </div>
+
+      <div class="glass-card els-study-teaser" id="elsStudyTeaser">
+        <h3 class="input-title">Ejemplos clásicos de estudio</h3>
+        <p class="explore-lead">
+          Un clic abre un ejemplo <strong>reproducible en esta Torá</strong> (extractos, no el Tanaj completo).
+          No son profecías: son saltos, acrósticos o pares de gematría para estudiar con el semáforo de honestidad.
+        </p>
+        <div class="els-teaser-chips" id="elsStudyTeaserChips">
+          <button type="button" class="explore-chip" data-els-classic="torah-50-genesis">תורה · salto 50 · Génesis 1</button>
+          <button type="button" class="explore-chip" data-els-classic="acrostic-bilu">BILU · Isaías 2:5</button>
+          <button type="button" class="explore-chip" data-els-classic="pair-ahava-echad">אהבה = אחד = 13</button>
+        </div>
+      </div>
     </div>
 
     <!-- SECCIÓN 1: CALCULADORA -->
@@ -562,18 +575,36 @@
       <!-- Onboarding Collapsible -->
       <details class="glass-card els-onboarding" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
         <summary style="font-family: var(--font-serif); color: var(--gold-primary); font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none;">
-          <span>📖 ¿Qué es el Código de la Biblia y cómo funciona el motor ELS?</span>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">▼ haz clic para leer</span>
+          <span>Qué afirma y qué no afirma esta herramienta</span>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">▼ leer</span>
         </summary>
-        <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.8rem;">
+        <div id="elsHonestyNote" class="els-honesty-copy">
           <p>
-            El <strong>Código de la Biblia</strong> o búsqueda por <strong>Secuencias de Letras Equidistantes (ELS)</strong> busca términos ocultos en el texto hebreo continuo de la Torá (corpus consonántico de los 5 libros, ~27 000 letras, sin espacios ni puntuación).
+            El motor busca <strong>secuencias de letras equidistantes (ELS)</strong> en una cinta consonántica
+            de ~27 300 letras (Génesis casi completo; Éxodo–Deuteronomio son <strong>extractos</strong>, no los 304 000 caracteres de la Torá entera).
+            Palabras cortas aparecen en cualquier texto largo; un hallazgo no demuestra diseño ni predice el futuro.
           </p>
-          <p style="margin-top: 0.5rem;">
-            El motor toma una palabra y prueba todos los saltos posibles (ej: tomar cada 7ª letra). Si las letras de la palabra forman una secuencia a igual intervalo y se disponen en una cuadrícula con el ancho adecuado, la palabra aparece alineada verticalmente o en diagonal, permitiendo visualizar cruces con otras palabras clave en la misma matriz.
+          <p>
+            <strong>Sí mostramos</strong> ejemplos reproducibles aquí (p. ej. <span class="he">תורה</span> a salto 50 desde Génesis 1:1)
+            y un control en texto barajado —el mismo test que usan los críticos— para ver si el salto también sale al azar.
           </p>
-          <p style="margin-top: 0.5rem; color: var(--gold-glow); font-size: 0.85rem;">
-            💡 <strong>Consejo:</strong> Puedes ingresar una o varias palabras separadas por coma (ej: <code>Israel, Moisés</code>) para buscar sus coincidencias y ver sus intersecciones de color.
+          <p>
+            <strong>No afirmamos</strong> las matrices populares de Drosnin (Rabin, Hitler, 11-S) ni el experimento WRR de «grandes rabinos»:
+            necesitan el Génesis/Tanaj completo y listas de apelativos. Eliyahu Rips rechazó el uso predictivo de esos libros.
+            McKay et al. (1999) encontraron «códigos» equivalentes en <em>Guerra y paz</em>.
+          </p>
+          <h4 class="els-biblio-heading">Lecturas (estudio, no prueba)</h4>
+          <ul class="els-biblio-list" id="elsBibliographyList">
+            <li>Rabbeinu Bachya, <em>Be’ur al ha-Torah</em> (s. XIII) — saltos / notarikon.</li>
+            <li>Moshe Cordovero, <em>Pardes Rimonim</em> — gematría, temurá, notarikon.</li>
+            <li>Michael Ber Weissmandl, <em>Torat Chemed</em> (1958) — <span class="he">תורה</span> cada 50 letras.</li>
+            <li>Witztum, Rips y Rosenberg, <em>Statistical Science</em> 1994 — debate de «grandes rabinos».</li>
+            <li>Michael Drosnin, <em>The Bible Code</em> — popularización; Rips rechazó la profecía.</li>
+            <li>McKay, Bar-Natan, Bar-Hillel y Kalai, <em>Statistical Science</em> 1999 — controles en prosa secular.</li>
+            <li>Jeffrey Tigay / crítica textual — el recuento de letras no es estable entre manuscritos.</li>
+          </ul>
+          <p class="els-honesty-tip">
+            Consejo: una o varias palabras separadas por coma. El semáforo de las filas usa el mismo criterio de honestidad que Favoritos (exploratorio / plausible / raro), no «asombroso».
           </p>
         </div>
       </details>
@@ -610,10 +641,17 @@
             <button id="btnSearchELS" class="search-btn">Buscar Código</button>
           </div>
 
+          <section class="els-classic-gallery" id="elsClassicGallery" aria-label="Ejemplos clásicos">
+            <h4 class="els-gallery-title">Ejemplos clásicos</h4>
+            <p class="els-gallery-lead">Un clic fija el salto, abre la matriz y cita la fuente. Solo marcamos como hallazgo lo que este corpus puede mostrar.</p>
+            <div class="els-gallery-grid" id="elsClassicGalleryGrid"></div>
+            <div id="elsClassicCaption" class="els-classic-caption" hidden></div>
+          </section>
+
           <!-- Sugerencias Rápidas / Quick Picks -->
           <div style="margin-bottom: 1.2rem;">
             <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: bold;">
-              ✨ Búsquedas Sugeridas (Clic para probar):
+              Búsquedas sugeridas:
             </div>
             <div class="quick-picks-container" id="elsQuickPicks" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
               <button class="els-quick-chip" data-query="ישראל">🇮🇱 Israel (ישראל)</button>
@@ -718,7 +756,11 @@
               <button id="btnShareELS" title="Generar tarjeta mística de este código bíblico para compartir" style="display: none; background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.4); color: #c8a2c8; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📤 Compartir Tarjeta</button>
               <!-- Botón Guardar Favorito -->
               <button id="btnSaveELSFavorite" class="btn-els-action btn-save-favorite" title="Guardar este hallazgo en Favoritos" style="display: none;">⭐ Guardar</button>
+              <button type="button" id="btnElsShuffledControl" class="btn-els-action" title="Buscar el mismo salto en un texto con las mismas letras en orden aleatorio" style="display: none;">Barajar control</button>
             </div>
+          </div>
+          <div id="elsControlPanel" class="els-control-panel" hidden>
+            <p id="elsControlResult"></p>
           </div>
 
           <!-- Leyenda Topográfica Multipalabra (Mejora 6) -->
@@ -757,7 +799,8 @@
               Selecciona una coincidencia para construir la matriz del código.
             </div>
             <div id="matrixContainer" style="display: none; width: 100%;">
-              <!-- Tabla renderizada dinámicamente -->
+              <p id="matrixVerseHint" class="matrix-verse-hint" aria-live="polite">Pasa el cursor o el foco por una letra para ver el versículo.</p>
+              <table id="bibleCodeMatrix" class="bible-code-matrix" aria-label="Matriz ELS"></table>
             </div>
           </div>
 
