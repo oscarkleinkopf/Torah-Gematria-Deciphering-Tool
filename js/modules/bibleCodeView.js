@@ -52,8 +52,8 @@
       const btnSearchELS = document.getElementById('btnSearchELS');
       const rangeMatrixWidth = document.getElementById('rangeMatrixWidth');
       const lblMatrixWidth = document.getElementById('lblMatrixWidth');
-      const btnTopographicScan = document.getElementById('btnTopographicScan');
       const btnShareELS = document.getElementById('btnShareELS');
+      const btnTopographicScan = document.getElementById('btnToggleTopographicELS') || document.getElementById('btnTopographicScan');
 
       // Selector de Libros
       const bookPills = document.querySelectorAll('.book-pill');
@@ -111,6 +111,16 @@
         btnShuffle.addEventListener('click', () => self.runShuffledControl());
       }
 
+      const btnCopy = document.getElementById('btnCopyELSCitation');
+      if (btnCopy) {
+        btnCopy.addEventListener('click', () => self.copyCitation());
+      }
+
+      const btnClearHistory = document.getElementById('btnClearELSHistory');
+      if (btnClearHistory) {
+        btnClearHistory.addEventListener('click', () => self.clearSearchHistory());
+      }
+
       // Compartir ELS
       if (btnShareELS) {
         btnShareELS.addEventListener('click', () => {
@@ -143,10 +153,14 @@
       const btnPNG = document.getElementById('btnExportMatrixPNG');
       const btnFav = document.getElementById('btnSaveELSFavorite');
       const btnShuffle = document.getElementById('btnElsShuffledControl');
+      const btnShare = document.getElementById('btnShareELS');
+      const btnCopy = document.getElementById('btnCopyELSCitation');
       const display = show ? 'inline-block' : 'none';
       if (btnPNG) btnPNG.style.display = display;
       if (btnFav) btnFav.style.display = display;
       if (btnShuffle) btnShuffle.style.display = display;
+      if (btnShare) btnShare.style.display = display;
+      if (btnCopy) btnCopy.style.display = display;
     },
 
     initFavoriteAndExport: function(context) {
@@ -356,6 +370,11 @@
       const rawQuery = txtSearchELS.value.trim();
       if (!rawQuery) return;
 
+      this.state.isTopographic = false;
+      this.state.topographicWords = [];
+      const legendBox = document.getElementById('elsTopographicLegend');
+      if (legendBox) legendBox.style.display = 'none';
+
       this.saveSearchHistory(rawQuery);
 
       const minSkip = numMinSkip ? parseInt(numMinSkip.value, 10) : 2;
@@ -507,6 +526,8 @@
         if (matrixEmptyState) matrixEmptyState.style.display = 'block';
         if (matrixContainer) matrixContainer.style.display = 'none';
         this.toggleElsActionButtons(false);
+        this.fillNarrativePanel(null);
+        this.fillSecondaryPanel(null);
         return;
       }
 
@@ -573,6 +594,7 @@
 
       if (this.state.activeMatch) {
         this.renderMatrix();
+        this.fillNarrativePanel(this.state.activeMatch);
       }
     },
 
@@ -626,6 +648,13 @@
 
       matrixGrid.innerHTML = '';
       const matchSet = new Set(match.indices);
+      const secondaryByIdx = {};
+      (this.state.topographicWords || []).forEach(fw => {
+        if (!fw || fw.word === match.word) return;
+        (fw.indices || []).forEach(i => {
+          if (secondaryByIdx[i] == null) secondaryByIdx[i] = fw.color || '#9b59b6';
+        });
+      });
       const hint = document.getElementById('matrixVerseHint');
       if (hint) {
         hint.textContent = this.formatVerseLabel(match.start, match.indices) +
@@ -645,27 +674,43 @@
           const verse = this.formatVerseLabel(idx);
           td.title = verse + ' · letra #' + this.getGlobalIndex(idx);
           if (matchSet.has(idx)) td.classList.add('highlight-primary');
+          if (secondaryByIdx[idx] != null) {
+            td.classList.add('highlight-secondary');
+            if (!matchSet.has(idx)) td.style.borderColor = secondaryByIdx[idx];
+          }
           tr.appendChild(td);
         }
         matrixGrid.appendChild(tr);
       }
+      this.fillNarrativePanel(match);
+      this.fillSecondaryPanel(match);
     },
 
     handleTopographicScan: function() {
       const Engine = global.GematriaEngine;
       const DB = global.GematriaDB;
       const numMinSkip = document.getElementById('numMinSkip');
+      const numMaxSkip = document.getElementById('numMaxSkip');
       if (!Engine || !DB) return;
 
-      const skip = numMinSkip ? parseInt(numMinSkip.value, 10) : 50;
+      let skip = 50;
+      if (this.state.activeMatch && this.state.activeMatch.skip) {
+        skip = Math.abs(this.state.activeMatch.skip);
+      } else if (numMinSkip && numMaxSkip) {
+        const minS = parseInt(numMinSkip.value, 10);
+        const maxS = parseInt(numMaxSkip.value, 10);
+        skip = (minS === maxS && minS >= 2) ? minS : 50;
+      }
       const text = this.getActiveTorahText();
       const results = Engine.ScanTopographicELS(text, skip, DB.KNOWLEDGE_GRAPH, { maxMatches: 8 });
+      this.state.isTopographic = true;
+      this.state.topographicWords = results;
       this.renderTopographicResults(results, skip);
     },
 
     renderTopographicResults: function(foundWords, skip) {
       const legendBox = document.getElementById('elsTopographicLegend');
-      const chipsContainer = document.getElementById('topographicChipsContainer') || document.getElementById('elsTopographicChips');
+      const chipsContainer = document.getElementById('elsTopographicChips') || document.getElementById('topographicChipsContainer');
       const lblSkip = document.getElementById('lblTopographicSkip');
       const lblCount = document.getElementById('lblTopographicCount');
       if (!legendBox || !chipsContainer) return;
@@ -679,10 +724,11 @@
       foundWords.forEach(fw => {
         const chip = document.createElement('button');
         chip.className = 'topographic-chip';
+        chip.type = 'button';
         chip.style.borderColor = fw.color;
         chip.style.backgroundColor = fw.color + '20';
         chip.style.color = fw.color;
-        chip.innerHTML = `<span>●</span> <span style="font-family:var(--font-hebrew);">${fw.word}</span> <span style="font-size:0.7rem;opacity:0.85;">(${fw.title})</span>`;
+        chip.innerHTML = `<span>●</span> <span style="font-family:var(--font-hebrew);">${escapeHtml(fw.word)}</span> <span style="font-size:0.7rem;opacity:0.85;">(${escapeHtml(fw.title)})</span>`;
         chip.addEventListener('click', () => {
           self.state.activeMatch = {
             word: fw.word,
@@ -693,10 +739,26 @@
             rawQuery: fw.title
           };
           self.state.primaryWord = fw.word;
+          self.applyMatrixWidth(Math.abs(fw.skip || skip || 50));
           self.renderMatrix();
         });
         chipsContainer.appendChild(chip);
       });
+
+      if (foundWords.length) {
+        const first = foundWords[0];
+        this.state.activeMatch = {
+          word: first.word,
+          skip: first.skip,
+          start: first.start,
+          end: first.end,
+          indices: first.indices,
+          rawQuery: first.title
+        };
+        this.state.primaryWord = first.word;
+        this.applyMatrixWidth(Math.abs(first.skip || skip || 50));
+        this.renderMatrix();
+      }
     },
 
     showProgressBar: function(word) {
@@ -916,6 +978,141 @@
         <strong>${ctrl.originalCount}</strong> vez/veces. Con las mismas letras en orden aleatorio (semilla ${ctrl.seed}):
         <strong>${ctrl.controlCount}</strong> vez/veces. Si también sale barajado, el salto no es distintivo de esta secuencia
         (McKay et al., 1999).`;
+    },
+
+    formatCitation: function(match) {
+      if (!match) return '';
+      const verse = this.formatVerseLabel(match.start, match.indices);
+      const globalIdx = this.getGlobalIndex(match.start);
+      return `${match.word} · salto ${match.skip} · letra #${globalIdx} · ${verse}`;
+    },
+
+    copyCitation: function() {
+      const match = this.state.activeMatch;
+      const text = this.formatCitation(match);
+      const btn = document.getElementById('btnCopyELSCitation');
+      if (!text) return;
+      const done = (ok) => {
+        if (!btn) return;
+        const prev = btn.textContent;
+        btn.textContent = ok ? 'Copiado' : 'No se pudo copiar';
+        setTimeout(() => { btn.textContent = prev; }, 1800);
+      };
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => done(true)).catch(() => done(false));
+        return;
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done(true);
+      } catch (e) {
+        done(false);
+      }
+    },
+
+    fillNarrativePanel: function(match) {
+      const panel = document.getElementById('elsNarrativePanel');
+      const textEl = document.getElementById('elsNarrativeText');
+      if (!panel || !textEl) return;
+      if (!match) {
+        panel.style.display = 'none';
+        return;
+      }
+      const Engine = global.GematriaEngine;
+      const DB = global.GematriaDB;
+      const numMinSkip = document.getElementById('numMinSkip');
+      const numMaxSkip = document.getElementById('numMaxSkip');
+      const verse = this.formatVerseLabel(match.start, match.indices);
+      const citation = this.formatCitation(match);
+      let honestyHtml = '';
+      if (Engine && typeof Engine.AssessELSHonesty === 'function') {
+        const honesty = Engine.AssessELSHonesty(match, {
+          text: this.getActiveTorahText(),
+          minSkip: numMinSkip ? parseInt(numMinSkip.value, 10) : 2,
+          maxSkip: numMaxSkip ? parseInt(numMaxSkip.value, 10) : 120,
+          runControl: false
+        });
+        honestyHtml = `<p><span class="honesty-badge ${escapeHtml(honesty.band)}">${escapeHtml(honesty.label)}</span>
+          ${escapeHtml(honesty.note || '')}</p>
+          ${(honesty.warnings || []).map(w => `<p class="els-narrative-warn">${escapeHtml(w)}</p>`).join('')}`;
+      }
+      let classicHtml = '';
+      const exId = this.state.activeExampleId;
+      const example = exId && DB && DB.ELS_CLASSIC_EXAMPLES
+        ? DB.ELS_CLASSIC_EXAMPLES.find(e => e.id === exId)
+        : null;
+      if (example && example.kind === 'els') {
+        classicHtml = `<p class="els-narrative-source">${escapeHtml(example.context || '')}
+          ${(example.sources || []).length ? ' · ' + escapeHtml(example.sources.join(' · ')) : ''}</p>`;
+      }
+      textEl.innerHTML = `
+        <p><strong style="font-family:var(--font-hebrew)">${escapeHtml(match.word)}</strong>
+          · ${escapeHtml(citation)}</p>
+        ${classicHtml}
+        ${honestyHtml}
+      `;
+      panel.style.display = 'block';
+    },
+
+    fillSecondaryPanel: function(match) {
+      const panel = document.getElementById('elsSecondaryPanel');
+      const list = document.getElementById('elsSecondaryWordsList');
+      if (!panel || !list) return;
+      const others = (this.state.topographicWords || []).filter(fw => fw && match && fw.word !== match.word);
+      if (!others.length) {
+        panel.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+      const seen = {};
+      list.innerHTML = others.filter(fw => {
+        if (seen[fw.word]) return false;
+        seen[fw.word] = true;
+        return true;
+      }).map(fw =>
+        `<span class="secondary-badge" style="border-color:${escapeHtml(fw.color)};color:${escapeHtml(fw.color)}">
+          <span style="font-family:var(--font-hebrew)">${escapeHtml(fw.word)}</span>
+          <span>${escapeHtml(fw.title || '')}</span>
+        </span>`
+      ).join('');
+      panel.style.display = 'block';
+    },
+
+    restoreSearch: function(opts, context) {
+      const o = opts || {};
+      const ctx = context || this._context;
+      if (ctx && ctx.switchTab) ctx.switchTab('biblecode');
+      const txtSearchELS = document.getElementById('txtSearchELS');
+      const numMinSkip = document.getElementById('numMinSkip');
+      const numMaxSkip = document.getElementById('numMaxSkip');
+      if (txtSearchELS) txtSearchELS.value = o.word || o.hebrew || '';
+      if (o.book) this.setSelectedBook(o.book);
+      const skip = o.skip != null ? Math.abs(o.skip) : null;
+      if (skip) {
+        if (numMinSkip) numMinSkip.value = o.minSkip != null ? o.minSkip : skip;
+        if (numMaxSkip) numMaxSkip.value = o.maxSkip != null ? o.maxSkip : skip;
+        this.pagination.sortBy = 'position';
+        const selSort = document.getElementById('selELSSort');
+        if (selSort) selSort.value = 'position';
+        this.state.pendingMatrixWidth = skip;
+        this.applyMatrixWidth(skip);
+        if (o.start != null) {
+          this.state.pendingSelect = { start: o.start, skip: o.skip };
+        }
+      }
+      this.handleSearch(ctx);
+    },
+
+    clearSearchHistory: function() {
+      try {
+        localStorage.removeItem('els_search_history');
+      } catch (e) {}
+      this.renderSearchHistory();
     }
   };
 
