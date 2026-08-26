@@ -180,11 +180,9 @@
 
       function openLettersFromExplore(hebrew) {
         if (context && context.switchTab) context.switchTab('letters');
-        const wanted = new Set(String(hebrew || '').replace(/[^א-ת]/g, '').split(''));
-        document.querySelectorAll('#lettersGrid .letter-card').forEach(card => {
-          const ch = card.getAttribute('data-letter') || '';
-          card.classList.toggle('study-focus', wanted.has(ch));
-        });
+        if (Modules.lettersView && typeof Modules.lettersView.highlightFromStudy === 'function') {
+          Modules.lettersView.highlightFromStudy(hebrew);
+        }
       }
 
       function openAcrosticsFromExplore(targetHebrew) {
@@ -199,13 +197,8 @@
       }
 
       function openReflectionFromExplore(query) {
-        const picker = Explore && Explore.PickDailyReflection;
-        const picked = picker ? picker(DB.DAILY_REFLECTIONS, query || '') : null;
-        if (picked && typeof picked.index === 'number') {
-          const topics = document.querySelectorAll('#reflectionTopicsContainer [data-reflection-index]');
-          topics.forEach(btn => {
-            if (parseInt(btn.getAttribute('data-reflection-index'), 10) === picked.index) btn.click();
-          });
+        if (Modules.reflectionView && typeof Modules.reflectionView.openFromQuery === 'function') {
+          Modules.reflectionView.openFromQuery(query);
         }
         if (context && context.switchTab) context.switchTab('reflection');
       }
@@ -924,6 +917,8 @@
       this.runExploreSearch = runExploreSearch;
       this.renderExploreResults = renderExploreResults;
       this.setExploreMode = setExploreMode;
+      this.fillProfileForm = fillProfileForm;
+      this.runProfileBuild = runProfileBuild;
     }
   };
 

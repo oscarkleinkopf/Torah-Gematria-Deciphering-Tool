@@ -796,6 +796,37 @@ async function runAllTests() {
   assert(indexSrc.includes('data-acrostic-ex="yhvh"'), "Hay chip clásico יהוה");
   assert(indexSrc.includes('btnAcrosticsCorpus'), "Hay botón para buscar en frases curadas");
 
+  console.log("\n=== SECCIÓN 24: HILO DE ESTUDIO — ESPEJO, REFLEXIÓN, FAVORITOS Y NAV ===");
+  assert(fs.existsSync('./js/modules/lettersView.js'), "Existe lettersView.js (espejo de letras)");
+  assert(fs.existsSync('./js/modules/reflectionView.js'), "Existe reflectionView.js");
+  assert(fs.existsSync('./js/modules/favoritesView.js'), "Existe favoritesView.js");
+  const lettersSrc = fs.readFileSync('./js/modules/lettersView.js', 'utf8');
+  assert(lettersSrc.includes('highlightFromStudy'), "El espejo resalta letras del hebreo de estudio");
+  assert(lettersSrc.includes('openLetter'), "El espejo abre el modal de detalle de letra");
+  const reflectionSrc = fs.readFileSync('./js/modules/reflectionView.js', 'utf8');
+  assert(reflectionSrc.includes('openFromQuery'), "La reflexión se abre desde la consulta de estudio");
+  assert(reflectionSrc.includes('data-reflection-index'), "Los temas de reflexión tienen índice para el handoff");
+  const favSrc = fs.readFileSync('./js/modules/favoritesView.js', 'utf8');
+  assert(favSrc.includes('data-fav-type="explore"'), "Favoritos reabre una correlación de Explorar");
+  assert(favSrc.includes('data-fav-type="profile"'), "Favoritos reabre un perfil personal");
+  assert(favSrc.includes('data-fav-type="els"'), "Favoritos reabre un hallazgo ELS");
+  assert(indexSrc.includes('id="btnNavMore"'), "La navegación compacta tiene menú Más");
+  assert(indexSrc.includes('src="export.js"'), "export.js se carga en la página");
+  assert(indexSrc.includes('js/modules/lettersView.js'), "index.html carga lettersView");
+  assert(indexSrc.includes('js/modules/reflectionView.js'), "index.html carga reflectionView");
+  assert(indexSrc.includes('js/modules/favoritesView.js'), "index.html carga favoritesView");
+  const timelineSrc = fs.readFileSync('./js/modules/timelineView.js', 'utf8');
+  assert(timelineSrc.includes('event.title'), "La línea de tiempo usa title de HISTORICAL_EVENTS");
+  assert(timelineSrc.includes('focusEvent'), "Explorar puede enfocar un hito de la línea de tiempo");
+  const bibleSrc = fs.readFileSync('./js/modules/bibleCodeView.js', 'utf8');
+  assert(bibleSrc.includes('btnSaveELSFavorite'), "ELS puede guardarse en Favoritos");
+  assert(bibleSrc.includes('btnExportMatrixPNG'), "ELS puede exportar la matriz PNG");
+  const exploreSrc2 = fs.readFileSync('./js/modules/exploreView.js', 'utf8');
+  assert(exploreSrc2.includes('lettersView.highlightFromStudy'), "Explorar resalta el espejo de letras");
+  assert(exploreSrc2.includes('reflectionView.openFromQuery'), "Explorar abre la reflexión por consulta");
+  assert(exploreSrc2.includes('fillProfileForm'), "Explorar expone fillProfileForm para recargar un perfil");
+  assert(Storage.ClearFavorites && Storage.GetFavorites, "storage.js exporta ClearFavorites y GetFavorites");
+
   console.log("\n=== SECCIÓN 28: SALMOS (TEHILIM), PLEGARIAS Y SONIFICACIÓN (CARACTERÍSTICAS 1 Y 2) ===");
   assert(Array.isArray(DB.TEHILIM_PSALMS) && DB.TEHILIM_PSALMS.length >= 5, `TEHILIM_PSALMS contiene al menos 5 salmos estructurados (actual: ${DB.TEHILIM_PSALMS.length})`);
   assert(DB.TEHILIM_PSALMS.some(p => p.number === 23), "La base de datos incluye el Salmo 23");

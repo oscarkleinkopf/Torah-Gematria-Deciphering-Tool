@@ -11,6 +11,9 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `storage.js`: LocalStorage manager for Favorites, Explore history, and the user name dictionary (`GetUserNameDictionary` / `SaveUserNameEntry` / `RemoveUserNameEntry`).
 - `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
 - `app.js`: UI Controller, DOM event bindings, compact study navigation, visual animations, Canvas renderers, and Explore tab (handoffs: focused timeline, Torah search by value, comparator).
+- `js/modules/lettersView.js`: 22-letter mirror + modal; `highlightFromStudy(hebrew)` from Explore.
+- `js/modules/reflectionView.js`: daily reflection topics; `openFromQuery(query)` via `PickDailyReflection`.
+- `js/modules/favoritesView.js`: ELS / Explore / profile favorites list with reload into the correct mode.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
 - `index.html`: Compact study nav (Inicio, Calculadora, ELS, Favoritos + Más) with a return-to-study bar; Explore remains the home.
 - `test.js`: Automated unit test suite run via `node test.js`.
