@@ -827,6 +827,73 @@ async function runAllTests() {
   assert(exploreSrc2.includes('fillProfileForm'), "Explorar expone fillProfileForm para recargar un perfil");
   assert(Storage.ClearFavorites && Storage.GetFavorites, "storage.js exporta ClearFavorites y GetFavorites");
 
+  console.log("\n=== SECCIÓN 29: GALERÍA DE CÓDIGOS CLÁSICOS Y UX DE ESTUDIO ===");
+  assert(Array.isArray(DB.ELS_CLASSIC_EXAMPLES) && DB.ELS_CLASSIC_EXAMPLES.length >= 5,
+    `ELS_CLASSIC_EXAMPLES tiene fichas de estudio (actual: ${DB.ELS_CLASSIC_EXAMPLES.length})`);
+  const torah50 = DB.ELS_CLASSIC_EXAMPLES.find(e => e.id === 'torah-50-genesis');
+  assert(torah50 && torah50.kind === 'els' && torah50.hebrew === 'תורה',
+    "La galería incluye el ejemplo clásico תורה");
+  assert(torah50.skipMin === 50 && torah50.skipMax === 50 && torah50.matrixWidth === 50,
+    "El ejemplo clásico fija salto y ancho de matriz en 50");
+  assert(torah50.matchHint && torah50.matchHint.start === 5 && torah50.matchHint.skip === 50,
+    "El hint de UI apunta a letra #5 salto 50");
+  assert(torah50.reproducible === true, "תורה@50 en Génesis se marca como reproducible en este corpus");
+  assert((torah50.sources || []).some(s => /Weissmandl|Bachya|Bachya/i.test(s)),
+    "El ejemplo cita a Weissmandl o Bachya");
+
+  const toraHit = Engine.FindELS(TORAH_TEXT, torah50.hebrew, torah50.skipMin, torah50.skipMax)
+    .find(m => m.start === torah50.matchHint.start && m.skip === torah50.matchHint.skip);
+  assert(toraHit, "FindELS reproduce el hint de UI: תורה salto 50 en letra #5");
+  const verseAt5 = LookupTorahVerse(toraHit.start);
+  assert(verseAt5 && verseAt5.reference === 'Génesis 1:1',
+    "LookupTorahVerse en el match clásico #5 es Génesis 1:1");
+  const spanClassic = LookupTorahVerseSpan(toraHit.indices);
+  assert(/Génesis 1:1/.test(spanClassic), "LookupTorahVerseSpan cubre Génesis 1:1 en el ELS clásico");
+
+  const exoCard = DB.ELS_CLASSIC_EXAMPLES.find(e => e.id === 'torah-50-exodus');
+  assert(exoCard && exoCard.reproducible === false && exoCard.kind === 'note',
+    "Éxodo תורה@50 se presenta como nota (hace falta el libro entero), no como hallazgo");
+  assert(!Engine.FindELS(TORAH_BOOKS.exodus, 'תורה', 50, 50).length,
+    "En el extracto de Éxodo no hay תורה a salto 50: la nota es honesta");
+
+  assert(DB.ELS_CLASSIC_EXAMPLES.some(e => e.kind === 'acrostic' && e.acrosticId === 'bilu'),
+    "La galería enlaza el acróstico BILU (no lo finge como ELS)");
+  assert(DB.ELS_CLASSIC_EXAMPLES.some(e => e.kind === 'gematria' && e.wordA === 'אהבה' && e.wordB === 'אחד'),
+    "La galería enlaza el par de gematría Ahavá / Ejad");
+  assert(!DB.ELS_CLASSIC_EXAMPLES.some(e => /rabin|hitler|drosnin/i.test(JSON.stringify(e))),
+    "La galería no presenta matrices Drosnin como hallazgos de esta app");
+
+  assert(Array.isArray(DB.ELS_BIBLIOGRAPHY) && DB.ELS_BIBLIOGRAPHY.length >= 6,
+    "Hay bibliografía mínima (Bachya, Weissmandl, WRR, Drosnin, McKay…)");
+  assert(DB.ELS_BIBLIOGRAPHY.some(b => /Weissmandl/i.test(b.author)), "Bibliografía incluye a Weissmandl");
+  assert(DB.ELS_BIBLIOGRAPHY.some(b => /McKay/i.test(b.author)), "Bibliografía incluye a McKay et al.");
+  assert(DB.ELS_BIBLIOGRAPHY.some(b => /Drosnin/i.test(b.author) && /rechaz/i.test(b.note)),
+    "La ficha Drosnin menciona el rechazo de Rips");
+
+  const bibleSrcGallery = fs.readFileSync('./js/modules/bibleCodeView.js', 'utf8');
+  assert(bibleSrcGallery.includes('openClassicExample'), "bibleCodeView expone openClassicExample");
+  assert(bibleSrcGallery.includes('AssessELSHonesty'), "Las filas ELS usan AssessELSHonesty, no «Asombroso»");
+  assert(!/Asombroso/.test(bibleSrcGallery), "bibleCodeView ya no etiqueta hallazgos como Asombroso");
+  assert(bibleSrcGallery.includes('LookupTorahVerse'), "Las filas/hover resuelven versículo real");
+  assert(bibleSrcGallery.includes('ELSControlAtSkip'), "Hay control de texto barajado");
+  assert(bibleSrcGallery.includes('runShuffledControl'), "El botón de control está cableado");
+  assert(bibleSrcGallery.includes('showMatrixVerseHover'), "La matriz muestra versículo al pasar el cursor");
+  assert(bibleSrcGallery.includes('pendingSelect'), "Un ejemplo clásico selecciona el match hint");
+
+  const indexGallery = fs.readFileSync('./index.html', 'utf8');
+  assert(indexGallery.includes('id="elsClassicGallery"'), "index.html tiene la galería de ejemplos");
+  assert(indexGallery.includes('id="elsHonestyNote"'), "index.html tiene la nota de honestidad");
+  assert(indexGallery.includes('id="elsBibliographyList"'), "index.html tiene la bibliografía colapsable");
+  assert(indexGallery.includes('data-els-classic="torah-50-genesis"'), "Inicio/galería apunta al ejemplo תורה@50");
+  assert(indexGallery.includes('id="bibleCodeMatrix"'), "La matriz ELS es una tabla real");
+  assert(indexGallery.includes('id="matrixVerseHint"'), "Hay pista de versículo al pasar el cursor");
+  assert(indexGallery.includes('id="btnElsShuffledControl"'), "Hay botón de control barajado");
+  assert(indexGallery.includes('id="elsStudyTeaser"'), "Inicio tiene un bloque corto de ejemplos clásicos");
+
+  const comparatorSrc = fs.readFileSync('./js/modules/comparatorView.js', 'utf8');
+  assert(comparatorSrc.includes('openPairFromStudy'), "El comparador abre pares desde la galería");
+  assert(comparatorSrc.includes('pair.wordA'), "Los chips legendarios usan wordA/wordB");
+
   console.log("\n=== SECCIÓN 28: SALMOS (TEHILIM), PLEGARIAS Y SONIFICACIÓN (CARACTERÍSTICAS 1 Y 2) ===");
   assert(Array.isArray(DB.TEHILIM_PSALMS) && DB.TEHILIM_PSALMS.length >= 5, `TEHILIM_PSALMS contiene al menos 5 salmos estructurados (actual: ${DB.TEHILIM_PSALMS.length})`);
   assert(DB.TEHILIM_PSALMS.some(p => p.number === 23), "La base de datos incluye el Salmo 23");
