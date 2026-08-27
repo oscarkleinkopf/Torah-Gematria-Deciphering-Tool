@@ -211,6 +211,17 @@
         self.runAcrosticSearch({ forceCorpus: true });
       };
 
+      this.loadAcrosticVerse = function(reference) {
+        const phrases = Engine && Engine.GetAcrosticPhraseCorpus
+          ? Engine.GetAcrosticPhraseCorpus(DB)
+          : (DB.TORAH_VERSES || []);
+        const phrase = phrases.find(p => p.reference === reference);
+        if (!phrase) return;
+        if (txtAcrosticsInput) txtAcrosticsInput.value = phrase.hebrew;
+        if (txtAcrosticsTarget) txtAcrosticsTarget.value = '';
+        self.runAcrosticSearch();
+      };
+
       if (btnFindAcrostics) {
         btnFindAcrostics.addEventListener('click', () => self.runAcrosticSearch());
       }
@@ -223,6 +234,11 @@
           const examples = (DB && DB.ACROSTIC_EXAMPLES) || [];
           const ex = examples.find(e => e.id === id);
           if (ex) self.loadAcrosticExample(ex);
+        });
+      });
+      document.querySelectorAll('[data-acrostic-verse]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          self.loadAcrosticVerse(btn.getAttribute('data-acrostic-verse'));
         });
       });
     },

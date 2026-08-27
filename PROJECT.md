@@ -2,7 +2,7 @@
 
 ## Architecture
 Vanilla JavaScript ES6+ single-page application with modular architecture:
-- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS`, `TORAH_VERSE_MAP`, `LookupTorahVerse(index)` (letter → Génesis 1:1, etc.).
+- `torah_text.js`: Complete Hebrew biblical consonantal corpus (~306k letters, 5 books, WLC via Sefaria). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS`, `TORAH_VERSE_MAP`, `TORAH_CORPUS_META`, `LookupTorahVerse(index)` (letter → Génesis 1:1, etc.). Regenerate with `node scripts/build_torah_corpus.js`.
 - `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
 - `hebrew_calendar.js`: Gregorian ↔ Hebrew civil calendar (Dershowitz/Reingold), Hebrew year letters (ה׳תש״ח), parse `5 Iyar 5708`.

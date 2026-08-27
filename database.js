@@ -81,6 +81,54 @@ const TORAH_VERSES = [
     translation: '¿Quién subirá por nosotros al cielo?',
     gematria: 651,
     commentary: 'Las iniciales forman מילה (circuncisión / palabra) y las finales יהוה. Ejemplo clásico de Roshei y Sofei Teivot en cuatro palabras.'
+  },
+  {
+    reference: 'Deuteronomio 6:4',
+    hebrew: 'שְׁמַע יִשְׂרָאֵל יְהוָה אֱלֹהֵינוּ יְהוָה אֶחָד',
+    transliteration: 'Shema Yisrael Adonai Eloheinu Adonai Ejad',
+    translation: 'Escucha, Israel: el Señor nuestro Dios, el Señor uno es.',
+    gematria: 1118,
+    commentary: 'El Shemá. Seis palabras con espacios: corpus de Roshei/Sofei Teivot, no de la cinta ELS.'
+  },
+  {
+    reference: 'Deuteronomio 6:5',
+    hebrew: 'וְאָהַבְתָּ אֵת יְהוָה אֱלֹהֶיךָ בְּכָל לְבָבְךָ וּבְכָל נַפְשְׁךָ וּבְכָל מְאֹדֶךָ',
+    transliteration: 'Ve\'ahavta et Adonai Elohecha bechol levavecha uvechol nafshecha uvechol me\'odecha',
+    translation: 'Y amarás al Señor tu Dios con todo tu corazón, con toda tu alma y con todas tus fuerzas.',
+    gematria: 1644,
+    commentary: 'Ve\'ahavta, continuación inmediata del Shemá. Diez palabras para notarikon sobre el amor a Dios.'
+  },
+  {
+    reference: 'Números 6:24–26',
+    hebrew: 'יְבָרֶכְךָ יְהוָה וְיִשְׁמְרֶךָ יָאֵר יְהוָה פָּנָיו אֵלֶיךָ וִיחֻנֶּךָּ יִשָּׂא יְהוָה פָּנָיו אֵלֶיךָ וְיָשֵׂם לְךָ שָׁלוֹם',
+    transliteration: 'Yevarechecha Adonai veyishmerecha. Ya\'er Adonai panav elecha vichuneka. Yisa Adonai panav elecha veyasem lecha shalom',
+    translation: 'El Señor te bendiga y te guarde. El Señor haga resplandecer su rostro sobre ti y tenga de ti misericordia. El Señor alce hacia ti su rostro y ponga en ti paz.',
+    gematria: 2718,
+    commentary: 'Birkat Kohanim (bendición sacerdotal) en tres versículos seguidos. Quince palabras para acrósticos sobre la bendición.'
+  },
+  {
+    reference: 'Éxodo 20:2',
+    hebrew: 'אָנֹכִי יְהוָה אֱלֹהֶיךָ אֲשֶׁר הוֹצֵאתִיךָ מֵאֶרֶץ מִצְרַיִם מִבֵּית עֲבָדִים',
+    transliteration: 'Anochi Adonai Elohecha asher hotzeticha me\'eretz Mitzrayim mibeit avadim',
+    translation: 'Yo soy el Señor tu Dios, que te saqué de la tierra de Egipto, de la casa de servidumbre.',
+    gematria: 2495,
+    commentary: 'Apertura del Decálogo. Nueve palabras; las iniciales no se presentan como un código, solo como frase curada.'
+  },
+  {
+    reference: 'Génesis 1:3',
+    hebrew: 'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר וַיְהִי אוֹר',
+    transliteration: 'Vayomer Elohim yehi or vayehi or',
+    translation: 'Y dijo Dios: Sea la luz; y fue la luz.',
+    gematria: 813,
+    commentary: 'Primera pronunciación creadora. Seis palabras en torno a אור (luz).'
+  },
+  {
+    reference: 'Éxodo 3:14',
+    hebrew: 'אֶהְיֶה אֲשֶׁר אֶהְיֶה',
+    transliteration: 'Ehyeh asher ehyeh',
+    translation: 'Yo soy el que soy.',
+    gematria: 543,
+    commentary: 'Autorevelación en la zarza ardiente. Tres palabras (אהיה אשר אהיה) para extraer Roshei/Sofei Teivot, no como cinta ELS.'
   }
 ];
 
@@ -110,9 +158,9 @@ const ACROSTIC_EXAMPLES = [
 
 /**
  * Guided study gallery for the ELS tab. Only `reproducible: true` items
- * are presented as findings in *this* corpus (Genesis ~full; Ex–Dt excerpts).
+ * are presented as findings in *this* corpus (five Torah books, WLC).
  * Famous popular-press matrices (Drosnin, WRR rabbi lists) stay in the
- * bibliography — they need a full Tanakh and are not claimed here.
+ * bibliography — they need extra name lists and are not claimed here.
  */
 const ELS_BIBLIOGRAPHY = [
   {
@@ -187,24 +235,24 @@ const ELS_CLASSIC_EXAMPLES = [
     honestyKey: 'common',
     sources: ['Rabbeinu Bachya, Be’ur al ha-Torah', 'Michael Ber Weissmandl, Torat Chemed (1958)'],
     context: 'Desde la ת de בראשית, cada 50 letras se lee תורה. Palabra de 4 letras con salto fijo: hallazgo exploratorio, no un milagro.',
-    corpusNote: 'Reproducible en este corpus (Génesis casi completo). Letra #5 · Génesis 1:1.',
+    corpusNote: 'Reproducible en este corpus (Génesis completo, WLC). Letra #5 · Génesis 1:1.',
     reproducible: true
   },
   {
     id: 'torah-50-exodus',
-    kind: 'note',
-    title: 'תורה salto 50 · Éxodo',
+    kind: 'els',
+    title: 'תורה salto 50 · Éxodo 1',
     hebrew: 'תורה',
     skipMin: 50,
     skipMax: 50,
-    matchHint: null,
+    matchHint: { start: 7, skip: 50 },
     matrixWidth: 50,
     book: 'exodus',
     honestyKey: 'common',
     sources: ['Michael Ber Weissmandl, Torat Chemed (1958)'],
-    context: 'Weissmandl también describe תורה cada 50 letras al inicio de Shemot. Aquí Éxodo es un extracto (~4 400 letras), no el libro entero.',
-    corpusNote: 'Hace falta el libro completo. En este corpus esa secuencia no aparece; no la presentamos como hallazgo.',
-    reproducible: false
+    context: 'Desde la primera ת de Shemot (Éxodo 1:1), cada 50 letras se lee תורה. Misma cautela que en Génesis: palabra de 4 letras, salto fijo, hallazgo exploratorio.',
+    corpusNote: 'Reproducible en Shemot completo. Letra #7 del Éxodo · Éxodo 1:1.',
+    reproducible: true
   },
   {
     id: 'acrostic-bilu',
