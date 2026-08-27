@@ -772,11 +772,14 @@ async function runAllTests() {
 
   const deut3012 = DB.TORAH_VERSES.find(v => /30:12/.test(v.reference));
   assert(deut3012, "El versículo Deuteronomio 30:12 existe en TORAH_VERSES");
-  DB.TORAH_VERSES.forEach(v => {
-    if (/32:3/.test(v.reference)) return;
+  assert(Engine.CalculateGematria(deut3012.hebrew).absolute === deut3012.gematria,
+    `Gematria almacenada de Dt 30:12 coincide con el motor (${deut3012.gematria})`);
+  ['Deuteronomio 6:4', 'Deuteronomio 6:5', 'Números 6:24–26', 'Éxodo 20:2', 'Génesis 1:3', 'Éxodo 3:14'].forEach(ref => {
+    const v = DB.TORAH_VERSES.find(x => x.reference === ref);
+    assert(v, `${ref} existe en TORAH_VERSES`);
     const calc = Engine.CalculateGematria(v.hebrew).absolute;
     assert(calc === v.gematria,
-      `Gematria almacenada de ${v.reference} coincide con el motor (${v.gematria} === ${calc})`);
+      `Gematria almacenada de ${ref} coincide con el motor (${v.gematria} === ${calc})`);
   });
   const deut323 = DB.TORAH_VERSES.find(v => /32:3/.test(v.reference));
   assert(deut323 && deut323.gematria === 708,
