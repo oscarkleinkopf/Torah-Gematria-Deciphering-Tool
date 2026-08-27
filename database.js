@@ -158,9 +158,9 @@ const ACROSTIC_EXAMPLES = [
 
 /**
  * Guided study gallery for the ELS tab. Only `reproducible: true` items
- * are presented as findings in *this* corpus (Genesis ~full; Ex–Dt excerpts).
+ * are presented as findings in *this* corpus (five Torah books, WLC).
  * Famous popular-press matrices (Drosnin, WRR rabbi lists) stay in the
- * bibliography — they need a full Tanakh and are not claimed here.
+ * bibliography — they need extra name lists and are not claimed here.
  */
 const ELS_BIBLIOGRAPHY = [
   {
@@ -235,24 +235,24 @@ const ELS_CLASSIC_EXAMPLES = [
     honestyKey: 'common',
     sources: ['Rabbeinu Bachya, Be’ur al ha-Torah', 'Michael Ber Weissmandl, Torat Chemed (1958)'],
     context: 'Desde la ת de בראשית, cada 50 letras se lee תורה. Palabra de 4 letras con salto fijo: hallazgo exploratorio, no un milagro.',
-    corpusNote: 'Reproducible en este corpus (Génesis casi completo). Letra #5 · Génesis 1:1.',
+    corpusNote: 'Reproducible en este corpus (Génesis completo, WLC). Letra #5 · Génesis 1:1.',
     reproducible: true
   },
   {
     id: 'torah-50-exodus',
-    kind: 'note',
-    title: 'תורה salto 50 · Éxodo',
+    kind: 'els',
+    title: 'תורה salto 50 · Éxodo 1',
     hebrew: 'תורה',
     skipMin: 50,
     skipMax: 50,
-    matchHint: null,
+    matchHint: { start: 7, skip: 50 },
     matrixWidth: 50,
     book: 'exodus',
     honestyKey: 'common',
     sources: ['Michael Ber Weissmandl, Torat Chemed (1958)'],
-    context: 'Weissmandl también describe תורה cada 50 letras al inicio de Shemot. Aquí Éxodo es un extracto (~4 400 letras), no el libro entero.',
-    corpusNote: 'Hace falta el libro completo. En este corpus esa secuencia no aparece; no la presentamos como hallazgo.',
-    reproducible: false
+    context: 'Desde la primera ת de Shemot (Éxodo 1:1), cada 50 letras se lee תורה. Misma cautela que en Génesis: palabra de 4 letras, salto fijo, hallazgo exploratorio.',
+    corpusNote: 'Reproducible en Shemot completo. Letra #7 del Éxodo · Éxodo 1:1.',
+    reproducible: true
   },
   {
     id: 'acrostic-bilu',

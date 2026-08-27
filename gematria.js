@@ -1382,7 +1382,7 @@ function _pickCrossoverMatch(matches, preferredSkip) {
 
 /**
  * Palabras del grafo cuya secuencia ELS cabe entera en un tramo visible de matriz.
- * Escanea solo el recorte [windowStart, windowEnd], no los 27k de la cinta.
+ * Escanea solo el recorte [windowStart, windowEnd], no los ~306k de la cinta.
  */
 function ScanMatrixCrossovers(text, wordsList, windowStart, windowEnd, options) {
   const opts = options || {};

@@ -1,6 +1,6 @@
 # Torá Gematria & Decodificador Místico (Bible Code ELS)
 
-Una aplicación web interactiva y estática (deployable en Netlify / GitHub Pages) para explorar las correlaciones de Gematria, el entrelazado místico del alfabeto hebreo, la línea de tiempo del Sionismo y el motor de búsqueda del **Código de la Biblia (ELS - Equidistant Letter Sequences)** sobre un corpus consonántico de los **5 libros de la Torá** (~27 000 letras; Génesis amplio; Éxodo–Deuteronomio como extractos curados, con Decálogo, Shemá y Birkat Kohanim).
+Una aplicación web interactiva y estática (deployable en Netlify / GitHub Pages) para explorar las correlaciones de Gematria, el entrelazado místico del alfabeto hebreo, la línea de tiempo del Sionismo y el motor de búsqueda del **Código de la Biblia (ELS - Equidistant Letter Sequences)** sobre un corpus consonántico de los **5 libros de la Torá completos** (~306 000 letras, WLC vía Sefaria; no incluye Profetas ni Escritos).
 
 ## Características Principales
 
@@ -25,7 +25,7 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
    - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
 
 4. **Código de la Biblia (ELS Matrix & Auto-Scanner)**:
-   - Motor de búsqueda ELS sobre corpus consonántico embebido (~27k letras, 5 libros).
+   - Motor de búsqueda ELS sobre corpus consonántico embebido (~306k letras, 5 libros completos, WLC).
    - Búsqueda asíncrona vía **Web Worker** (`elsWorker.js`) con barra de progreso y **cancelación real** (terminate + `shouldCancel`).
    - Matriz visual responsiva en orientación **RTL** con ajuste dinámico de columnas.
   - Cada hallazgo ELS muestra la **referencia de versículo** real (p. ej. Génesis 1:1, Éxodo 20:2), no un bloque aproximado.
@@ -47,7 +47,7 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
 
 - HTML5 / CSS3 (Vanilla CSS con diseño futurista cósmico / glassmorphism)
 - JavaScript ES6+ sin dependencias externas ni backend
-- Corpus consonántico embebido en `torah_text.js` (sanitizado en carga; sin API externa)
+- Corpus consonántico embebido en `torah_text.js` (WLC vía [Sefaria](https://www.sefaria.org), CC-BY-SA; regenerar con `node scripts/build_torah_corpus.js`)
 - Node.js (suites de pruebas `test.js` y `adversarial_test.js`)
 
 ## Pruebas Unitarias

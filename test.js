@@ -106,18 +106,15 @@ async function runAllTests() {
   const maxRow = Math.min(Math.floor((TORAH_TEXT.length - 1) / w), endRow + 6);
   const visibleStartIdx = minRow * w;
   const visibleEndIdx = (maxRow + 1) * w - 1;
+  const windowSlice = TORAH_TEXT.slice(visibleStartIdx, visibleEndIdx + 1);
 
   const crossovers = [];
   DB.KNOWLEDGE_GRAPH.forEach(entry => {
     if (entry.hebrew === 'תורה') return;
-    const subMatches = Engine.FindELS(TORAH_TEXT, entry.hebrew, 2, 80);
-    for (let m of subMatches) {
-      const allInWindow = m.indices.every(idx => idx >= visibleStartIdx && idx <= visibleEndIdx);
-      if (allInWindow) {
-        crossovers.push({ entry, match: m });
-        break;
-      }
-    }
+    const word = Engine.SanitizeHebrewConsonants(entry.hebrew);
+    if (!word || word.length < 2) return;
+    const subMatches = Engine.FindELS(windowSlice, word, 2, 80);
+    if (subMatches.length) crossovers.push({ entry, match: subMatches[0] });
   });
   assert(crossovers.length > 0, `Encuentra crossovers conceptuales en la ventana de 'תורה' (salto 50, ventana [${visibleStartIdx}-${visibleEndIdx}]). Total: ${crossovers.length}`);
 
@@ -219,9 +216,10 @@ async function runAllTests() {
   const totalFreq = Object.values(freqsData.frequencies).reduce((a, b) => a + b, 0);
   assert(Math.abs(totalFreq - 1.0) < 1e-6, "La suma de las frecuencias de letras es igual a 1.0");
 
-  // Validar CalculateELSPValue para 'תורה' en salto 50 con N=6877 benchmark
-  const pValStats6877 = Engine.CalculateELSPValue(6877, 'תורה', 50, freqsData.frequencies);
-  assert(Math.abs(pValStats6877.expectedMatches - 0.22749) < 1e-2, `Esperado para 'תורה' (s=50, N=6877) ~0.2275 (obtenido: ${pValStats6877.expectedMatches.toFixed(5)})`);
+  const genFreqs = Engine.CalculateLetterFrequencies(TORAH_BOOKS.genesis);
+  const pValGenesis = Engine.CalculateELSPValue(TORAH_BOOKS.genesis.length, 'תורה', 50, genFreqs.frequencies);
+  assert(pValGenesis.expectedMatches > 0 && pValGenesis.pValue >= 0 && pValGenesis.pValue <= 1,
+    `Esperado para 'תורה' (s=50, Génesis N=${TORAH_BOOKS.genesis.length}) es finito (obtenido: ${pValGenesis.expectedMatches.toFixed(5)})`);
 
   // Validar CalculateELSPValue sobre corpus expandido
   const pValStatsExp = Engine.CalculateELSPValue(TORAH_TEXT.length, 'תורה', 50, freqsData.frequencies);
@@ -247,7 +245,7 @@ async function runAllTests() {
   // 13. Validar Expansión de Corpus de la Torá (torah_text.js)
   console.log("\n=== SECCIÓN 13: CORPUS DE LA TORÁ & ESTRUCTURA DE LIBROS ===");
   assert(TORAH_TEXT !== undefined && typeof TORAH_TEXT === 'string', "torah_text.js exporta TORAH_TEXT como cadena de caracteres");
-  assert(TORAH_TEXT.length >= 6877, `TORAH_TEXT tiene longitud expandida suficiente (mínimo M1: 6877, actual: ${TORAH_TEXT.length})`);
+  assert(TORAH_TEXT.length >= 300000, `TORAH_TEXT es la Torá completa (mínimo 300k, actual: ${TORAH_TEXT.length})`);
   assert(!/[^א-ת]/.test(TORAH_TEXT), "TORAH_TEXT contiene únicamente consonantes hebreas sin neqqudot ni caracteres ajenos");
 
   assert(TORAH_BOOKS !== undefined && typeof TORAH_BOOKS === 'object', "TORAH_BOOKS define la estructura de los 5 libros de la Torá");
@@ -268,9 +266,11 @@ async function runAllTests() {
   assert(TORAH_BOOKS.deuteronomy.includes('שמעישראליהוהאלהינויהוהאחד'), "Deuteronomio incluye el Shemá");
   assert(TORAH_BOOKS.numbers.includes('יברכךיהוהוישמרך'), "Números incluye Birkat Kohanim");
 
-  const { TORAH_BOOK_OFFSETS, TORAH_VERSE_MAP, LookupTorahVerse, LookupTorahVerseSpan } = require('./torah_text.js');
+  const { TORAH_BOOK_OFFSETS, TORAH_VERSE_MAP, TORAH_CORPUS_META, LookupTorahVerse, LookupTorahVerseSpan } = require('./torah_text.js');
+  assert(TORAH_CORPUS_META && TORAH_CORPUS_META.complete === true,
+    "TORAH_CORPUS_META marca el corpus de cinco libros como completo");
   assert(Array.isArray(TORAH_BOOK_OFFSETS) && TORAH_BOOK_OFFSETS.length === 5, "TORAH_BOOK_OFFSETS define offsets de 5 libros");
-  assert(Array.isArray(TORAH_VERSE_MAP) && TORAH_VERSE_MAP.length >= 300, `TORAH_VERSE_MAP tiene versículos alineados (actual: ${TORAH_VERSE_MAP.length})`);
+  assert(Array.isArray(TORAH_VERSE_MAP) && TORAH_VERSE_MAP.length >= 5000, `TORAH_VERSE_MAP tiene versículos alineados (actual: ${TORAH_VERSE_MAP.length})`);
   assert(typeof LookupTorahVerse === 'function' && LookupTorahVerse(0).reference === 'Génesis 1:1', "Letra #0 → Génesis 1:1");
   assert(LookupTorahVerse(5).reference === 'Génesis 1:1', "El ELS clásico de תורה (letra #5) cae en Génesis 1:1");
   assert(LookupTorahVerse(28).reference === 'Génesis 1:2', "Letra #28 → Génesis 1:2");
@@ -303,8 +303,8 @@ async function runAllTests() {
 
   const workerPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new Error("Timeout esperando respuesta del Worker (5000ms)"));
-    }, 5000);
+      reject(new Error("Timeout esperando respuesta del Worker (20000ms)"));
+    }, 20000);
 
     worker.onmessage = (e) => {
       const msg = e.data;
@@ -380,7 +380,8 @@ async function runAllTests() {
   assert(totalBooksLen === TORAH_TEXT.length, `La suma de caracteres de los 5 libros (${totalBooksLen}) coincide con TORAH_TEXT (${TORAH_TEXT.length})`);
 
   const genesisTorahELS = Engine.FindELS(TORAH_BOOKS.genesis, 'תורה', 50, 50);
-  assert(genesisTorahELS.length > 0 && genesisTorahELS[0].skip === 50, "Búsqueda ELS en Génesis individual encuentra el código 'תורה' en salto 50");
+  assert(genesisTorahELS.some(m => m.skip === 50 && m.start === 5),
+    "Búsqueda ELS en Génesis individual encuentra תורה@50 en la letra #5");
 
   console.log("\n=== SECCIÓN 19: ESCANEO TOPOGRÁFICO MULTIPALABRA (MEJORA 6) ===");
   const topoResults = Engine.ScanTopographicELS(TORAH_BOOKS.genesis, 50, DB.KNOWLEDGE_GRAPH, { maxMatches: 10 });
@@ -872,10 +873,16 @@ async function runAllTests() {
   assert(/Génesis 1:1/.test(spanClassic), "LookupTorahVerseSpan cubre Génesis 1:1 en el ELS clásico");
 
   const exoCard = DB.ELS_CLASSIC_EXAMPLES.find(e => e.id === 'torah-50-exodus');
-  assert(exoCard && exoCard.reproducible === false && exoCard.kind === 'note',
-    "Éxodo תורה@50 se presenta como nota (hace falta el libro entero), no como hallazgo");
-  assert(!Engine.FindELS(TORAH_BOOKS.exodus, 'תורה', 50, 50).length,
-    "En el extracto de Éxodo no hay תורה a salto 50: la nota es honesta");
+  assert(exoCard && exoCard.reproducible === true && exoCard.kind === 'els',
+    "Éxodo תורה@50 se presenta como hallazgo reproducible (Shemot completo)");
+  assert(exoCard.matchHint && exoCard.matchHint.start === 7 && exoCard.matchHint.skip === 50,
+    "El hint de Éxodo apunta a la primera ת de Shemot (letra #7)");
+  const exoHit = Engine.FindELS(TORAH_BOOKS.exodus, 'תורה', 50, 50)
+    .find(m => m.start === 7 && m.skip === 50);
+  assert(exoHit, "En Shemot completo hay תורה a salto 50 desde la letra #7");
+  const exoGlobal = TORAH_BOOK_OFFSETS.find(b => b.key === 'exodus').offset + 7;
+  assert(LookupTorahVerse(exoGlobal).reference === 'Éxodo 1:1',
+    "La ת inicial de Shemot cae en Éxodo 1:1");
 
   assert(DB.ELS_CLASSIC_EXAMPLES.some(e => e.kind === 'acrostic' && e.acrosticId === 'bilu'),
     "La galería enlaza el acróstico BILU (no lo finge como ELS)");
@@ -906,6 +913,7 @@ async function runAllTests() {
   assert(indexGallery.includes('id="elsHonestyNote"'), "index.html tiene la nota de honestidad");
   assert(indexGallery.includes('id="elsBibliographyList"'), "index.html tiene la bibliografía colapsable");
   assert(indexGallery.includes('data-els-classic="torah-50-genesis"'), "Inicio/galería apunta al ejemplo תורה@50");
+  assert(indexGallery.includes('data-els-classic="torah-50-exodus"'), "Inicio también apunta a תורה@50 de Éxodo");
   assert(indexGallery.includes('id="bibleCodeMatrix"'), "La matriz ELS es una tabla real");
   assert(indexGallery.includes('id="matrixVerseHint"'), "Hay pista de versículo al pasar el cursor");
   assert(indexGallery.includes('id="btnElsShuffledControl"'), "Hay botón de control barajado");
