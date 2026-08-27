@@ -21,6 +21,8 @@
       matrixWidth: 50,
       isTopographic: false,
       topographicWords: [],
+      windowCrossovers: [],
+      _crossoverKey: '',
       pendingSelect: null,
       pendingMatrixWidth: null,
       activeExampleId: null
@@ -645,16 +647,21 @@
       const endRow = Math.floor(maxIdx / w);
       const minRow = Math.max(0, startRow - 4);
       const maxRow = Math.min(Math.floor((text.length - 1) / w), endRow + 4);
+      const windowStart = minRow * w;
+      const windowEnd = Math.min(text.length - 1, (maxRow + 1) * w - 1);
+      this.scanWindowCrossovers(text, windowStart, windowEnd, match);
 
       matrixGrid.innerHTML = '';
       const matchSet = new Set(match.indices);
       const secondaryByIdx = {};
-      (this.state.topographicWords || []).forEach(fw => {
+      const paintSecondary = (fw) => {
         if (!fw || fw.word === match.word) return;
         (fw.indices || []).forEach(i => {
           if (secondaryByIdx[i] == null) secondaryByIdx[i] = fw.color || '#9b59b6';
         });
-      });
+      };
+      (this.state.windowCrossovers || []).forEach(paintSecondary);
+      (this.state.topographicWords || []).forEach(paintSecondary);
       const hint = document.getElementById('matrixVerseHint');
       if (hint) {
         hint.textContent = this.formatVerseLabel(match.start, match.indices) +
@@ -684,6 +691,41 @@
       }
       this.fillNarrativePanel(match);
       this.fillSecondaryPanel(match);
+    },
+
+    scanWindowCrossovers: function(text, windowStart, windowEnd, match) {
+      const Engine = global.GematriaEngine;
+      const DB = global.GematriaDB;
+      if (!Engine || typeof Engine.ScanMatrixCrossovers !== 'function' || !DB || !DB.KNOWLEDGE_GRAPH) {
+        this.state.windowCrossovers = [];
+        this.state._crossoverKey = '';
+        return;
+      }
+      const numMinSkip = document.getElementById('numMinSkip');
+      const numMaxSkip = document.getElementById('numMaxSkip');
+      let minSkip = numMinSkip ? parseInt(numMinSkip.value, 10) : 2;
+      let maxSkip = numMaxSkip ? parseInt(numMaxSkip.value, 10) : 80;
+      if (!Number.isFinite(minSkip) || minSkip < 2) minSkip = 2;
+      if (!Number.isFinite(maxSkip)) maxSkip = 80;
+      maxSkip = Math.min(100, Math.max(minSkip, maxSkip));
+      const excludeWord = (match && (match.word || this.state.primaryWord)) || '';
+      const key = [windowStart, windowEnd, minSkip, maxSkip, excludeWord, text.length, this.state.matrixWidth].join('|');
+      if (this.state._crossoverKey === key && Array.isArray(this.state.windowCrossovers)) return;
+      this.state._crossoverKey = key;
+      this.state.windowCrossovers = Engine.ScanMatrixCrossovers(
+        text,
+        DB.KNOWLEDGE_GRAPH,
+        windowStart,
+        windowEnd,
+        {
+          minSkip,
+          maxSkip,
+          maxHits: 12,
+          minLength: 3,
+          excludeWord,
+          preferredSkip: this.state.matrixWidth
+        }
+      );
     },
 
     handleTopographicScan: function() {
@@ -1063,23 +1105,46 @@
       const panel = document.getElementById('elsSecondaryPanel');
       const list = document.getElementById('elsSecondaryWordsList');
       if (!panel || !list) return;
-      const others = (this.state.topographicWords || []).filter(fw => fw && match && fw.word !== match.word);
-      if (!others.length) {
+      const merged = [];
+      const seen = {};
+      const pushUnique = (fw) => {
+        if (!fw || !fw.word || (match && fw.word === match.word) || seen[fw.word]) return;
+        seen[fw.word] = true;
+        merged.push(fw);
+      };
+      (this.state.windowCrossovers || []).forEach(pushUnique);
+      (this.state.topographicWords || []).forEach(pushUnique);
+      if (!merged.length) {
         panel.style.display = 'none';
         list.innerHTML = '';
         return;
       }
-      const seen = {};
-      list.innerHTML = others.filter(fw => {
-        if (seen[fw.word]) return false;
-        seen[fw.word] = true;
-        return true;
-      }).map(fw =>
-        `<span class="secondary-badge" style="border-color:${escapeHtml(fw.color)};color:${escapeHtml(fw.color)}">
-          <span style="font-family:var(--font-hebrew)">${escapeHtml(fw.word)}</span>
+      list.innerHTML = '';
+      const self = this;
+      merged.forEach(fw => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'secondary-badge';
+        chip.style.borderColor = fw.color || '#9b59b6';
+        chip.style.color = fw.color || '#d8a0f8';
+        chip.innerHTML = `<span style="font-family:var(--font-hebrew)">${escapeHtml(fw.word)}</span>
           <span>${escapeHtml(fw.title || '')}</span>
-        </span>`
-      ).join('');
+          ${self.honestyBadgeHtml(fw)}`;
+        chip.addEventListener('click', () => {
+          self.state.activeMatch = {
+            word: fw.word,
+            skip: fw.skip,
+            start: fw.start,
+            end: fw.end,
+            indices: fw.indices,
+            rawQuery: fw.title
+          };
+          self.state.primaryWord = fw.word;
+          self.applyMatrixWidth(Math.abs(fw.skip || self.state.matrixWidth || 50));
+          self.renderMatrix();
+        });
+        list.appendChild(chip);
+      });
       panel.style.display = 'block';
     },
 

@@ -81,6 +81,54 @@ const TORAH_VERSES = [
     translation: '¿Quién subirá por nosotros al cielo?',
     gematria: 651,
     commentary: 'Las iniciales forman מילה (circuncisión / palabra) y las finales יהוה. Ejemplo clásico de Roshei y Sofei Teivot en cuatro palabras.'
+  },
+  {
+    reference: 'Deuteronomio 6:4',
+    hebrew: 'שְׁמַע יִשְׂרָאֵל יְהוָה אֱלֹהֵינוּ יְהוָה אֶחָד',
+    transliteration: 'Shema Yisrael Adonai Eloheinu Adonai Ejad',
+    translation: 'Escucha, Israel: el Señor nuestro Dios, el Señor uno es.',
+    gematria: 1118,
+    commentary: 'El Shemá. Seis palabras con espacios: corpus de Roshei/Sofei Teivot, no de la cinta ELS.'
+  },
+  {
+    reference: 'Deuteronomio 6:5',
+    hebrew: 'וְאָהַבְתָּ אֵת יְהוָה אֱלֹהֶיךָ בְּכָל לְבָבְךָ וּבְכָל נַפְשְׁךָ וּבְכָל מְאֹדֶךָ',
+    transliteration: 'Ve\'ahavta et Adonai Elohecha bechol levavecha uvechol nafshecha uvechol me\'odecha',
+    translation: 'Y amarás al Señor tu Dios con todo tu corazón, con toda tu alma y con todas tus fuerzas.',
+    gematria: 1644,
+    commentary: 'Ve\'ahavta, continuación inmediata del Shemá. Diez palabras para notarikon sobre el amor a Dios.'
+  },
+  {
+    reference: 'Números 6:24–26',
+    hebrew: 'יְבָרֶכְךָ יְהוָה וְיִשְׁמְרֶךָ יָאֵר יְהוָה פָּנָיו אֵלֶיךָ וִיחֻנֶּךָּ יִשָּׂא יְהוָה פָּנָיו אֵלֶיךָ וְיָשֵׂם לְךָ שָׁלוֹם',
+    transliteration: 'Yevarechecha Adonai veyishmerecha. Ya\'er Adonai panav elecha vichuneka. Yisa Adonai panav elecha veyasem lecha shalom',
+    translation: 'El Señor te bendiga y te guarde. El Señor haga resplandecer su rostro sobre ti y tenga de ti misericordia. El Señor alce hacia ti su rostro y ponga en ti paz.',
+    gematria: 2718,
+    commentary: 'Birkat Kohanim (bendición sacerdotal) en tres versículos seguidos. Quince palabras para acrósticos sobre la bendición.'
+  },
+  {
+    reference: 'Éxodo 20:2',
+    hebrew: 'אָנֹכִי יְהוָה אֱלֹהֶיךָ אֲשֶׁר הוֹצֵאתִיךָ מֵאֶרֶץ מִצְרַיִם מִבֵּית עֲבָדִים',
+    transliteration: 'Anochi Adonai Elohecha asher hotzeticha me\'eretz Mitzrayim mibeit avadim',
+    translation: 'Yo soy el Señor tu Dios, que te saqué de la tierra de Egipto, de la casa de servidumbre.',
+    gematria: 2495,
+    commentary: 'Apertura del Decálogo. Nueve palabras; las iniciales no se presentan como un código, solo como frase curada.'
+  },
+  {
+    reference: 'Génesis 1:3',
+    hebrew: 'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר וַיְהִי אוֹר',
+    transliteration: 'Vayomer Elohim yehi or vayehi or',
+    translation: 'Y dijo Dios: Sea la luz; y fue la luz.',
+    gematria: 813,
+    commentary: 'Primera pronunciación creadora. Seis palabras en torno a אור (luz).'
+  },
+  {
+    reference: 'Éxodo 3:14',
+    hebrew: 'אֶהְיֶה אֲשֶׁר אֶהְיֶה',
+    transliteration: 'Ehyeh asher ehyeh',
+    translation: 'Yo soy el que soy.',
+    gematria: 543,
+    commentary: 'Autorevelación en la zarza ardiente. Tres palabras (אהיה אשר אהיה) para extraer Roshei/Sofei Teivot, no como cinta ELS.'
   }
 ];
 

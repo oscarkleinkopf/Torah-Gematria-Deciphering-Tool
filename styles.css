@@ -1668,6 +1668,8 @@ footer a:hover {
 
 /* Badges de conexiones cruzadas secundarias */
 .secondary-badge {
+  appearance: none;
+  -webkit-appearance: none;
   background: rgba(142, 68, 173, 0.12);
   border: 1px solid rgba(142, 68, 173, 0.25);
   color: #d8a0f8;
@@ -1677,6 +1679,7 @@ footer a:hover {
   font-family: var(--font-serif);
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.3rem;
   cursor: pointer;
   transition: var(--transition);
@@ -1686,6 +1689,12 @@ footer a:hover {
   background: rgba(142, 68, 173, 0.2);
   border-color: var(--purple-accent);
   transform: translateY(-1px);
+}
+
+.secondary-badge .honesty-badge {
+  max-width: 160px;
+  font-size: 0.62rem;
+  padding: 0.1rem 0.4rem;
 }
 
 /* --- ESTILOS DE LA FASE 4 (BÚSQUEDA AUTOMÁTICA Y MATRIX SCANNER) --- */

@@ -1346,6 +1346,96 @@ function ScanTopographicELS(corpusText, skip, wordsList = [], options = {}) {
   return foundWords;
 }
 
+const CROSSOVER_PALETTE = [
+  '#9b59b6',
+  '#00ced1',
+  '#2ecc71',
+  '#e67e22',
+  '#e74c3c',
+  '#fd79a8',
+  '#a29bfe',
+  '#74b9ff',
+  '#1abc9c',
+  '#ffd700'
+];
+
+function _crossoverHebrew(entry) {
+  const raw = typeof entry === 'string' ? entry : (entry && entry.hebrew) || '';
+  return SanitizeHebrewConsonants(raw);
+}
+
+function _pickCrossoverMatch(matches, preferredSkip) {
+  if (!matches || !matches.length) return null;
+  if (preferredSkip == null || !Number.isFinite(Number(preferredSkip))) return matches[0];
+  const pref = Math.abs(Number(preferredSkip));
+  let best = matches[0];
+  let bestDelta = Math.abs(Math.abs(best.skip) - pref);
+  for (let i = 1; i < matches.length; i++) {
+    const delta = Math.abs(Math.abs(matches[i].skip) - pref);
+    if (delta < bestDelta) {
+      best = matches[i];
+      bestDelta = delta;
+    }
+  }
+  return best;
+}
+
+/**
+ * Palabras del grafo cuya secuencia ELS cabe entera en un tramo visible de matriz.
+ * Escanea solo el recorte [windowStart, windowEnd], no los 27k de la cinta.
+ */
+function ScanMatrixCrossovers(text, wordsList, windowStart, windowEnd, options) {
+  const opts = options || {};
+  if (!text || !wordsList || !wordsList.length) return [];
+  const start = Math.max(0, parseInt(windowStart, 10) || 0);
+  const end = Math.min(text.length - 1, parseInt(windowEnd, 10) || 0);
+  if (end < start) return [];
+
+  const slice = text.slice(start, end + 1);
+  const minLength = opts.minLength != null ? parseInt(opts.minLength, 10) : 3;
+  const minSkip = Math.max(1, parseInt(opts.minSkip, 10) || 2);
+  const rawMax = parseInt(opts.maxSkip, 10);
+  const maxSkip = Math.min(100, Math.max(minSkip, Number.isFinite(rawMax) ? rawMax : 80));
+  const maxHits = Math.max(1, parseInt(opts.maxHits, 10) || 12);
+  const excludeWord = SanitizeHebrewConsonants(opts.excludeWord || '');
+  const preferredSkip = opts.preferredSkip != null ? opts.preferredSkip : opts.matrixWidth;
+
+  const prepared = [];
+  const seenPrep = {};
+  wordsList.forEach(wEntry => {
+    const hebrewWord = _crossoverHebrew(wEntry);
+    if (!hebrewWord || hebrewWord.length < minLength) return;
+    if (excludeWord && hebrewWord === excludeWord) return;
+    if (seenPrep[hebrewWord]) return;
+    seenPrep[hebrewWord] = true;
+    prepared.push({ hebrewWord, wEntry });
+  });
+  prepared.sort((a, b) => b.hebrewWord.length - a.hebrewWord.length);
+
+  const foundWords = [];
+  for (let i = 0; i < prepared.length && foundWords.length < maxHits; i++) {
+    const { hebrewWord, wEntry } = prepared[i];
+    const matches = FindELS(slice, hebrewWord, minSkip, maxSkip);
+    const best = _pickCrossoverMatch(matches, preferredSkip);
+    if (!best) continue;
+    const indices = (best.indices || []).map(idx => idx + start);
+    foundWords.push({
+      word: hebrewWord,
+      title: typeof wEntry === 'object' ? (wEntry.spanish || wEntry.concept || hebrewWord) : hebrewWord,
+      category: typeof wEntry === 'object' ? (wEntry.category || 'concepto') : 'palabra',
+      skip: best.skip,
+      start: (typeof best.start === 'number' ? best.start : indices[0] - start) + start,
+      end: indices.length ? indices[indices.length - 1] : start,
+      indices,
+      color: CROSSOVER_PALETTE[foundWords.length % CROSSOVER_PALETTE.length],
+      expectedCount: best.expectedCount,
+      pValue: best.pValue,
+      entry: typeof wEntry === 'object' ? wEntry : { hebrew: hebrewWord }
+    });
+  }
+  return foundWords;
+}
+
 // --- FASE 7: SEMÁFORO DE SIGNIFICANCIA ESTADÍSTICA Y TOOLTIPS EDUCATIVOS (MEJORA 8) ---
 function FormatSignificanceMetrics(match) {
   if (!match) return null;
@@ -1772,6 +1862,7 @@ const _exportedEngine = {
   AnalyzeCrossConnection,
   SearchSpanishSemantic,
   ScanTopographicELS,
+  ScanMatrixCrossovers,
   FormatSignificanceMetrics,
   EDUCATIONAL_TOOLTIPS,
   GematriaSearchCache,
