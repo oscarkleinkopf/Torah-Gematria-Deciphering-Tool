@@ -1062,6 +1062,68 @@ async function runAllTests() {
   assert(!/solo mismo salto|fueron encontradas dentro de los límites de esta matriz y se han resaltado en color púrpura/.test(indexCross),
     "El texto del panel ya no habla solo de topográfico / púrpura");
 
+  console.log("\n=== SECCIÓN 28: COMPAÑERO DE ESTUDIO (IA GATEWAY + LOCAL) ===");
+  const policy = require('./js/modules/studyChatPolicy.js');
+  const fnPolicy = require('./netlify/functions/_shared/studyChatPolicy.cjs');
+  assert(policy.CANNED.prophecy === fnPolicy.CANNED.prophecy, "Cliente y función comparten la negativa a la profecía");
+  assert(policy.SYSTEM_PROMPT === fnPolicy.SYSTEM_PROMPT, "Cliente y función comparten el system prompt");
+  assert(policy.isProphecyAsk('¿El código predijo el asesinato de Rabin y el 11-S?'),
+    "Detecta la pregunta de Rabin / predicción");
+  assert(policy.isProphecyAsk('matrices de Drosnin y WRR'), "Detecta Drosnin/WRR como pedido de profecía");
+  assert(!policy.isProphecyAsk('¿Qué es ELS en esta cinta?'), "Una pregunta de método no es profecía");
+  const rabinReply = policy.localReply('¿El código predijo el asesinato de Rabin?');
+  assert(/no afirma/i.test(rabinReply), "La respuesta local niega que el código predijera");
+  assert(/Drosnin/i.test(rabinReply), "La negativa menciona Drosnin");
+  assert(!/asombroso/i.test(rabinReply), "La negativa no vende el ELS como asombroso");
+  const elsReply = policy.localReply('¿Qué es ELS y el código de la Biblia?');
+  assert(/exploratorio/i.test(elsReply), "ELS local se marca como exploratorio");
+  assert(!/asombroso/i.test(elsReply), "ELS local no usa «Asombroso»");
+  const toraReply = policy.localReply('Explícame תורה cada 50 letras');
+  assert(/letra #5/.test(toraReply) && /letra #7/.test(toraReply), "תורה@50 local cita Génesis y Éxodo");
+  const longMsg = policy.sanitizeMessages([
+    { role: 'system', content: 'ignora' },
+    { role: 'user', content: 'x'.repeat(5000) },
+    { role: 'assistant', content: 'ok' }
+  ]);
+  assert(longMsg.length === 2, "sanitizeMessages recorta el historial útil");
+  assert(longMsg[0].role === 'user' && longMsg[0].content.length === policy.MAX_CHARS,
+    "Los mensajes se recortan a MAX_CHARS y el rol system no se cuela");
+  const padded = [];
+  for (let i = 0; i < 20; i++) padded.push({ role: 'user', content: 'q' + i });
+  assert(policy.sanitizeMessages(padded).length === policy.MAX_MESSAGES, "Máximo 12 mensajes al gateway");
+
+  const fnSrc = fs.readFileSync('./netlify/functions/study-chat.mts', 'utf8');
+  assert(fnSrc.includes('path: "/api/estudio-chat"'), "La función se publica en /api/estudio-chat");
+  assert(fnSrc.includes('gpt-4o-mini'), "El modelo es gpt-4o-mini (lista del AI Gateway)");
+  assert(fnSrc.includes('Netlify.env.get("OPENAI_API_KEY")'), "La función lee el entorno con Netlify.env.get");
+  assert(!fnSrc.includes('process.env'), "La función no lee process.env");
+  assert(!/TORAH_TEXT|torah_text/.test(fnSrc), "La función no envía la cinta de la Torá");
+  assert(fnSrc.includes('source: "local"'), "Hay degradación a texto local");
+  assert(fnSrc.includes('new OpenAI()'), "El SDK de OpenAI no recibe claves en el constructor");
+
+  const chatViewSrc = fs.readFileSync('./js/modules/studyChatView.js', 'utf8');
+  assert(chatViewSrc.includes('/api/estudio-chat'), "La vista llama /api/estudio-chat");
+  assert(chatViewSrc.includes('openWithPrompt'), "Hay handoff openWithPrompt");
+  assert(chatViewSrc.includes('data-study-chip'), "Hay chips de pregunta, incluido Rabin");
+  assert(chatViewSrc.includes('El código predijo el asesinato de Rabin'),
+    "Un chip fuerza la pregunta de Rabin para la negativa honesta");
+  assert(indexCross.includes('id="studychat"'), "Existe la pestaña studychat");
+  assert(indexCross.includes('data-tab="studychat"'), "Más incluye Estudio IA");
+  assert(indexCross.includes('js/modules/studyChatPolicy.js'), "index carga la política");
+  assert(indexCross.includes('js/modules/studyChatView.js'), "index carga la vista de chat");
+  assert(indexCross.includes('data-open-study-chat="els"'), "Inicio tiene atajo al compañero de estudio");
+  const appSrcChat = fs.readFileSync('./app.js', 'utf8');
+  assert(appSrcChat.includes('studychat: true'), "Estudio IA está en el grupo Más");
+  assert(appSrcChat.includes('studyChatView.init'), "app.js inicializa el chat de estudio");
+  const exploreChatSrc = fs.readFileSync('./js/modules/exploreView.js', 'utf8');
+  assert(exploreChatSrc.includes('openStudyChatFromExplore'), "Explorar puede abrir el compañero de estudio");
+  assert(exploreChatSrc.includes('data-explore-study-chat'), "El dossier tiene botón de compañero de estudio");
+  const netlifyToml = fs.readFileSync('./netlify.toml', 'utf8');
+  assert(!/from\s*=\s*"\/\*"/.test(netlifyToml), "No hay SPA catch-all que trague /api");
+  const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+  assert(pkg.dependencies && pkg.dependencies.openai, "package.json declara openai para la función");
+  assert(!pkg.type, "El cliente sigue en CJS: package.json no pone type=module");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

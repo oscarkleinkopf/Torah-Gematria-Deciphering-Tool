@@ -15,7 +15,10 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `js/modules/reflectionView.js`: daily reflection topics; `openFromQuery(query)` via `PickDailyReflection`.
 - `js/modules/favoritesView.js`: ELS / Explore / profile favorites list with reload into the correct mode.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
-- `index.html`: Compact study nav (Inicio, Calculadora, ELS, Favoritos + Más) with a return-to-study bar; Explore remains the home.
+- `index.html`: Compact study nav (Inicio, Calculadora, ELS, Favoritos + Más) with a return-to-study bar; Explore remains the home. **Estudio IA** lives under Más.
+- `js/modules/studyChatPolicy.js`: Shared study-companion policy (prophecy refusal, canned local replies). Same text as `netlify/functions/_shared/studyChatPolicy.cjs`.
+- `js/modules/studyChatView.js`: Vanilla chat UI; `fetch('/api/estudio-chat')` with local fallback; `openWithPrompt` from Explore.
+- `netlify/functions/study-chat.mts`: Optional Netlify Function (`/api/estudio-chat`) via AI Gateway (`gpt-4o-mini`). Degrades to local replies. Does not send `TORAH_TEXT`.
 - `test.js`: Automated unit test suite run via `node test.js`.
 - `adversarial_test.js`: Stress / cipher / acrostic / ELS adversarial suite.
 
@@ -68,6 +71,10 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()` / `SuggestNameDictionary()`: live dictionary merge, validation, browse/filter and typeahead.
 - `ExploreCorrelations` sets `meta.hebrewSource`: `dictionary` | `dictionary-user` | `phonetic` | `hebrew`.
 - `FormatCorrelationReport(data)`: Plain-text correlation / profile report for download.
+
+### Study companion (`studyChatPolicy.js` / `study-chat.mts`)
+- `isProphecyAsk(text)` / `localReply(text)` / `buildGatewayMessages(history)`: refuse Drosnin/WRR-as-findings; cap 12 messages × 2000 chars.
+- POST `/api/estudio-chat` body `{ messages: [{ role, content }] }` → `{ reply, source: "gateway"|"local", prophecyAsk }`. Never a live API in `make check`.
 
 ### `hebrew_calendar.js`
 - `GregorianToHebrew(y, m, d)` / `HebrewToGregorian(hy, hm, hd)`: civil Hebrew calendar (1=Nisan … 7=Tishrei).
