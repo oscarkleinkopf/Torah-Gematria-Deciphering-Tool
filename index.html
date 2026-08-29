@@ -92,6 +92,7 @@
           <button class="nav-btn" data-tab="comparison">Comparador</button>
           <button class="nav-btn" data-tab="letters">Espejo de letras</button>
           <button class="nav-btn" data-tab="reflection">Reflexión</button>
+          <button class="nav-btn" data-tab="studychat">Estudio IA</button>
           <button class="nav-btn tour-nav-btn" id="btnStartTour" title="Iniciar recorrido interactivo de 3 pasos">✨ Tour Guiado</button>
         </div>
       </div>
@@ -233,6 +234,7 @@
           <button type="button" class="explore-chip" data-els-classic="torah-50-exodus">תורה · salto 50 · Éxodo 1</button>
           <button type="button" class="explore-chip" data-els-classic="acrostic-bilu">BILU · Isaías 2:5</button>
           <button type="button" class="explore-chip" data-els-classic="pair-ahava-echad">אהבה = אחד = 13</button>
+          <button type="button" class="explore-chip" data-open-study-chat="els">Preguntar: ¿qué es ELS?</button>
         </div>
       </div>
     </div>
@@ -870,6 +872,30 @@
       </div>
     </div>
 
+    <!-- SECCIÓN: ESTUDIO IA (compañero, no profecía) -->
+    <div id="studychat" class="tab-content">
+      <div class="glass-card study-chat-panel">
+        <h3 class="input-title">Compañero de estudio</h3>
+        <p class="study-chat-lead">
+          Preguntas sobre gematría, ELS y acrósticos de <strong>esta</strong> app.
+          No es un oráculo: no afirma que «el código predijera» asesinatos, atentados ni noticias.
+          En GitHub Pages o sin IA activa en Netlify responde con <strong>texto local fijo</strong>;
+          en un deploy de producción con AI Gateway puede ampliar la explicación (misma política de honestidad).
+        </p>
+        <div id="study-chat-chips" class="study-chat-chips" aria-label="Preguntas de estudio"></div>
+        <div id="study-chat-log" class="study-chat-log" aria-live="polite"></div>
+        <form id="study-chat-form" class="study-chat-form">
+          <label class="visually-hidden" for="study-chat-input">Pregunta de estudio</label>
+          <textarea id="study-chat-input" class="study-chat-input" rows="2" maxlength="2000" placeholder="Ej: ¿Qué contiene la cinta ELS de esta app?"></textarea>
+          <button type="submit" id="study-chat-send" class="search-btn">Enviar</button>
+        </form>
+        <p class="study-chat-foot">
+          La función no envía la cinta de ~306 000 letras. Prueba el chip
+          «El código predijo a Rabin»: debe negar la profecía, no venderla.
+        </p>
+      </div>
+    </div>
+
     <!-- SECCIÓN: ACRÓSTICOS (ROSHEI / SOFEI TEIVOT) -->
     <div id="acrostics" class="tab-content">
       <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
@@ -1137,6 +1163,8 @@
   <script src="js/modules/lettersView.js"></script>
   <script src="js/modules/reflectionView.js"></script>
   <script src="js/modules/favoritesView.js"></script>
+  <script src="js/modules/studyChatPolicy.js"></script>
+  <script src="js/modules/studyChatView.js"></script>
 
   <!-- Orquestador Principal -->
   <script src="app.js"></script>

@@ -1,0 +1,13 @@
+{
+  "name": "torah-gematria-deciphering-tool",
+  "private": true,
+  "description": "Static Hebrew gematria/ELS study app. The browser stays vanilla; an optional Netlify Function uses AI Gateway for the study companion.",
+  "scripts": {
+    "test": "node test.js",
+    "check": "node test.js && node adversarial_test.js"
+  },
+  "dependencies": {
+    "@netlify/functions": "^4.2.5",
+    "openai": "^4.104.0"
+  }
+}

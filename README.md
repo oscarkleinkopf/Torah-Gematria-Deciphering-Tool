@@ -20,7 +20,7 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
   - **Diccionario vivo**: léxico hebreo consultable (Cohen, Herzl, Raquel…) más nombres que tú guardas; sugerencias al escribir; se distingue **diccionario** vs **fonética aproximada**.
   - Calendario hebreo civil (Nisán–Adar) sin heurística `año+3760`: 14/05/1948 = 5 de Iyar 5708 (ה׳תש״ח).
   - Inicio de estudio en **Explorar** (Consulta / Mi perfil / Diccionario), con dossier de ejemplo al abrir.
-  - Navegación compacta: **Inicio / Calculadora / Código ELS / Favoritos**, y el resto bajo **Más**. Desde un resultado se profundiza (timeline, Torá, comparador, ELS, espejo de letras, acrósticos, reflexión) y se vuelve al estudio.
+  - Navegación compacta: **Inicio / Calculadora / Código ELS / Favoritos**, y el resto bajo **Más** (incluye **Estudio IA**). Desde un resultado se profundiza (timeline, Torá, comparador, ELS, espejo de letras, acrósticos, reflexión, compañero de estudio) y se vuelve al estudio.
   - Resultados combinados: grafo, línea de tiempo, tarjetas sionistas, versículos por valor y atajo a ELS.
    - Exportar informe `.txt`, guardar en Favoritos e historial de búsquedas recientes.
 
@@ -46,9 +46,9 @@ Una aplicación web interactiva y estática (deployable en Netlify / GitHub Page
 ## Tecnologías
 
 - HTML5 / CSS3 (Vanilla CSS con diseño futurista cósmico / glassmorphism)
-- JavaScript ES6+ sin dependencias externas ni backend
+- JavaScript ES6+ **en el navegador** (sin bundler ni framework). El chat de estudio llama a una función Netlify opcional; si no hay gateway, usa texto local.
 - Corpus consonántico embebido en `torah_text.js` (WLC vía [Sefaria](https://www.sefaria.org), CC-BY-SA; regenerar con `node scripts/build_torah_corpus.js`)
-- Node.js (suites de pruebas `test.js` y `adversarial_test.js`)
+- Node.js (suites de pruebas `test.js` y `adversarial_test.js`; `make check` no llama a la API)
 
 ## Pruebas Unitarias
 
@@ -61,6 +61,8 @@ node test.js && node adversarial_test.js
 ## Despliegue en Netlify
 
 El repositorio incluye `netlify.toml` preconfigurado. Conecta el repositorio GitHub en Netlify o arrastra la carpeta del proyecto a Netlify Drop.
+
+La pestaña **Estudio IA** (bajo **Más**) es un compañero de estudio, no un oráculo. En producción, con [AI Gateway](https://docs.netlify.com/build/ai-gateway/overview/) activo, la función `/api/estudio-chat` usa `gpt-4o-mini`. No definas `OPENAI_API_KEY` en la UI de Netlify: eso saltaría la pasarela. En GitHub Pages o sin IA, el mismo chip responde con texto local (incluida la negativa a «el código predijo a Rabin»). La función no envía la cinta ELS.
 
 ## Arquitectura
 

@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
     zionism: true,
     comparison: true,
     letters: true,
-    reflection: true
+    reflection: true,
+    studychat: true
   };
 
   function closeNavMore() {
@@ -217,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.pwaManager) Modules.pwaManager.init(appContext);
     if (Modules.mysticAudio) Modules.mysticAudio.init(appContext);
     if (Modules.tehilimView) Modules.tehilimView.init(appContext);
+    if (Modules.studyChatView) Modules.studyChatView.init(appContext);
 
     // Estado inicial
     processInputText('שלום');

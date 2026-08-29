@@ -203,6 +203,19 @@
         if (context && context.switchTab) context.switchTab('reflection');
       }
 
+      function openStudyChatFromExplore(query, hebrew) {
+        const q = String(query || '').trim();
+        const he = String(hebrew || '').trim();
+        const prompt = he
+          ? 'En esta app, ¿cómo estudio «' + q + '» (' + he + ') sin tratarlo como profecía? Oriéntame a gematría, ELS o acrósticos según corresponda.'
+          : 'En esta app, ¿cómo estudio «' + q + '» sin tratarlo como profecía?';
+        if (Modules.studyChatView && typeof Modules.studyChatView.openWithPrompt === 'function') {
+          Modules.studyChatView.openWithPrompt(prompt);
+          return;
+        }
+        if (context && context.switchTab) context.switchTab('studychat');
+      }
+
       function openElsFromExplore(terms) {
         if (!terms) return;
         if (Modules.bibleCodeView && typeof Modules.bibleCodeView.restoreSearch === 'function') {
@@ -314,6 +327,7 @@
           ${hebrew ? `<button type="button" class="explore-action-btn" data-explore-letters="${escapeHtml(hebrew)}">Espejo de letras</button>` : ''}
           ${hebrew ? `<button type="button" class="explore-action-btn" data-explore-acrostics="${escapeHtml(hebrew)}">Acrósticos en frases curadas</button>` : ''}
           <button type="button" class="explore-action-btn" data-explore-reflection="${escapeHtml(data.query || '')}">Reflexión</button>
+          <button type="button" class="explore-action-btn" data-explore-study-chat="1">Compañero de estudio</button>
         </div>`;
 
         if (meta.nameEntry || meta.dateInfo || meta.primaryGematria || data.queryType === 'compound') {
@@ -554,6 +568,9 @@
           btn.addEventListener('click', () => {
             openReflectionFromExplore(btn.getAttribute('data-explore-reflection') || data.query || '');
           });
+        });
+        exploreResults.querySelectorAll('[data-explore-study-chat]').forEach(btn => {
+          btn.addEventListener('click', () => openStudyChatFromExplore(data.query || '', hebrew || ''));
         });
 
         const btnPin = document.getElementById('btnPinToDictionary');
