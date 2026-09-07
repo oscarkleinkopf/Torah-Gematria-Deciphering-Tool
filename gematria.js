@@ -1713,6 +1713,144 @@ function FindResonantPsalms(targetValue, psalmsList = [], tolerance = 0) {
   return results.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Analizador de Flujo de Oraciones y Versículos Completos (Sentence & Flow Analyzer)
+ */
+function AnalyzeSentenceFlow(sentenceText) {
+  const rawText = String(sentenceText || '').trim();
+  if (!rawText) {
+    return {
+      words: [],
+      wordCount: 0,
+      totalGematria: 0,
+      totalReduced: 0,
+      arithmeticMean: 0,
+      harmonicMean: 0,
+      rosheiTeivot: { word: '', gematria: 0, reduced: 0 },
+      sofeiTeivot: { word: '', gematria: 0, reduced: 0 },
+      sefirahBalance: { chesedRatio: 50, gevurahRatio: 50, label: 'Equilibrio (Tiféret)' },
+      isNumericPalindrome: false
+    };
+  }
+
+  const rawTokens = rawText.split(/\s+/).filter(Boolean);
+  const words = [];
+  let runningSum = 0;
+  let harmonicDenom = 0;
+  let rosheiLetters = '';
+  let sofeiLetters = '';
+  let increasingDeltas = 0;
+  let decreasingDeltas = 0;
+
+  for (let i = 0; i < rawTokens.length; i++) {
+    const rawToken = rawTokens[i];
+    let hebrewClean = rawToken.replace(/[^\u05D0-\u05EA]/g, '');
+    let isTransliterated = false;
+
+    if (!hebrewClean && /[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(rawToken)) {
+      hebrewClean = SpanishToHebrew(rawToken);
+      isTransliterated = true;
+    }
+
+    if (!hebrewClean) continue;
+
+    const calc = CalculateGematria(hebrewClean);
+    runningSum += calc.absolute;
+    if (calc.absolute > 0) {
+      harmonicDenom += 1 / calc.absolute;
+    }
+
+    const firstChar = hebrewClean[0];
+    const lastChar = hebrewClean[hebrewClean.length - 1];
+    rosheiLetters += firstChar;
+    sofeiLetters += lastChar;
+
+    const wordItem = {
+      index: words.length + 1,
+      rawToken: rawToken,
+      hebrewClean: hebrewClean,
+      isTransliterated: isTransliterated,
+      absolute: calc.absolute,
+      ordinal: calc.ordinal,
+      reduced: calc.reduced,
+      atbash: calc.atbash ? calc.atbash.absolute : 0,
+      cumulative: runningSum,
+      delta: 0,
+      deltaSign: '='
+    };
+
+    if (words.length > 0) {
+      const prevVal = words[words.length - 1].absolute;
+      const d = calc.absolute - prevVal;
+      wordItem.delta = Math.abs(d);
+      wordItem.deltaSign = d > 0 ? '+' : (d < 0 ? '-' : '=');
+      if (d > 0) increasingDeltas++;
+      else if (d < 0) decreasingDeltas++;
+    }
+
+    words.push(wordItem);
+  }
+
+  const wordCount = words.length;
+  if (wordCount === 0) {
+    return {
+      words: [],
+      wordCount: 0,
+      totalGematria: 0,
+      totalReduced: 0,
+      arithmeticMean: 0,
+      harmonicMean: 0,
+      rosheiTeivot: { word: '', gematria: 0, reduced: 0 },
+      sofeiTeivot: { word: '', gematria: 0, reduced: 0 },
+      sefirahBalance: { chesedRatio: 50, gevurahRatio: 50, label: 'Equilibrio (Tiféret)' },
+      isNumericPalindrome: false
+    };
+  }
+
+  const totalGematria = runningSum;
+  const totalReduced = (totalGematria % 9) || (totalGematria > 0 ? 9 : 0);
+  const arithmeticMean = Math.round((totalGematria / wordCount) * 10) / 10;
+  const harmonicMean = harmonicDenom > 0 ? Math.round((wordCount / harmonicDenom) * 10) / 10 : 0;
+
+  const rosheiCalc = CalculateGematria(rosheiLetters);
+  const sofeiCalc = CalculateGematria(sofeiLetters);
+
+  const vals = words.map(w => w.absolute);
+  const isNumericPalindrome = wordCount >= 3 && vals.slice().reverse().every((val, idx) => val === vals[idx]);
+
+  const totalTransitions = (increasingDeltas + decreasingDeltas) || 1;
+  const chesedRatio = Math.round((increasingDeltas / totalTransitions) * 100);
+  const gevurahRatio = 100 - chesedRatio;
+  let sefirahLabel = 'Equilibrio Armónico (Tiféret)';
+  if (chesedRatio >= 65) sefirahLabel = 'Predominancia Expansiva (Jésed / Gracia)';
+  else if (gevurahRatio >= 65) sefirahLabel = 'Predominancia Estructurante (Gevurá / Rigor)';
+
+  return {
+    words: words,
+    wordCount: wordCount,
+    totalGematria: totalGematria,
+    totalReduced: totalReduced,
+    arithmeticMean: arithmeticMean,
+    harmonicMean: harmonicMean,
+    rosheiTeivot: {
+      word: rosheiLetters,
+      gematria: rosheiCalc.absolute,
+      reduced: rosheiCalc.reduced
+    },
+    sofeiTeivot: {
+      word: sofeiLetters,
+      gematria: sofeiCalc.absolute,
+      reduced: sofeiCalc.reduced
+    },
+    sefirahBalance: {
+      chesedRatio: chesedRatio,
+      gevurahRatio: gevurahRatio,
+      label: sefirahLabel
+    },
+    isNumericPalindrome: isNumericPalindrome
+  };
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -1749,7 +1887,8 @@ const _exportedEngine = {
   ELSControlAtSkip,
   AssessELSHonesty,
   ELS_HONESTY_LABELS,
-  FindResonantPsalms
+  FindResonantPsalms,
+  AnalyzeSentenceFlow
 };
 
 if (typeof module !== 'undefined' && module.exports) {

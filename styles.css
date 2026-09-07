@@ -3708,6 +3708,180 @@ footer a:hover {
   margin-bottom: 0.8rem;
 }
 
+/* ==========================================================================
+   FASE 11: ANALIZADOR DE FRASES, VERSÍCULOS & FLUJO MÍSTICO
+   ========================================================================== */
+
+.sentence-presets-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.sentence-preset-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: var(--text-secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sentence-preset-chip:hover {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold-primary);
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.sentence-balance-card {
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.balance-title {
+  font-size: 0.9rem;
+  color: var(--gold-primary);
+}
+
+.palindrome-badge {
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.3) 0%, rgba(212, 175, 55, 0.3) 100%);
+  border: 1px solid #9b59b6;
+  color: #e056fd;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-weight: bold;
+  animation: pulseGlow 2s infinite alternate;
+}
+
+.balance-progress-wrapper {
+  display: flex;
+  height: 22px;
+  border-radius: 11px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.72rem;
+  font-weight: bold;
+  line-height: 22px;
+  text-align: center;
+}
+
+.balance-bar-segment.chesed {
+  background: linear-gradient(90deg, #00b894 0%, #00cec9 100%);
+  color: #05040e;
+  transition: width 0.5s ease;
+}
+
+.balance-bar-segment.gevurah {
+  background: linear-gradient(90deg, #d63031 0%, #e17055 100%);
+  color: #ffffff;
+  transition: width 0.5s ease;
+}
+
+/* ACRÓSTICOS EN FLUJO */
+.acrostics-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.acrostic-flow-card {
+  background: linear-gradient(145deg, rgba(20, 16, 38, 0.75) 0%, rgba(10, 8, 22, 0.75) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.acrostic-flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.acrostic-flow-header h4 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--gold-primary);
+}
+
+.acrostic-val-badge {
+  background: rgba(212, 175, 55, 0.2);
+  color: #ffd700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.acrostic-word-display {
+  font-family: var(--font-hebrew);
+  font-size: 1.8rem;
+  color: #ffd700;
+  text-align: center;
+  letter-spacing: 4px;
+  margin: 0.6rem 0;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.acrostic-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 0.8rem;
+}
+
+/* TABLA DE PALABRAS Y DELTAS */
+.sentence-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.delta-chip {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.delta-plus {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.delta-minus {
+  background: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.delta-zero {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
 
 
 

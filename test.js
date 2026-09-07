@@ -773,6 +773,39 @@ async function runAllTests() {
   assert(tehilimModuleFile.includes('renderPsalms'), "tehilimView.js implementa renderizado dinámico de salmos");
   assert(tehilimModuleFile.includes('renderPrayers'), "tehilimView.js implementa renderizado de plegarias sagradas");
 
+  console.log("\n=== SECCIÓN 29: ANALIZADOR DE FRASES Y ORACIONES COMPLETAS (CARACTERÍSTICA 1) ===");
+  assert(typeof Engine.AnalyzeSentenceFlow === 'function', "gematria.js exporta AnalyzeSentenceFlow");
+
+  const emptyFlow = Engine.AnalyzeSentenceFlow('');
+  assert(emptyFlow && emptyFlow.wordCount === 0 && emptyFlow.totalGematria === 0, "AnalyzeSentenceFlow maneja cadenas vacías de forma segura");
+
+  const genesis11 = "בראשית ברא אלהים את השמים ואת הארץ";
+  const genAnalysis = Engine.AnalyzeSentenceFlow(genesis11);
+  assert(genAnalysis.wordCount === 7, `Génesis 1:1 contiene 7 palabras (actual: ${genAnalysis.wordCount})`);
+  assert(genAnalysis.totalGematria === 2701, `Génesis 1:1 suma exactamente 2701 (actual: ${genAnalysis.totalGematria})`);
+  assert(genAnalysis.totalReduced === 1, `La raíz sefirótica de Génesis 1:1 (2701) es 1 (actual: ${genAnalysis.totalReduced})`);
+  assert(genAnalysis.words[0].cumulative === 913, "Bereshit suma acumulada 913");
+  assert(genAnalysis.words[6].cumulative === 2701, "La última palabra culmina la suma acumulada en 2701");
+  assert(genAnalysis.rosheiTeivot.word === 'בבאאהוה', `Roshei Teivot de Génesis 1:1 es 'בבאאהוה' (actual: ${genAnalysis.rosheiTeivot.word})`);
+  assert(genAnalysis.sofeiTeivot.word === 'תאםתםתץ', `Sofei Teivot de Génesis 1:1 es 'תאםתםתץ' (actual: ${genAnalysis.sofeiTeivot.word})`);
+  assert(genAnalysis.arithmeticMean > 385 && genAnalysis.arithmeticMean < 386, `Media aritmética correcta ~385.9 (actual: ${genAnalysis.arithmeticMean})`);
+  assert(genAnalysis.harmonicMean > 0, `Media armónica calculada sin división por cero (actual: ${genAnalysis.harmonicMean})`);
+
+  const shemaAnalysis = Engine.AnalyzeSentenceFlow("שמע ישראל יהוה אלהינו יהוה אחד");
+  assert(shemaAnalysis.wordCount === 6, "Shemá Israel contiene 6 palabras");
+  assert(shemaAnalysis.totalGematria === 1118, `Shemá Israel suma exactamente 1118 (actual: ${shemaAnalysis.totalGematria})`);
+
+  const palindromeAnalysis = Engine.AnalyzeSentenceFlow("שלום אמת שלום");
+  assert(palindromeAnalysis.isNumericPalindrome === true, "Detecta correctamente palíndromos numéricos simétricos");
+
+  const spanishAnalysis = Engine.AnalyzeSentenceFlow("paz y amor");
+  assert(spanishAnalysis.wordCount === 3 && spanishAnalysis.totalGematria > 0, "Procesa y translitera oraciones completas en español");
+
+  const sentenceModuleFile = fs.readFileSync('./js/modules/sentenceAnalyzer.js', 'utf8');
+  assert(sentenceModuleFile.includes('runAnalysis'), "sentenceAnalyzer.js contiene lógica de orquestación runAnalysis");
+  assert(sentenceModuleFile.includes('drawWaveform'), "sentenceAnalyzer.js dibuja el gráfico de onda en Canvas");
+  assert(sentenceModuleFile.includes('playSequentialMelody'), "sentenceAnalyzer.js implementa reproducción melódica secuencial");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

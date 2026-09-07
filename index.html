@@ -79,6 +79,7 @@
     <!-- Navegación Principal -->
     <nav>
       <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
+      <button class="nav-btn" data-tab="sentence">📖 Analizador de Frases</button>
       <button class="nav-btn" data-tab="tehilim">📜 Salmos & Plegarias</button>
       <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
       <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
@@ -913,6 +914,71 @@
       </div>
     </div>
 
+    <!-- SECCIÓN: ANALIZADOR DE FRASES Y ORACIONES COMPLETAS -->
+    <div id="sentence" class="tab-content">
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h2 class="input-title" style="font-size: 1.4rem; color: var(--gold-primary); margin-bottom: 0.4rem;">📖 Analizador de Frases, Versículos & Flujo Místico</h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 780px; margin: 0 auto;">
+            Decodifica oraciones completas palabra por palabra: gematria acumulativa, acrósticos ocultos (Roshei y Sofei Teivot), polaridad de Sefirot y onda de energía en tiempo real.
+          </p>
+        </div>
+
+        <!-- Entrada de Texto y Acciones -->
+        <div class="sentence-input-wrapper" style="max-width: 850px; margin: 0 auto 1.2rem auto;">
+          <textarea id="txtSentenceInput" class="gematria-input rtl" rows="3" placeholder="Pega un versículo en hebreo (ej. בראשית ברא אלהים...) o escribe una frase en español..." style="width: 100%; font-size: 1.2rem; margin-bottom: 0.8rem;"></textarea>
+          
+          <div style="display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap;">
+            <button id="btnAnalyzeSentence" class="share-act-btn btn-copy-image" style="padding: 0.6rem 1.4rem; font-size: 0.95rem;">⚡ Analizar Frase</button>
+            <button id="btnPlaySentenceMelody" class="share-act-btn btn-download-png" style="padding: 0.6rem 1.4rem; font-size: 0.95rem;">🎵 Reproducir Melodía Completa</button>
+          </div>
+        </div>
+
+        <!-- Presets Bíblicos y Arquetípicos -->
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; display: block;">Ejemplos Bíblicos & Místicos:</span>
+          <div id="sentencePresetsContainer" class="sentence-presets-row">
+            <!-- Chips de presets -->
+          </div>
+        </div>
+
+        <!-- Métricas Principales -->
+        <div class="results-grid" id="sentenceMetricsGrid" style="margin-bottom: 1.5rem;">
+          <!-- 4 tarjetas de resultados -->
+        </div>
+
+        <!-- Barra de Balance Sefirótico -->
+        <div id="sentenceBalanceContainer" style="margin-bottom: 1.5rem;">
+          <!-- Progress bar Jésed vs Gevurá -->
+        </div>
+
+        <!-- Gráfico de Onda de Flujo Energético en Canvas -->
+        <div class="glass-card" style="padding: 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.4rem;">
+            <h4 style="font-family: var(--font-serif); color: var(--gold-primary); margin: 0; font-size: 1rem;">📈 Gráfico de Onda de Flujo Energético (Palabra por Palabra)</h4>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Curva Armónica & Picos Gematriales</span>
+          </div>
+          <canvas id="sentenceWaveCanvas" style="width: 100%; height: 240px; border-radius: 8px; display: block;"></canvas>
+        </div>
+
+        <!-- Acrósticos Ocultos (Roshei Teivot & Sofei Teivot) -->
+        <div style="margin-bottom: 1.5rem;">
+          <h3 class="input-title" style="font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 0.8rem;">✨ Acrósticos Ocultos Revelados</h3>
+          <div id="sentenceAcrosticsContainer" class="acrostics-flow-grid">
+            <!-- Tarjetas de acrósticos inicial y final -->
+          </div>
+        </div>
+
+        <!-- Tabla Desglosada Paso a Paso -->
+        <div>
+          <h3 class="input-title" style="font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 0.8rem;">📜 Desglose Secuencial y Deltas (Δ)</h3>
+          <div id="sentenceWordsTableContainer">
+            <!-- Tabla dinámica -->
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Pie de Página -->
     <footer>
       <p>Desarrollado para la reflexión, la educación y el estudio de las correspondencias numéricas en la Torá.</p>
@@ -1063,6 +1129,7 @@
   <script src="js/modules/pwaManager.js"></script>
   <script src="js/modules/mysticAudio.js"></script>
   <script src="js/modules/tehilimView.js"></script>
+  <script src="js/modules/sentenceAnalyzer.js"></script>
 
   <!-- Orquestador Principal -->
   <script src="app.js"></script>
