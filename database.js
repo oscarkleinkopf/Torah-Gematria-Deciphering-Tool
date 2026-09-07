@@ -73,6 +73,261 @@ const TORAH_VERSES = [
     translation: 'Porque proclamaré el nombre del Señor; dad grandeza a nuestro Dios.',
     gematria: 708,
     commentary: 'El valor numérico de este versículo central es 708, coincidiendo de forma asombrosa con el año hebreo 5708 (תש"ח - 1948), año del nacimiento del Estado de Israel.'
+  },
+  {
+    reference: 'Deuteronomio 30:12',
+    hebrew: 'מִי יַעֲלֶה לָּנוּ הַשָּׁמַיְמָה',
+    transliteration: 'Mi ya\'aleh lanu hashamaymah',
+    translation: '¿Quién subirá por nosotros al cielo?',
+    gematria: 651,
+    commentary: 'Las iniciales forman מילה (circuncisión / palabra) y las finales יהוה. Ejemplo clásico de Roshei y Sofei Teivot en cuatro palabras.'
+  },
+  {
+    reference: 'Deuteronomio 6:4',
+    hebrew: 'שְׁמַע יִשְׂרָאֵל יְהוָה אֱלֹהֵינוּ יְהוָה אֶחָד',
+    transliteration: 'Shema Yisrael Adonai Eloheinu Adonai Ejad',
+    translation: 'Escucha, Israel: el Señor nuestro Dios, el Señor uno es.',
+    gematria: 1118,
+    commentary: 'El Shemá. Seis palabras con espacios: corpus de Roshei/Sofei Teivot, no de la cinta ELS.'
+  },
+  {
+    reference: 'Deuteronomio 6:5',
+    hebrew: 'וְאָהַבְתָּ אֵת יְהוָה אֱלֹהֶיךָ בְּכָל לְבָבְךָ וּבְכָל נַפְשְׁךָ וּבְכָל מְאֹדֶךָ',
+    transliteration: 'Ve\'ahavta et Adonai Elohecha bechol levavecha uvechol nafshecha uvechol me\'odecha',
+    translation: 'Y amarás al Señor tu Dios con todo tu corazón, con toda tu alma y con todas tus fuerzas.',
+    gematria: 1644,
+    commentary: 'Ve\'ahavta, continuación inmediata del Shemá. Diez palabras para notarikon sobre el amor a Dios.'
+  },
+  {
+    reference: 'Números 6:24–26',
+    hebrew: 'יְבָרֶכְךָ יְהוָה וְיִשְׁמְרֶךָ יָאֵר יְהוָה פָּנָיו אֵלֶיךָ וִיחֻנֶּךָּ יִשָּׂא יְהוָה פָּנָיו אֵלֶיךָ וְיָשֵׂם לְךָ שָׁלוֹם',
+    transliteration: 'Yevarechecha Adonai veyishmerecha. Ya\'er Adonai panav elecha vichuneka. Yisa Adonai panav elecha veyasem lecha shalom',
+    translation: 'El Señor te bendiga y te guarde. El Señor haga resplandecer su rostro sobre ti y tenga de ti misericordia. El Señor alce hacia ti su rostro y ponga en ti paz.',
+    gematria: 2718,
+    commentary: 'Birkat Kohanim (bendición sacerdotal) en tres versículos seguidos. Quince palabras para acrósticos sobre la bendición.'
+  },
+  {
+    reference: 'Éxodo 20:2',
+    hebrew: 'אָנֹכִי יְהוָה אֱלֹהֶיךָ אֲשֶׁר הוֹצֵאתִיךָ מֵאֶרֶץ מִצְרַיִם מִבֵּית עֲבָדִים',
+    transliteration: 'Anochi Adonai Elohecha asher hotzeticha me\'eretz Mitzrayim mibeit avadim',
+    translation: 'Yo soy el Señor tu Dios, que te saqué de la tierra de Egipto, de la casa de servidumbre.',
+    gematria: 2495,
+    commentary: 'Apertura del Decálogo. Nueve palabras; las iniciales no se presentan como un código, solo como frase curada.'
+  },
+  {
+    reference: 'Génesis 1:3',
+    hebrew: 'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר וַיְהִי אוֹר',
+    transliteration: 'Vayomer Elohim yehi or vayehi or',
+    translation: 'Y dijo Dios: Sea la luz; y fue la luz.',
+    gematria: 813,
+    commentary: 'Primera pronunciación creadora. Seis palabras en torno a אור (luz).'
+  },
+  {
+    reference: 'Éxodo 3:14',
+    hebrew: 'אֶהְיֶה אֲשֶׁר אֶהְיֶה',
+    transliteration: 'Ehyeh asher ehyeh',
+    translation: 'Yo soy el que soy.',
+    gematria: 543,
+    commentary: 'Autorevelación en la zarza ardiente. Tres palabras (אהיה אשר אהיה) para extraer Roshei/Sofei Teivot, no como cinta ELS.'
+  }
+];
+
+const ACROSTIC_EXAMPLES = [
+  {
+    id: 'bilu',
+    label: 'BILU · Isaías 2:5',
+    type: 'roshei',
+    target: 'בילו',
+    reference: 'Isaías 2:5'
+  },
+  {
+    id: 'milah',
+    label: 'מילה · Deut. 30:12',
+    type: 'roshei',
+    target: 'מילה',
+    reference: 'Deuteronomio 30:12'
+  },
+  {
+    id: 'yhvh',
+    label: 'יהוה · Deut. 30:12 (finales)',
+    type: 'sofei',
+    target: 'יהוה',
+    reference: 'Deuteronomio 30:12'
+  }
+];
+
+/**
+ * Guided study gallery for the ELS tab. Only `reproducible: true` items
+ * are presented as findings in *this* corpus (five Torah books, WLC).
+ * Famous popular-press matrices (Drosnin, WRR rabbi lists) stay in the
+ * bibliography — they need extra name lists and are not claimed here.
+ */
+const ELS_BIBLIOGRAPHY = [
+  {
+    id: 'bachya',
+    author: 'Rabbeinu Bachya',
+    title: 'Be’ur al ha-Torah',
+    year: 's. XIII',
+    note: 'Uno de los primeros comentarios que señala saltos de letras (p. ej. cada 50) y notarikon en Génesis.'
+  },
+  {
+    id: 'cordovero',
+    author: 'Moshe Cordovero',
+    title: 'Pardes Rimonim',
+    year: 's. XVI',
+    note: 'Manual clásico de gematría, temurá y notarikon. No es un motor ELS informático.'
+  },
+  {
+    id: 'vilna',
+    author: 'Gaón de Vilna',
+    title: 'Aderet Eliyahu',
+    year: 's. XVIII',
+    note: 'Arquitectura del texto masorético; se cita a menudo junto a los códigos, pero no describe ELS por ordenador.'
+  },
+  {
+    id: 'weissmandl',
+    author: 'Michael Ber Weissmandl',
+    title: 'Torat Chemed',
+    year: '1958',
+    note: 'Observación moderna de תורה cada 50 letras y la familia de patrones en los cinco libros.'
+  },
+  {
+    id: 'wrr',
+    author: 'Witztum, Rips y Rosenberg',
+    title: 'Equidistant Letter Sequences in the Book of Genesis',
+    year: '1994',
+    note: 'Statistical Science: experimento de «grandes rabinos» en Génesis. Sigue siendo objeto de debate metodológico.'
+  },
+  {
+    id: 'drosnin',
+    author: 'Michael Drosnin',
+    title: 'The Bible Code I–III',
+    year: '1997–',
+    note: 'Popularizó matrices predictivas (Rabin, etc.). Eliyahu Rips rechazó el uso profético. Esta app no las reproduce.'
+  },
+  {
+    id: 'mckay',
+    author: 'McKay, Bar-Natan, Bar-Hillel y Kalai',
+    title: 'Solving the Bible Code Puzzle',
+    year: '1999',
+    note: 'Statistical Science: el mismo método produce «códigos» en Guerra y paz y Moby-Dick. Control de texto barajado.'
+  },
+  {
+    id: 'tigay',
+    author: 'Jeffrey Tigay (y crítica textual)',
+    title: 'Variantes masoréticas / Qumrán',
+    year: '—',
+    note: 'El recuento de letras no es estable entre manuscritos. Un ELS depende de una cinta consonántica concreta.'
+  }
+];
+
+const ELS_CLASSIC_EXAMPLES = [
+  {
+    id: 'torah-50-genesis',
+    kind: 'els',
+    title: 'תורה cada 50 letras · Génesis 1',
+    hebrew: 'תורה',
+    skipMin: 50,
+    skipMax: 50,
+    matchHint: { start: 5, skip: 50 },
+    matrixWidth: 50,
+    book: 'all',
+    honestyKey: 'common',
+    sources: ['Rabbeinu Bachya, Be’ur al ha-Torah', 'Michael Ber Weissmandl, Torat Chemed (1958)'],
+    context: 'Desde la ת de בראשית, cada 50 letras se lee תורה. Palabra de 4 letras con salto fijo: hallazgo exploratorio, no un milagro.',
+    corpusNote: 'Reproducible en este corpus (Génesis completo, WLC). Letra #5 · Génesis 1:1.',
+    reproducible: true
+  },
+  {
+    id: 'torah-50-exodus',
+    kind: 'els',
+    title: 'תורה salto 50 · Éxodo 1',
+    hebrew: 'תורה',
+    skipMin: 50,
+    skipMax: 50,
+    matchHint: { start: 7, skip: 50 },
+    matrixWidth: 50,
+    book: 'exodus',
+    honestyKey: 'common',
+    sources: ['Michael Ber Weissmandl, Torat Chemed (1958)'],
+    context: 'Desde la primera ת de Shemot (Éxodo 1:1), cada 50 letras se lee תורה. Misma cautela que en Génesis: palabra de 4 letras, salto fijo, hallazgo exploratorio.',
+    corpusNote: 'Reproducible en Shemot completo. Letra #7 del Éxodo · Éxodo 1:1.',
+    reproducible: true
+  },
+  {
+    id: 'acrostic-bilu',
+    kind: 'acrostic',
+    acrosticId: 'bilu',
+    title: 'BILU · Isaías 2:5',
+    hebrew: 'בילו',
+    honestyKey: 'plausible',
+    sources: ['Isaías 2:5 · pioneros BILU (1882)'],
+    context: 'Roshei Teivot de בית יעקב לכו ונלכה. Es un acróstico sobre un versículo con espacios, no un ELS.',
+    corpusNote: 'Se abre en Acrósticos (frases curadas).',
+    reproducible: true
+  },
+  {
+    id: 'acrostic-milah',
+    kind: 'acrostic',
+    acrosticId: 'milah',
+    title: 'מילה · Deuteronomio 30:12',
+    hebrew: 'מילה',
+    honestyKey: 'plausible',
+    sources: ['Deuteronomio 30:12', 'comentario tradicional de Roshei Teivot'],
+    context: 'Las iniciales de מִי יַעֲלֶה לָּנוּ הַשָּׁמַיְמָה forman מילה (circuncisión / palabra).',
+    corpusNote: 'Se abre en Acrósticos (frases curadas).',
+    reproducible: true
+  },
+  {
+    id: 'acrostic-yhvh',
+    kind: 'acrostic',
+    acrosticId: 'yhvh',
+    title: 'יהוה · Deuteronomio 30:12 (finales)',
+    hebrew: 'יהוה',
+    honestyKey: 'plausible',
+    sources: ['Deuteronomio 30:12', 'Sofei Teivot'],
+    context: 'Las letras finales del mismo versículo forman el Tetragrámaton. No es un código ELS.',
+    corpusNote: 'Se abre en Acrósticos (frases curadas).',
+    reproducible: true
+  },
+  {
+    id: 'pair-ahava-echad',
+    kind: 'gematria',
+    title: 'אהבה y אחד = 13',
+    hebrew: 'אהבה',
+    wordA: 'אהבה',
+    wordB: 'אחד',
+    honestyKey: 'plausible',
+    sources: ['Pares clásicos de gematría'],
+    context: 'Amor y Unidad valen 13; su suma es 26 (יהוה). Estudio de equivalencia numérica, no un ELS.',
+    corpusNote: 'Se abre en el Comparador.',
+    reproducible: true
+  },
+  {
+    id: 'pair-tzion-yosef',
+    kind: 'gematria',
+    title: 'ציון y יוסף = 156',
+    hebrew: 'ציון',
+    wordA: 'ציון',
+    wordB: 'יוסף',
+    honestyKey: 'plausible',
+    sources: ['Pares clásicos de gematría'],
+    context: 'Sión y José comparten 156. Puente histórico-místico del retorno, no un código de saltos.',
+    corpusNote: 'Se abre en el Comparador.',
+    reproducible: true
+  },
+  {
+    id: 'pair-mashiach-nachash',
+    kind: 'gematria',
+    title: 'משיח y נחש = 358',
+    hebrew: 'משיח',
+    wordA: 'משיח',
+    wordB: 'נחש',
+    honestyKey: 'plausible',
+    sources: ['Pares clásicos de gematría'],
+    context: 'Mesías y serpiente valen 358. Lectura cabalística de transmutación, no un ELS hallado aquí.',
+    corpusNote: 'Se abre en el Comparador.',
+    reproducible: true
   }
 ];
 
@@ -1171,7 +1426,10 @@ if (typeof module !== 'undefined' && module.exports) {
     LEGENDARY_PAIRS,
     SPANISH_HEBREW_DICT,
     TEHILIM_PSALMS,
-    SACRED_PRAYERS
+    SACRED_PRAYERS,
+    ACROSTIC_EXAMPLES,
+    ELS_BIBLIOGRAPHY,
+    ELS_CLASSIC_EXAMPLES
   };
 } else {
   window.GematriaDB = { 
@@ -1184,7 +1442,10 @@ if (typeof module !== 'undefined' && module.exports) {
     LEGENDARY_PAIRS,
     SPANISH_HEBREW_DICT,
     TEHILIM_PSALMS,
-    SACRED_PRAYERS
+    SACRED_PRAYERS,
+    ACROSTIC_EXAMPLES,
+    ELS_BIBLIOGRAPHY,
+    ELS_CLASSIC_EXAMPLES
   };
 }
 

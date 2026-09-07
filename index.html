@@ -78,18 +78,25 @@
 
     <!-- Navegación Principal -->
     <nav>
-      <button class="nav-btn active" data-tab="calculator">Calculadora de Gematria</button>
-      <button class="nav-btn" data-tab="sentence">📖 Analizador de Frases</button>
-      <button class="nav-btn" data-tab="tehilim">📜 Salmos & Plegarias</button>
-      <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
-      <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
-      <button class="nav-btn" data-tab="biblecode">Código de la Biblia</button>
-      <button class="nav-btn" data-tab="zionism">Correlación Sionista</button>
-      <button class="nav-btn" data-tab="comparison">Comparador Místico</button>
-      <button class="nav-btn" data-tab="letters">Espejo de Letras</button>
-      <button class="nav-btn" data-tab="favorites">⭐ Favoritos</button>
-      <button class="nav-btn" data-tab="reflection">Espacio de Reflexión</button>
-      <button class="nav-btn tour-nav-btn" id="btnStartTour" title="Iniciar recorrido interactivo de 3 pasos">✨ Tour Guiado</button>
+      <button class="nav-btn active" data-tab="explore">Inicio</button>
+      <button class="nav-btn" data-tab="calculator">Calculadora</button>
+      <button class="nav-btn" data-tab="sentence">📖 Frases</button>
+      <button class="nav-btn" data-tab="biblecode">Código ELS</button>
+      <button class="nav-btn" data-tab="favorites">Favoritos</button>
+      <div class="nav-more-wrap">
+        <button type="button" class="nav-more-toggle" id="btnNavMore" aria-expanded="false" aria-controls="navMoreMenu">Más</button>
+        <div id="navMoreMenu" class="nav-more-menu" hidden>
+          <button class="nav-btn" data-tab="tehilim">Salmos & Plegarias</button>
+          <button class="nav-btn" data-tab="torah">Buscador en la Torá</button>
+          <button class="nav-btn" data-tab="acrostics">Acrósticos</button>
+          <button class="nav-btn" data-tab="zionism">Línea de tiempo</button>
+          <button class="nav-btn" data-tab="comparison">Comparador</button>
+          <button class="nav-btn" data-tab="letters">Espejo de letras</button>
+          <button class="nav-btn" data-tab="reflection">Reflexión</button>
+          <button class="nav-btn" data-tab="studychat">Estudio IA</button>
+          <button class="nav-btn tour-nav-btn" id="btnStartTour" title="Iniciar recorrido interactivo de 3 pasos">✨ Tour Guiado</button>
+        </div>
+      </div>
     </nav>
     <div id="studyReturnBar" class="study-return-bar" hidden>
       <button type="button" class="study-return-btn" id="btnReturnToStudy">← Volver al estudio</button>
@@ -215,6 +222,21 @@
       <div class="glass-card explore-panel explore-output-panel" id="exploreOutputPanel">
         <div id="exploreStatus" class="explore-status" aria-live="polite"></div>
         <div id="exploreResults" class="explore-results"></div>
+      </div>
+
+      <div class="glass-card els-study-teaser" id="elsStudyTeaser">
+        <h3 class="input-title">Ejemplos clásicos de estudio</h3>
+        <p class="explore-lead">
+          Un clic abre un ejemplo <strong>reproducible en esta Torá</strong> (cinco libros completos, WLC; no es el Tanaj con Profetas y Escritos).
+          No son profecías: son saltos, acrósticos o pares de gematría para estudiar con el semáforo de honestidad.
+        </p>
+        <div class="els-teaser-chips" id="elsStudyTeaserChips">
+          <button type="button" class="explore-chip" data-els-classic="torah-50-genesis">תורה · salto 50 · Génesis 1</button>
+          <button type="button" class="explore-chip" data-els-classic="torah-50-exodus">תורה · salto 50 · Éxodo 1</button>
+          <button type="button" class="explore-chip" data-els-classic="acrostic-bilu">BILU · Isaías 2:5</button>
+          <button type="button" class="explore-chip" data-els-classic="pair-ahava-echad">אהבה = אחד = 13</button>
+          <button type="button" class="explore-chip" data-open-study-chat="els">Preguntar: ¿qué es ELS?</button>
+        </div>
       </div>
     </div>
 
@@ -557,18 +579,36 @@
       <!-- Onboarding Collapsible -->
       <details class="glass-card els-onboarding" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
         <summary style="font-family: var(--font-serif); color: var(--gold-primary); font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none;">
-          <span>📖 ¿Qué es el Código de la Biblia y cómo funciona el motor ELS?</span>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">▼ haz clic para leer</span>
+          <span>Qué afirma y qué no afirma esta herramienta</span>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">▼ leer</span>
         </summary>
-        <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.8rem;">
+        <div id="elsHonestyNote" class="els-honesty-copy">
           <p>
-            El <strong>Código de la Biblia</strong> o búsqueda por <strong>Secuencias de Letras Equidistantes (ELS)</strong> busca términos ocultos en el texto hebreo continuo de la Torá (corpus consonántico de los 5 libros, ~27 000 letras, sin espacios ni puntuación).
+            El motor busca <strong>secuencias de letras equidistantes (ELS)</strong> en una cinta consonántica
+            de ~306 000 letras: los <strong>cinco libros de la Torá completos</strong> (WLC vía Sefaria).
+            No incluye Profetas ni Escritos. Palabras cortas aparecen en cualquier texto largo; un hallazgo no demuestra diseño ni predice el futuro.
           </p>
-          <p style="margin-top: 0.5rem;">
-            El motor toma una palabra y prueba todos los saltos posibles (ej: tomar cada 7ª letra). Si las letras de la palabra forman una secuencia a igual intervalo y se disponen en una cuadrícula con el ancho adecuado, la palabra aparece alineada verticalmente o en diagonal, permitiendo visualizar cruces con otras palabras clave en la misma matriz.
+          <p>
+            <strong>Sí mostramos</strong> ejemplos reproducibles aquí (p. ej. <span class="he">תורה</span> a salto 50 desde Génesis 1:1 y desde Éxodo 1:1)
+            y un control en texto barajado —el mismo test que usan los críticos— para ver si el salto también sale al azar.
           </p>
-          <p style="margin-top: 0.5rem; color: var(--gold-glow); font-size: 0.85rem;">
-            💡 <strong>Consejo:</strong> Puedes ingresar una o varias palabras separadas por coma (ej: <code>Israel, Moisés</code>) para buscar sus coincidencias y ver sus intersecciones de color.
+          <p>
+            <strong>No afirmamos</strong> las matrices populares de Drosnin (Rabin, Hitler, 11-S) ni el experimento WRR de «grandes rabinos»:
+            hace falta además una lista de apelativos y un protocolo estadístico que esta app no ejecuta. Eliyahu Rips rechazó el uso predictivo de esos libros.
+            McKay et al. (1999) encontraron «códigos» equivalentes en <em>Guerra y paz</em>.
+          </p>
+          <h4 class="els-biblio-heading">Lecturas (estudio, no prueba)</h4>
+          <ul class="els-biblio-list" id="elsBibliographyList">
+            <li>Rabbeinu Bachya, <em>Be’ur al ha-Torah</em> (s. XIII) — saltos / notarikon.</li>
+            <li>Moshe Cordovero, <em>Pardes Rimonim</em> — gematría, temurá, notarikon.</li>
+            <li>Michael Ber Weissmandl, <em>Torat Chemed</em> (1958) — <span class="he">תורה</span> cada 50 letras.</li>
+            <li>Witztum, Rips y Rosenberg, <em>Statistical Science</em> 1994 — debate de «grandes rabinos».</li>
+            <li>Michael Drosnin, <em>The Bible Code</em> — popularización; Rips rechazó la profecía.</li>
+            <li>McKay, Bar-Natan, Bar-Hillel y Kalai, <em>Statistical Science</em> 1999 — controles en prosa secular.</li>
+            <li>Jeffrey Tigay / crítica textual — el recuento de letras no es estable entre manuscritos.</li>
+          </ul>
+          <p class="els-honesty-tip">
+            Consejo: una o varias palabras separadas por coma. El semáforo de las filas usa el mismo criterio de honestidad que Favoritos (exploratorio / plausible / raro), no «asombroso».
           </p>
         </div>
       </details>
@@ -605,10 +645,17 @@
             <button id="btnSearchELS" class="search-btn">Buscar Código</button>
           </div>
 
+          <section class="els-classic-gallery" id="elsClassicGallery" aria-label="Ejemplos clásicos">
+            <h4 class="els-gallery-title">Ejemplos clásicos</h4>
+            <p class="els-gallery-lead">Un clic fija el salto, abre la matriz y cita la fuente. Solo marcamos como hallazgo lo que este corpus puede mostrar.</p>
+            <div class="els-gallery-grid" id="elsClassicGalleryGrid"></div>
+            <div id="elsClassicCaption" class="els-classic-caption" hidden></div>
+          </section>
+
           <!-- Sugerencias Rápidas / Quick Picks -->
           <div style="margin-bottom: 1.2rem;">
             <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: bold;">
-              ✨ Búsquedas Sugeridas (Clic para probar):
+              Búsquedas sugeridas:
             </div>
             <div class="quick-picks-container" id="elsQuickPicks" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
               <button class="els-quick-chip" data-query="ישראל">🇮🇱 Israel (ישראל)</button>
@@ -713,7 +760,12 @@
               <button id="btnShareELS" title="Generar tarjeta mística de este código bíblico para compartir" style="display: none; background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.4); color: #c8a2c8; padding: 0.35rem 0.8rem; border-radius: 16px; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;">📤 Compartir Tarjeta</button>
               <!-- Botón Guardar Favorito -->
               <button id="btnSaveELSFavorite" class="btn-els-action btn-save-favorite" title="Guardar este hallazgo en Favoritos" style="display: none;">⭐ Guardar</button>
+              <button type="button" id="btnElsShuffledControl" class="btn-els-action" title="Buscar el mismo salto en un texto con las mismas letras en orden aleatorio" style="display: none;">Barajar control</button>
+              <button type="button" id="btnCopyELSCitation" class="btn-els-action" title="Copiar palabra, salto, letra de inicio y versículo" style="display: none;">Copiar cita</button>
             </div>
+          </div>
+          <div id="elsControlPanel" class="els-control-panel" hidden>
+            <p id="elsControlResult"></p>
           </div>
 
           <!-- Leyenda Topográfica Multipalabra (Mejora 6) -->
@@ -752,7 +804,8 @@
               Selecciona una coincidencia para construir la matriz del código.
             </div>
             <div id="matrixContainer" style="display: none; width: 100%;">
-              <!-- Tabla renderizada dinámicamente -->
+              <p id="matrixVerseHint" class="matrix-verse-hint" aria-live="polite">Pasa el cursor o el foco por una letra para ver el versículo.</p>
+              <table id="bibleCodeMatrix" class="bible-code-matrix" aria-label="Matriz ELS"></table>
             </div>
           </div>
 
@@ -771,8 +824,8 @@
             <div style="font-family: var(--font-serif); color: #c8a2c8; font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
               <span>🔮 Conexiones Secundarias Resaltadas (Cruces)</span>
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-              Las siguientes palabras clave del grafo de conocimiento también fueron encontradas dentro de los límites de esta matriz y se han resaltado en color púrpura:
+            <p data-els-secondary-intro style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+              Palabras del grafo de conocimiento cuya secuencia ELS cabe entera en esta ventana de matriz. No es un cifrado oculto: las palabras cortas son comunes.
             </p>
             <div id="elsSecondaryWordsList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
               <!-- Badges de palabras cruzadas encontradas -->
@@ -820,13 +873,51 @@
       </div>
     </div>
 
+    <!-- SECCIÓN: ESTUDIO IA (compañero, no profecía) -->
+    <div id="studychat" class="tab-content">
+      <div class="glass-card study-chat-panel">
+        <h3 class="input-title">Compañero de estudio</h3>
+        <p class="study-chat-lead">
+          Preguntas sobre gematría, ELS y acrósticos de <strong>esta</strong> app.
+          No es un oráculo: no afirma que «el código predijera» asesinatos, atentados ni noticias.
+          En GitHub Pages o sin IA activa en Netlify responde con <strong>texto local fijo</strong>;
+          en un deploy de producción con AI Gateway puede ampliar la explicación (misma política de honestidad).
+        </p>
+        <div id="study-chat-chips" class="study-chat-chips" aria-label="Preguntas de estudio"></div>
+        <div id="study-chat-log" class="study-chat-log" aria-live="polite"></div>
+        <form id="study-chat-form" class="study-chat-form">
+          <label class="visually-hidden" for="study-chat-input">Pregunta de estudio</label>
+          <textarea id="study-chat-input" class="study-chat-input" rows="2" maxlength="2000" placeholder="Ej: ¿Qué contiene la cinta ELS de esta app?"></textarea>
+          <button type="submit" id="study-chat-send" class="search-btn">Enviar</button>
+        </form>
+        <p class="study-chat-foot">
+          La función no envía la cinta de ~306 000 letras. Prueba el chip
+          «El código predijo a Rabin»: debe negar la profecía, no venderla.
+        </p>
+      </div>
+    </div>
+
     <!-- SECCIÓN: ACRÓSTICOS (ROSHEI / SOFEI TEIVOT) -->
     <div id="acrostics" class="tab-content">
       <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
         <h3 class="input-title">Buscador de Acrósticos (ראשי תיבות / סופי תיבות)</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-          Detecta si las <strong>iniciales (Roshei Teivot)</strong> o las <strong>finales (Sofei Teivot)</strong> de las palabras en un texto hebreo forman una palabra oculta. Una técnica milenaria de exégesis cabalística.
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+          Detecta si las <strong>iniciales (Roshei Teivot)</strong> o las <strong>finales (Sofei Teivot)</strong>
+          de las palabras forman una palabra oculta. Se busca en el texto pegado o en
+          <strong>frases curadas con espacios</strong> (versículos), no en el corpus ELS.
         </p>
+
+        <div class="acrostic-chips" id="acrosticExampleChips">
+          <button type="button" class="explore-chip" data-acrostic-ex="bilu">BILU · Isaías 2:5</button>
+          <button type="button" class="explore-chip" data-acrostic-ex="milah">מילה · Deut. 30:12</button>
+          <button type="button" class="explore-chip" data-acrostic-ex="yhvh">יהוה · Deut. 30:12 (finales)</button>
+          <button type="button" class="explore-chip" data-acrostic-verse="Deuteronomio 6:4">Shemá · Dt 6:4</button>
+          <button type="button" class="explore-chip" data-acrostic-verse="Deuteronomio 6:5">Ve’ahavta · Dt 6:5</button>
+          <button type="button" class="explore-chip" data-acrostic-verse="Números 6:24–26">Birkat Kohanim · Num 6:24–26</button>
+          <button type="button" class="explore-chip" data-acrostic-verse="Éxodo 20:2">Decálogo · Éx 20:2</button>
+          <button type="button" class="explore-chip" data-acrostic-verse="Génesis 1:3">Luz · Gn 1:3</button>
+          <button type="button" class="explore-chip" data-acrostic-verse="Éxodo 3:14">Ehyeh · Éx 3:14</button>
+        </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
           <div>
@@ -843,6 +934,7 @@
               <button class="els-quick-chip acrostic-type-btn" data-type="both">Ambos</button>
             </div>
             <button id="btnFindAcrostics" class="search-btn" style="width: 100%; margin-top: 1rem;">🔍 Buscar Acróstico</button>
+            <button type="button" id="btnAcrosticsCorpus" class="explore-action-btn" style="width: 100%; margin-top: 0.5rem;">📜 Buscar en frases curadas</button>
           </div>
         </div>
 
@@ -1114,7 +1206,11 @@
   <!-- Scripts de Datos y Motor -->
   <script src="database.js"></script>
   <script src="torah_text.js"></script>
+  <script src="hebrew_calendar.js"></script>
+  <script src="storage.js"></script>
   <script src="gematria.js"></script>
+  <script src="explore.js"></script>
+  <script src="export.js"></script>
 
   <!-- Módulos de la Aplicación -->
   <script src="js/modules/dailySync.js"></script>
@@ -1130,6 +1226,12 @@
   <script src="js/modules/mysticAudio.js"></script>
   <script src="js/modules/tehilimView.js"></script>
   <script src="js/modules/sentenceAnalyzer.js"></script>
+  <script src="js/modules/exploreView.js"></script>
+  <script src="js/modules/lettersView.js"></script>
+  <script src="js/modules/reflectionView.js"></script>
+  <script src="js/modules/favoritesView.js"></script>
+  <script src="js/modules/studyChatPolicy.js"></script>
+  <script src="js/modules/studyChatView.js"></script>
 
   <!-- Orquestador Principal -->
   <script src="app.js"></script>

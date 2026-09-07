@@ -12,10 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Estado Global de la Aplicación
   const appState = {
-    currentTab: 'calculator',
+    currentTab: 'explore',
     currentLanguage: 'hebrew',
     inputText: '',
-    gematriaResult: null
+    gematriaResult: null,
+    studyQuery: ''
   };
 
   // Contexto Compartido para los Módulos
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab: switchTab,
     setLanguage: setLanguage,
     processInputText: processInputText,
+    setStudyQuery: setStudyQuery,
     setTorahSearchMode: (mode) => {
       if (Modules.calculatorView) Modules.calculatorView.currentSearchMode = mode;
     },
@@ -34,9 +36,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- NAVEGACIÓN ENTRE PESTAÑAS (TABS) ---
   const navButtons = document.querySelectorAll('.nav-btn');
-  const tabPanes = document.querySelectorAll('.tab-pane');
+  const tabPanes = document.querySelectorAll('.tab-content, .tab-pane');
+
+  function setStudyQuery(query) {
+    appState.studyQuery = String(query || '').trim();
+    updateStudyReturnBar();
+  }
+
+  function updateStudyReturnBar() {
+    const bar = document.getElementById('studyReturnBar');
+    const qEl = document.getElementById('studyReturnQuery');
+    if (!bar) return;
+    const show = appState.currentTab !== 'explore' && !!appState.studyQuery;
+    bar.hidden = !show;
+    if (qEl) qEl.textContent = appState.studyQuery || '';
+  }
+
+  const SECONDARY_TABS = {
+    tehilim: true,
+    torah: true,
+    acrostics: true,
+    zionism: true,
+    comparison: true,
+    letters: true,
+    reflection: true,
+    studychat: true
+  };
+
+  function closeNavMore() {
+    const menu = document.getElementById('navMoreMenu');
+    const toggle = document.getElementById('btnNavMore');
+    if (menu) menu.hidden = true;
+    if (toggle) {
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function updateStudyChrome(tabId) {
+    const toggle = document.getElementById('btnNavMore');
+    if (toggle) toggle.classList.toggle('active-group', !!SECONDARY_TABS[tabId]);
+    updateStudyReturnBar();
+    closeNavMore();
+  }
 
   function switchTab(tabId) {
+    if (!tabId) return;
     appState.currentTab = tabId;
 
     navButtons.forEach(btn => {
@@ -46,6 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tabPanes.forEach(pane => {
       pane.classList.toggle('active', pane.id === tabId);
     });
+
+    updateStudyChrome(tabId);
+
+    if (tabId === 'favorites' && Modules.favoritesView && typeof Modules.favoritesView.render === 'function') {
+      Modules.favoritesView.render();
+    }
 
     // Redimensionar Canvas activos
     setTimeout(() => {
@@ -65,6 +116,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabId) switchTab(tabId);
     });
   });
+
+  const btnNavMore = document.getElementById('btnNavMore');
+  const navMoreMenu = document.getElementById('navMoreMenu');
+  if (btnNavMore && navMoreMenu) {
+    btnNavMore.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const willOpen = navMoreMenu.hidden;
+      navMoreMenu.hidden = !willOpen;
+      btnNavMore.classList.toggle('open', willOpen);
+      btnNavMore.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('click', (ev) => {
+    const wrap = document.querySelector('.nav-more-wrap');
+    if (!wrap || wrap.contains(ev.target)) return;
+    closeNavMore();
+  });
+
+  const btnReturnToStudy = document.getElementById('btnReturnToStudy');
+  if (btnReturnToStudy) {
+    btnReturnToStudy.addEventListener('click', () => switchTab('explore'));
+  }
 
   // --- CONFIGURACIÓN DE IDIOMA Y PROCESAMIENTO DE TEXTO ---
   function setLanguage(lang) {
@@ -133,6 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.galaxyCanvas) Modules.galaxyCanvas.init(appContext);
     if (Modules.comparatorView) Modules.comparatorView.init(appContext);
     if (Modules.timelineView) Modules.timelineView.init(appContext);
+    if (Modules.exploreView) Modules.exploreView.init(appContext);
+    if (Modules.lettersView) Modules.lettersView.init(appContext);
+    if (Modules.reflectionView) Modules.reflectionView.init(appContext);
+    if (Modules.favoritesView) Modules.favoritesView.init(appContext);
     if (Modules.bibleCodeView) Modules.bibleCodeView.init(appContext);
     if (Modules.shareCard) Modules.shareCard.init(appContext);
     if (Modules.tourModal) Modules.tourModal.init(appContext);
@@ -142,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Modules.mysticAudio) Modules.mysticAudio.init(appContext);
     if (Modules.tehilimView) Modules.tehilimView.init(appContext);
     if (Modules.sentenceAnalyzer) Modules.sentenceAnalyzer.init(appContext);
+    if (Modules.studyChatView) Modules.studyChatView.init(appContext);
 
     // Estado inicial
     processInputText('שלום');

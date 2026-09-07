@@ -3,7 +3,7 @@
  * Service Worker - Modo Offline y PWA
  */
 
-const CACHE_NAME = 'torah-gematria-v2';
+const CACHE_NAME = 'torah-gematria-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -24,7 +24,9 @@ const STATIC_ASSETS = [
   './js/modules/shareCard.js',
   './js/modules/tourModal.js',
   './js/modules/reportGenerator.js',
-  './js/modules/pwaManager.js'
+  './js/modules/pwaManager.js',
+  './js/modules/studyChatPolicy.js',
+  './js/modules/studyChatView.js'
 ];
 
 // Instalación: Precaching de recursos estáticos

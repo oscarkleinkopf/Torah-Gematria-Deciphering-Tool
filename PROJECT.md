@@ -2,7 +2,7 @@
 
 ## Architecture
 Vanilla JavaScript ES6+ single-page application with modular architecture:
-- `torah_text.js`: Expanded Hebrew biblical consonantal corpus (~27k letters across 5 books; curated post-Genesis excerpts including Decálogo, Shemá, Birkat Kohanim). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS`, `TORAH_VERSE_MAP`, `LookupTorahVerse(index)` (letter → Génesis 1:1, etc.).
+- `torah_text.js`: Complete Hebrew biblical consonantal corpus (~306k letters, 5 books, WLC via Sefaria). Sanitized at load (`SanitizeHebrewConsonantsLocal`). Exports `TORAH_BOOK_OFFSETS`, `TORAH_VERSE_MAP`, `TORAH_CORPUS_META`, `LookupTorahVerse(index)` (letter → Génesis 1:1, etc.). Regenerate with `node scripts/build_torah_corpus.js`.
 - `database.js`: Knowledge graph (57 concepts) & historical timeline (13 events).
 - `elsWorker.js`: Web Worker module for offloading heavy ELS search; supports progress + cooperative cancel via `shouldCancel`.
 - `hebrew_calendar.js`: Gregorian ↔ Hebrew civil calendar (Dershowitz/Reingold), Hebrew year letters (ה׳תש״ח), parse `5 Iyar 5708`.
@@ -11,8 +11,14 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `storage.js`: LocalStorage manager for Favorites, Explore history, and the user name dictionary (`GetUserNameDictionary` / `SaveUserNameEntry` / `RemoveUserNameEntry`).
 - `gematria.js`: Core Gematria calculations, Temura ciphers, Acrostics, ELS search & p-value; exports `SanitizeHebrewConsonants` and abortable `FindELS`.
 - `app.js`: UI Controller, DOM event bindings, compact study navigation, visual animations, Canvas renderers, and Explore tab (handoffs: focused timeline, Torah search by value, comparator).
+- `js/modules/lettersView.js`: 22-letter mirror + modal; `highlightFromStudy(hebrew)` from Explore.
+- `js/modules/reflectionView.js`: daily reflection topics; `openFromQuery(query)` via `PickDailyReflection`.
+- `js/modules/favoritesView.js`: ELS / Explore / profile favorites list with reload into the correct mode.
 - `styles.css`: Cyber-mystic glassmorphism UI styles, CSS variables, responsiveness, animation effects.
-- `index.html`: Compact study nav (Inicio, Calculadora, ELS, Favoritos + Más) with a return-to-study bar; Explore remains the home.
+- `index.html`: Compact study nav (Inicio, Calculadora, ELS, Favoritos + Más) with a return-to-study bar; Explore remains the home. **Estudio IA** lives under Más.
+- `js/modules/studyChatPolicy.js`: Shared study-companion policy (prophecy refusal, canned local replies). Same text as `netlify/functions/_shared/studyChatPolicy.cjs`.
+- `js/modules/studyChatView.js`: Vanilla chat UI; `fetch('/api/estudio-chat')` with local fallback; `openWithPrompt` from Explore.
+- `netlify/functions/study-chat.mts`: Optional Netlify Function (`/api/estudio-chat`) via AI Gateway (`gpt-4o-mini`). Degrades to local replies. Does not send `TORAH_TEXT`.
 - `test.js`: Automated unit test suite run via `node test.js`.
 - `adversarial_test.js`: Stress / cipher / acrostic / ELS adversarial suite.
 
@@ -34,6 +40,9 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 ### `gematria.js`
 - `CalculateGematria(hebrewText)`: Returns `{ originalText, cleanText, lettersCount, absolute, absoluteGadol, ordinal, reduced, atbashText, atbashValue, albamText, albamValue, avgadText, avgadValue, breakdown }`
 - `FindAcrostics(text, type, targetWord, options)`: `type` is `'roshei'`, `'sofei'`, or `'both'`. Returns array of `{ phrase, cleanPhrase, word, targetWord, isRoshei, isSofei, indices, wordDetails }`
+- `GetAcrosticPhraseCorpus(db)`: verses in `TORAH_VERSES` with ≥2 Hebrew words (never `TORAH_TEXT`).
+- `FindAcrosticsInPhrases(phrases, targetWord, type, options)`: Roshei/Sofei search over curated spaced phrases; attaches `reference`, `translation`, `sourceHebrew`. Targets shorter than 2 letters return `[]`.
+- `ACROSTIC_EXAMPLES`: classic chips — BILU (Isaías 2:5, roshei), מילה / יהוה (Deuteronomio 30:12, roshei / sofei).
 - `CalculateELSPValue(textLength, searchWord, skipSpec, letterFrequencies)`: Returns `{ expectedMatches, pValue, statisticalSignificanceScore, logPValue }`
 - `FindELS(text, searchWord, minSkip, maxSkip)`: Returns array of matches enhanced with `{ pValue, expectedCount, significanceScore }`
 - `AssessELSHonesty(match, { text, minSkip, maxSkip, runControl })`: exploratory band `common` | `plausible` | `rare`, warnings, optional shuffled-text control. Never claims proof.
@@ -62,6 +71,10 @@ Vanilla JavaScript ES6+ single-page application with modular architecture:
 - `GetActiveNameDictionary()` / `BuildUserNameEntry()` / `SearchNameDictionary()` / `SuggestNameDictionary()`: live dictionary merge, validation, browse/filter and typeahead.
 - `ExploreCorrelations` sets `meta.hebrewSource`: `dictionary` | `dictionary-user` | `phonetic` | `hebrew`.
 - `FormatCorrelationReport(data)`: Plain-text correlation / profile report for download.
+
+### Study companion (`studyChatPolicy.js` / `study-chat.mts`)
+- `isProphecyAsk(text)` / `localReply(text)` / `buildGatewayMessages(history)`: refuse Drosnin/WRR-as-findings; cap 12 messages × 2000 chars.
+- POST `/api/estudio-chat` body `{ messages: [{ role, content }] }` → `{ reply, source: "gateway"|"local", prophecyAsk }`. Never a live API in `make check`.
 
 ### `hebrew_calendar.js`
 - `GregorianToHebrew(y, m, d)` / `HebrewToGregorian(hy, hm, hd)`: civil Hebrew calendar (1=Nisan … 7=Tishrei).
