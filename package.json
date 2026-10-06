@@ -1,5 +1,6 @@
 {
   "name": "torah-gematria-deciphering-tool",
+  "license": "MIT",
   "private": true,
   "description": "Static Hebrew gematria/ELS study app. The browser stays vanilla; an optional Netlify Function uses AI Gateway for the study companion.",
   "scripts": {
