@@ -67,3 +67,11 @@ La pestaña **Estudio IA** (bajo **Más**) es un compañero de estudio, no un or
 ## Arquitectura
 
 Ver [PROJECT.md](PROJECT.md) para contratos de módulos, hitos (M1–M5) y layout del código.
+
+## Licencia
+
+- **Código:** [MIT](LICENSE). Copyright (c) 2026 Osias Kleinkopf.
+- **Contenido propio** (textos del grafo de conocimiento, línea de tiempo y documentación): [CC BY-NC-SA 4.0](LICENSE-CONTENT.md).
+- **Material de terceros** (corpus de la Torá y versículos): no cubierto; ver [THIRD-PARTY.md](THIRD-PARTY.md).
+
+El corpus `torah_text.js` (Westminster Leningrad Codex, vía [Sefaria](https://www.sefaria.org)) mantiene su licencia CC BY-SA con atribución a Sefaria. No está bajo MIT ni bajo CC BY-NC-SA.
