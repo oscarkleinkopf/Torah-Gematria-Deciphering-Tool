@@ -1173,10 +1173,13 @@ function FindReverseGematria(targetNumber, options = {}, database = []) {
  */
 function AnalyzeCrossConnection(calcA, calcB, database = []) {
   if (!calcA || !calcB) return null;
+  if (typeof calcA === 'string') calcA = CalculateGematria(calcA);
+  if (typeof calcB === 'string') calcB = CalculateGematria(calcB);
 
   const scoreResult = ScoreCorrelation(calcA, calcB);
   const delta = Math.abs(calcA.absolute - calcB.absolute);
   const sum = calcA.absolute + calcB.absolute;
+  const isExactMatch = (calcA.absolute === calcB.absolute);
 
   // Anagrama
   const normA = NormalizeHebrewString(calcA.cleanText).split('').sort().join('');
@@ -1186,21 +1189,22 @@ function AnalyzeCrossConnection(calcA, calcB, database = []) {
   // Buscar si el Delta o la Suma coinciden con conceptos conocidos en la base de datos
   const deltaMatches = delta > 0 ? FindReverseGematria(delta, { tolerance: 0, system: 'absolute' }, database) : [];
   const sumMatches = FindReverseGematria(sum, { tolerance: 0, system: 'absolute' }, database);
+  const bridgeConcept = deltaMatches.length > 0 ? deltaMatches[0].entry : null;
 
   // Cifrados cruzados
   const isAtbashCross = (calcA.absolute === calcB.atbashValue || calcB.absolute === calcA.atbashValue);
   const isAlbamCross = (calcA.absolute === (calcB.albamValue || 0) || calcB.absolute === (calcA.albamValue || 0));
 
   let narrative = '';
-  if (calcA.absolute === calcB.absolute) {
+  if (isExactMatch) {
     narrative = `"${calcA.cleanText}" y "${calcB.cleanText}" comparten el mismo valor absoluto exacto (${calcA.absolute}). En la Cábala, esto se denomina "Equivalencia de Forma" (Mispar Shaveh), revelando que ambas expresiones vehiculan la misma emanación divina en niveles complementarios de la realidad.`;
   } else if (isAnagram) {
     narrative = `"${calcA.cleanText}" y "${calcB.cleanText}" son Anagramas Cabalísticos (Tzeruf Otiot). Están construidas con las mismas letras sagradas reorganizadas, mostrando dos aspectos de una misma fuerza creadora primordial.`;
   } else if (delta === 1) {
     narrative = `La diferencia entre ambos conceptos es exactamente de 1 unidad (Colel). En la exégesis rabínica, el Colel representa el principio de la Unidad Divina (Ejad) que enlaza y unifica ambos términos.`;
   } else if (deltaMatches.length > 0) {
-    const bridgeConcept = deltaMatches[0].entry.spanish || deltaMatches[0].entry.concept || deltaMatches[0].entry.hebrew;
-    narrative = `La distancia numérica entre ambos términos es de ${delta}. Este delta corresponde exactamente al valor de "${bridgeConcept}" (${deltaMatches[0].entry.hebrew}), actuando como el puente espiritual y catalizador que une a "${calcA.cleanText}" con "${calcB.cleanText}".`;
+    const bridgeLabel = deltaMatches[0].entry.spanish || deltaMatches[0].entry.concept || deltaMatches[0].entry.hebrew;
+    narrative = `La distancia numérica entre ambos términos es de ${delta}. Este delta corresponde exactamente al valor de "${bridgeLabel}" (${deltaMatches[0].entry.hebrew}), actuando como el puente espiritual y catalizador que une a "${calcA.cleanText}" con "${calcB.cleanText}".`;
   } else if (isAtbashCross) {
     narrative = `Existe un puente por Cifrado Atbash: el valor de una palabra es idéntico a la contraparte cifrada de la otra, revelando una conexión de espejo y complementariedad mística.`;
   } else {
@@ -1213,8 +1217,10 @@ function AnalyzeCrossConnection(calcA, calcB, database = []) {
     scoreResult,
     delta,
     deltaMatches,
+    bridgeConcept,
     sum,
     sumMatches,
+    isExactMatch,
     isAnagram,
     isAtbashCross,
     isAlbamCross,
@@ -1972,6 +1978,278 @@ function AnalyzeSentenceFlow(sentenceText) {
   };
 }
 
+/**
+ * Analizador Multi-Palabra y Matriz de Resonancia Grupal (Family & Group Resonance - Característica 6)
+ */
+function AnalyzeGroupResonance(termsInput, optionsOrGraph = [], psalmsArg = [], versesArg = []) {
+  let knowledgeGraph = [];
+  let spanishDict = [];
+  let psalmsList = [];
+  let versesList = [];
+
+  if (Array.isArray(optionsOrGraph)) {
+    knowledgeGraph = optionsOrGraph;
+    psalmsList = Array.isArray(psalmsArg) ? psalmsArg : [];
+    versesList = Array.isArray(versesArg) ? versesArg : [];
+  } else if (optionsOrGraph && typeof optionsOrGraph === 'object') {
+    knowledgeGraph = Array.isArray(optionsOrGraph.knowledgeGraph) ? optionsOrGraph.knowledgeGraph : [];
+    spanishDict = Array.isArray(optionsOrGraph.spanishDict) ? optionsOrGraph.spanishDict : [];
+    psalmsList = Array.isArray(optionsOrGraph.psalmsList) ? optionsOrGraph.psalmsList : [];
+    versesList = Array.isArray(optionsOrGraph.versesList) ? optionsOrGraph.versesList : [];
+  }
+
+  let rawTerms = [];
+  if (Array.isArray(termsInput)) {
+    rawTerms = termsInput.map(t => String(t || '').trim()).filter(Boolean);
+  } else if (typeof termsInput === 'string') {
+    rawTerms = termsInput.split(/[,;\n]+/).map(t => t.trim()).filter(Boolean);
+  }
+
+  const members = [];
+  let collectiveSum = 0;
+  let collectiveOrdinal = 0;
+  let harmonicDenom = 0;
+  let groupAcrostic = '';
+
+  for (let i = 0; i < rawTerms.length; i++) {
+    const raw = rawTerms[i];
+    let hebrew = raw.replace(/[^\u05D0-\u05EA]/g, '');
+    let label = raw;
+    let source = 'hebrew';
+
+    if (!hebrew && /[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(raw)) {
+      const sem = SearchSpanishSemantic(raw, spanishDict, knowledgeGraph, 1);
+      if (sem && sem.length > 0 && sem[0].score >= 85) {
+        hebrew = sem[0].hebrew.replace(/[^\u05D0-\u05EA]/g, '');
+        source = 'dictionary';
+      } else {
+        hebrew = SpanishToHebrew(raw).replace(/[^\u05D0-\u05EA]/g, '');
+        source = 'phonetic';
+      }
+    }
+
+    if (!hebrew) continue;
+
+    const calc = CalculateGematria(hebrew);
+    collectiveSum += calc.absolute;
+    collectiveOrdinal += calc.ordinal;
+    if (calc.absolute > 0) {
+      harmonicDenom += 1 / calc.absolute;
+    }
+    groupAcrostic += hebrew[0];
+
+    members.push({
+      index: members.length + 1,
+      label: label,
+      hebrew: hebrew,
+      source: source,
+      absolute: calc.absolute,
+      ordinal: calc.ordinal,
+      reduced: calc.reduced,
+      atbash: calc.atbash ? calc.atbash.absolute : 0
+    });
+  }
+
+  const count = members.length;
+  if (count === 0) {
+    return {
+      members: [],
+      memberCount: 0,
+      collectiveSum: 0,
+      collectiveOrdinal: 0,
+      collectiveReduced: 0,
+      centerOfGravity: 0,
+      harmonicCenter: 0,
+      groupAcrostic: { word: '', gematria: 0, reduced: 0 },
+      pairs: [],
+      matrix: [],
+      strongestBond: null,
+      widestSpan: null,
+      centerConcept: null,
+      collectivePsalm: null,
+      collectiveVerse: null
+    };
+  }
+
+  const collectiveReduced = (collectiveSum % 9) || (collectiveSum > 0 ? 9 : 0);
+  const centerOfGravity = Math.round((collectiveSum / count) * 10) / 10;
+  const centerRounded = Math.round(centerOfGravity);
+  const harmonicCenter = harmonicDenom > 0 ? Math.round((count / harmonicDenom) * 10) / 10 : 0;
+  const acrosticCalc = CalculateGematria(groupAcrostic);
+
+  const pairs = [];
+  const matrix = Array.from({ length: count }, () => Array(count).fill(null));
+
+  for (let i = 0; i < count; i++) {
+    matrix[i][i] = {
+      isSelf: true,
+      delta: 0,
+      sum: members[i].absolute * 2,
+      affinityScore: 100
+    };
+    for (let j = i + 1; j < count; j++) {
+      const mA = members[i];
+      const mB = members[j];
+      const cross = AnalyzeCrossConnection(mA.hebrew, mB.hebrew, knowledgeGraph);
+      const setA = new Set((mA.hebrew || '').replace(/\s/g, ''));
+      const setB = new Set((mB.hebrew || '').replace(/\s/g, ''));
+      const sharedLetters = [];
+      for (const ch of setA) {
+        if (setB.has(ch)) sharedLetters.push(ch);
+      }
+      const factorRel = GetFactorRelation(mA.absolute, mB.absolute);
+
+      let affinity = 20;
+      if (cross.isExactMatch) affinity = 100;
+      else if (cross.delta === 1) affinity = 92;
+      else if (cross.delta <= 10) affinity = 82;
+      else if (factorRel) affinity = 78;
+      else {
+        const maxV = Math.max(mA.absolute, mB.absolute, 1);
+        const proximity = Math.max(0, Math.round((1 - (cross.delta / maxV)) * 55));
+        affinity += proximity;
+      }
+      if (mA.reduced === mB.reduced) affinity = Math.min(100, affinity + 15);
+      if (sharedLetters.length > 0) affinity = Math.min(100, affinity + Math.min(15, sharedLetters.length * 5));
+
+      const pairEntry = {
+        indexA: i,
+        indexB: j,
+        memberA: mA,
+        memberB: mB,
+        delta: cross.delta,
+        sum: cross.sum,
+        sharedRoot: mA.reduced === mB.reduced ? mA.reduced : null,
+        sharedLetters: sharedLetters,
+        factorRelation: factorRel,
+        isExactMatch: cross.isExactMatch,
+        isAnagram: cross.isAnagram,
+        bridgeConcept: cross.bridgeConcept || null,
+        affinityScore: affinity,
+        narrative: cross.narrative
+      };
+
+      pairs.push(pairEntry);
+      matrix[i][j] = pairEntry;
+      matrix[j][i] = pairEntry;
+    }
+  }
+
+  let strongestBond = null;
+  let widestSpan = null;
+  if (pairs.length > 0) {
+    const byAffinity = pairs.slice().sort((a, b) => {
+      if (b.affinityScore !== a.affinityScore) return b.affinityScore - a.affinityScore;
+      return a.delta - b.delta;
+    });
+    strongestBond = byAffinity[0];
+
+    const bySpan = pairs.slice().sort((a, b) => b.delta - a.delta);
+    widestSpan = bySpan[0];
+  }
+
+  let centerConcept = null;
+  if (Array.isArray(knowledgeGraph) && knowledgeGraph.length > 0) {
+    let bestDiff = Infinity;
+    for (let k = 0; k < knowledgeGraph.length; k++) {
+      const node = knowledgeGraph[k];
+      const nodeVal = (node.gematria && node.gematria.absolute)
+        ? node.gematria.absolute
+        : CalculateGematria(node.hebrew || '').absolute;
+      if (nodeVal <= 0) continue;
+      const dCenter = Math.abs(nodeVal - centerRounded);
+      const dSum = Math.abs(nodeVal - collectiveSum);
+      const minD = Math.min(dCenter, dSum);
+      if (minD < bestDiff) {
+        bestDiff = minD;
+        centerConcept = {
+          hebrew: node.hebrew,
+          spanish: node.spanish || node.concept || '',
+          meaning: node.meaning || '',
+          gematria: nodeVal,
+          matchedAgainst: dSum <= dCenter ? 'collectiveSum' : 'centerOfGravity',
+          diff: minD
+        };
+      }
+    }
+  }
+
+  let collectivePsalm = null;
+  if (Array.isArray(psalmsList) && psalmsList.length > 0) {
+    const bySum = FindResonantPsalms(collectiveSum, psalmsList);
+    const byCenter = FindResonantPsalms(centerRounded, psalmsList);
+    const combined = [...bySum, ...byCenter].sort((a, b) => b.score - a.score);
+    if (combined.length > 0) {
+      const top = combined[0];
+      collectivePsalm = {
+        ...top,
+        number: top.psalmNumber || top.number,
+        psalmNumber: top.psalmNumber || top.number
+      };
+    } else {
+      const p0 = psalmsList[0];
+      const v0 = (p0.verses && p0.verses[0]) || {};
+      collectivePsalm = {
+        number: p0.number,
+        psalmNumber: p0.number,
+        psalmTitle: p0.title,
+        psalmIntention: p0.intention,
+        verseNum: v0.verseNum || 1,
+        hebrew: v0.hebrew || '',
+        spanish: v0.spanish || '',
+        gematria: v0.gematria || 0,
+        reference: `${p0.title} - Versículo ${v0.verseNum || 1}`
+      };
+    }
+  }
+
+  let collectiveVerse = null;
+  if (Array.isArray(versesList) && versesList.length > 0) {
+    let bestV = null;
+    let bestVDiff = Infinity;
+    for (let v = 0; v < versesList.length; v++) {
+      const item = versesList[v];
+      const vVal = item.totalGematria || item.gematria || CalculateGematria(item.hebrew || '').absolute;
+      const d = Math.min(Math.abs(vVal - collectiveSum), Math.abs(vVal - centerRounded));
+      if (d < bestVDiff) {
+        bestVDiff = d;
+        const refStr = item.reference || item.ref || 'Torá';
+        bestV = {
+          ref: refStr,
+          reference: refStr,
+          hebrew: item.hebrew,
+          spanish: item.spanish || item.translation || '',
+          gematria: vVal,
+          diff: d
+        };
+      }
+    }
+    collectiveVerse = bestV;
+  }
+
+  return {
+    members: members,
+    memberCount: count,
+    collectiveSum: collectiveSum,
+    collectiveOrdinal: collectiveOrdinal,
+    collectiveReduced: collectiveReduced,
+    centerOfGravity: centerOfGravity,
+    harmonicCenter: harmonicCenter,
+    groupAcrostic: {
+      word: groupAcrostic,
+      gematria: acrosticCalc.absolute,
+      reduced: acrosticCalc.reduced
+    },
+    pairs: pairs,
+    matrix: matrix,
+    strongestBond: strongestBond,
+    widestSpan: widestSpan,
+    centerConcept: centerConcept,
+    collectivePsalm: collectivePsalm,
+    collectiveVerse: collectiveVerse
+  };
+}
+
 // Exportación compatible
 const _globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : globalThis);
 
@@ -2012,7 +2290,8 @@ const _exportedEngine = {
   AssessELSHonesty,
   ELS_HONESTY_LABELS,
   FindResonantPsalms,
-  AnalyzeSentenceFlow
+  AnalyzeSentenceFlow,
+  AnalyzeGroupResonance
 };
 
 if (typeof module !== 'undefined' && module.exports) {

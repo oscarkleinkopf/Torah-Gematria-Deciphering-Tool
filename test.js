@@ -1157,6 +1157,49 @@ async function runAllTests() {
   assert(sentenceModuleFile.includes('drawWaveform'), "sentenceAnalyzer.js dibuja el gráfico de onda en Canvas");
   assert(sentenceModuleFile.includes('playSequentialMelody'), "sentenceAnalyzer.js implementa reproducción melódica secuencial");
 
+  // ==========================================
+  // 34. COMPARADOR MULTI-PALABRA Y MATRIZ DE RESONANCIA GRUPAL (CARACTERÍSTICA 6)
+  // ==========================================
+  console.log("\n34. Probando Comparador Multi-Palabra y Matriz de Resonancia Grupal...");
+  assert(typeof Engine.AnalyzeGroupResonance === 'function', "AnalyzeGroupResonance está expuesta en gematria.js");
+
+  const emptyGroup = Engine.AnalyzeGroupResonance([]);
+  assert(emptyGroup.memberCount === 0 && emptyGroup.collectiveSum === 0, "Maneja correctamente lista vacía de miembros");
+
+  const patriarchsGroup = Engine.AnalyzeGroupResonance(
+    ['אברהם', 'יצחק', 'יעקב'],
+    DB.KNOWLEDGE_GRAPH,
+    DB.TEHILIM_PSALMS,
+    DB.TORAH_VERSES
+  );
+  assert(patriarchsGroup.memberCount === 3, "Reconoce los 3 Patriarcas en el grupo");
+  assert(patriarchsGroup.collectiveSum === 638, `Suma colectiva de los 3 Patriarcas es 638 (248+208+182, actual: ${patriarchsGroup.collectiveSum})`);
+  assert(patriarchsGroup.groupAcrostic.word === 'איי', `Acróstico grupal de los Patriarcas es איי (actual: ${patriarchsGroup.groupAcrostic.word})`);
+  assert(patriarchsGroup.groupAcrostic.gematria === 21, `Guematria del acróstico grupal איי es 21 (actual: ${patriarchsGroup.groupAcrostic.gematria})`);
+  assert(patriarchsGroup.pairs.length === 3, "Calcula exactamente 3 pares únicos para un grupo de 3 miembros");
+  assert(patriarchsGroup.matrix.length === 3 && patriarchsGroup.matrix[0].length === 3, "Construye matriz NxN de 3x3");
+  assert(patriarchsGroup.strongestBond !== null, "Identifica el vínculo nuclear más estrecho del grupo");
+  assert(patriarchsGroup.widestSpan !== null, "Identifica el puente polar más amplio del grupo");
+  assert(patriarchsGroup.collectivePsalm !== null && patriarcharchsHasPsalm(patriarchsGroup), "Encuentra Tehilim colectivo para el grupo");
+  assert(patriarchsGroup.collectiveVerse !== null && patriarcharchsHasVerse(patriarchsGroup), "Encuentra versículo de Torá colectivo para el grupo");
+
+  function patriarcharchsHasPsalm(g) { return g.collectivePsalm && typeof g.collectivePsalm.number === 'number'; }
+  function patriarcharchsHasVerse(g) { return g.collectiveVerse && typeof g.collectiveVerse.ref === 'string'; }
+
+  const spanishGroup = Engine.AnalyzeGroupResonance(
+    ['David', 'Raquel', 'Cohen', 'Israel'],
+    DB.KNOWLEDGE_GRAPH,
+    DB.TEHILIM_PSALMS,
+    DB.TORAH_VERSES
+  );
+  assert(spanishGroup.memberCount === 4 && spanishGroup.collectiveSum > 0, "Translitera y analiza grupo de 4 nombres en español");
+  assert(spanishGroup.pairs.length === 6, "Grupo de 4 miembros genera exactamente 6 pares combinatorios");
+
+  const comparatorModuleFile = fs.readFileSync('./js/modules/comparatorView.js', 'utf8');
+  assert(comparatorModuleFile.includes('executeGroupComparison'), "comparatorView.js incluye executeGroupComparison");
+  assert(comparatorModuleFile.includes('drawGroupNetwork'), "comparatorView.js incluye drawGroupNetwork para geometría sagrada");
+  assert(comparatorModuleFile.includes('playGroupHarmony'), "comparatorView.js incluye playGroupHarmony para acorde grupal");
+
   console.log("\n=== RESUMEN ===");
   if (success) {
     console.log("🎉 ¡TODAS LAS PRUEBAS PASARON CORRECTAMENTE!");

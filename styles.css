@@ -4670,6 +4670,174 @@ footer a:hover {
   }
 }
 
+/* ==========================================================================
+   FASE 12: COMPARADOR MULTI-PALABRA & MATRIZ DE RESONANCIA GRUPAL
+   ========================================================================== */
+
+.compare-mode-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+}
+
+.compare-mode-btn {
+  background: rgba(20, 16, 38, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--text-secondary);
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  font-family: var(--font-serif);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.compare-mode-btn:hover {
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
+}
+
+.compare-mode-btn.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.28) 0%, rgba(0, 206, 209, 0.18) 100%);
+  border-color: var(--gold-primary);
+  color: #ffd700;
+  font-weight: bold;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.28);
+}
+
+.group-members-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.group-member-card {
+  background: rgba(12, 10, 25, 0.65);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.group-member-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-member-idx {
+  font-size: 0.74rem;
+  color: var(--gold-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: bold;
+}
+
+.group-member-remove {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  font-size: 1.05rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+
+.group-member-preview {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  min-height: 1.2rem;
+}
+
+.group-results-split {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1.2rem;
+  align-items: stretch;
+}
+
+@media (max-width: 820px) {
+  .group-results-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.group-highlights-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.group-highlight-card {
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.group-highlight-card.bond-card {
+  border-color: rgba(46, 204, 113, 0.45);
+  background: linear-gradient(145deg, rgba(16, 36, 30, 0.55) 0%, rgba(10, 12, 24, 0.75) 100%);
+}
+
+.group-highlight-card.center-card {
+  border-color: rgba(212, 175, 55, 0.45);
+}
+
+.group-highlight-card.span-card {
+  border-color: rgba(0, 206, 209, 0.35);
+}
+
+.group-hl-title {
+  font-family: var(--font-serif);
+  font-size: 0.86rem;
+  color: var(--gold-primary);
+  margin-bottom: 0.35rem;
+  font-weight: bold;
+}
+
+.group-hl-pair {
+  font-size: 0.96rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.group-hl-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.group-matrix-table th,
+.group-matrix-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.matrix-self-cell {
+  color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.matrix-pair-cell {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.matrix-pair-cell:hover {
+  background: rgba(212, 175, 55, 0.14);
+}
+
+
 
 
 

@@ -514,65 +514,158 @@
       </div>
     </div>
 
-    <!-- SECCIÓN DE COMPARACIÓN DE DOS PALABRAS -->
+    <!-- SECCIÓN DE COMPARACIÓN DE DOS PALABRAS Y MATRIZ DE RESONANCIA GRUPAL -->
     <div id="comparison" class="tab-content">
-      <div class="comparison-grid">
-        <!-- Panel Izquierdo: Inputs de comparación -->
-        <div class="glass-card comparison-inputs-panel">
-          <h3 class="input-title">Comparador Místico Inteligente</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.2rem;">
-            Analiza dos conceptos para descubrir sus resonancias, calcular su <strong>diferencia cabalística (&Delta;)</strong> y revelar su puente espiritual.
-          </p>
+      <!-- Conmutador de Modo: Dúo (A vs B) vs Matriz Grupal Multi-Palabra -->
+      <div class="compare-mode-switcher" role="tablist" aria-label="Modos del Comparador">
+        <button type="button" class="compare-mode-btn active" data-compare-mode="duo" role="tab" aria-selected="true">
+          ⚡ Comparador Dúo (A vs B)
+        </button>
+        <button type="button" class="compare-mode-btn" data-compare-mode="group" role="tab" aria-selected="false">
+          👥 Resonancia Grupal / Familiar (Multi-Palabra)
+        </button>
+      </div>
 
-          <!-- Selector de Pares Legendarios -->
-          <div style="margin-bottom: 1.2rem;">
-            <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: bold;">
-              🌟 Pares Legendarios Arquetípicos (Clic para cargar):
-            </div>
-            <div class="legendary-pairs-chips" id="legendaryPairsContainer" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-              <!-- Cargado dinámicamente -->
-            </div>
-          </div>
-          
-          <div class="compare-inputs-flex">
-            <div class="compare-input-box">
-              <label for="txtCompareA" class="compare-label">Palabra / Evento A</label>
-              <input type="text" id="txtCompareA" class="compare-text-input" placeholder="Término A (ej: Amor, Sión)..." autocomplete="off">
-              <div class="compare-hebrew-hint" id="hintCompareA">—</div>
+      <!-- MODO 1: DÚO MÍSTICO (A VS B) -->
+      <div id="compareModeDuo">
+        <div class="comparison-grid">
+          <!-- Panel Izquierdo: Inputs de comparación -->
+          <div class="glass-card comparison-inputs-panel">
+            <h3 class="input-title">Comparador Místico Inteligente</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.2rem;">
+              Analiza dos conceptos para descubrir sus resonancias, calcular su <strong>diferencia cabalística (&Delta;)</strong> y revelar su puente espiritual.
+            </p>
+
+            <!-- Selector de Pares Legendarios -->
+            <div style="margin-bottom: 1.2rem;">
+              <div style="font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; font-weight: bold;">
+                🌟 Pares Legendarios Arquetípicos (Clic para cargar):
+              </div>
+              <div class="legendary-pairs-chips" id="legendaryPairsContainer" style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                <!-- Cargado dinámicamente -->
+              </div>
             </div>
             
-            <div class="compare-divider-vs">VS</div>
+            <div class="compare-inputs-flex">
+              <div class="compare-input-box">
+                <label for="txtCompareA" class="compare-label">Palabra / Evento A</label>
+                <input type="text" id="txtCompareA" class="compare-text-input" placeholder="Término A (ej: Amor, Sión)..." autocomplete="off">
+                <div class="compare-hebrew-hint" id="hintCompareA">—</div>
+              </div>
+              
+              <div class="compare-divider-vs">VS</div>
+              
+              <div class="compare-input-box">
+                <label for="txtCompareB" class="compare-label">Palabra / Evento B</label>
+                <input type="text" id="txtCompareB" class="compare-text-input" placeholder="Término B (ej: Unidad, José)..." autocomplete="off">
+                <div class="compare-hebrew-hint" id="hintCompareB">—</div>
+              </div>
+            </div>
             
-            <div class="compare-input-box">
-              <label for="txtCompareB" class="compare-label">Palabra / Evento B</label>
-              <input type="text" id="txtCompareB" class="compare-text-input" placeholder="Término B (ej: Unidad, José)..." autocomplete="off">
-              <div class="compare-hebrew-hint" id="hintCompareB">—</div>
+            <div class="compare-action-container" style="margin-top: 1.5rem;">
+              <button id="btnCompare" class="search-btn" style="width: 100%; height: auto; padding: 0.9rem;">⚡ Encontrar Puentes & Delta Gematria</button>
             </div>
           </div>
-          
-          <div class="compare-action-container" style="margin-top: 1.5rem;">
-            <button id="btnCompare" class="search-btn" style="width: 100%; height: auto; padding: 0.9rem;">⚡ Encontrar Puentes & Delta Gematria</button>
+
+          <!-- Panel Derecho: Puente Narrativo y Canvas Dual -->
+          <div class="glass-card comparison-results-panel">
+            <h3 class="results-header">Puente y Relaciones Místicas</h3>
+            
+            <!-- Canvas Dual Orbitas -->
+            <div class="canvas-wrapper" style="height: 200px; margin-bottom: 1.2rem; background: rgba(5,4,10,0.6);">
+              <canvas id="comparisonCanvas"></canvas>
+              <div class="canvas-instructions">Intersección orbital de frecuencias</div>
+            </div>
+            
+            <div class="comparison-bridge-content" id="comparisonBridge">
+              <div class="empty-bridge-msg" style="text-align: center; padding: 2rem 0;">
+                <span style="color: var(--text-secondary); font-style: italic;">Ingresa dos palabras o selecciona un par legendario para revelar las conexiones de su puente espiritual.</span>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Panel Derecho: Puente Narrativo y Canvas Dual -->
-        <div class="glass-card comparison-results-panel">
-          <h3 class="results-header">Puente y Relaciones Místicas</h3>
-          
-          <!-- Canvas Dual Orbitas -->
-          <div class="canvas-wrapper" style="height: 200px; margin-bottom: 1.2rem; background: rgba(5,4,10,0.6);">
-            <canvas id="comparisonCanvas"></canvas>
-            <div class="canvas-instructions">Intersección orbital de frecuencias</div>
+      <!-- MODO 2: MATRIZ DE RESONANCIA GRUPAL / FAMILIAR (CARACTERÍSTICA 6) -->
+      <div id="compareModeGroup" hidden>
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+          <div style="text-align: center; margin-bottom: 1.4rem;">
+            <h2 class="input-title" style="font-size: 1.4rem; color: var(--gold-primary); margin-bottom: 0.4rem;">👥 Matriz de Resonancia Grupal & Familiar</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 800px; margin: 0 auto;">
+              Ingresa de 3 a 8 nombres de integrantes de una familia, equipo o conceptos de estudio para descubrir el <strong>Centro de Gravedad Numérico</strong>, la matriz de distancias (&Delta;), el vínculo nuclear y la bendición bíblica colectiva.
+            </p>
           </div>
-          
-          <div class="comparison-bridge-content" id="comparisonBridge">
-            <div class="empty-bridge-msg" style="text-align: center; padding: 2rem 0;">
-              <span style="color: var(--text-secondary); font-style: italic;">Ingresa dos palabras o selecciona un par legendario para revelar las conexiones de su puente espiritual.</span>
+
+          <!-- Presets de Grupos Arquetípicos -->
+          <div style="text-align: center; margin-bottom: 1.3rem;">
+            <span style="font-size: 0.78rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; display: block; margin-bottom: 0.5rem;">
+              ✨ Grupos Arquetípicos & Familiares (Clic para cargar):
+            </span>
+            <div id="groupPresetsContainer" class="sentence-presets-row">
+              <!-- Chips de grupos precargados -->
+            </div>
+          </div>
+
+          <!-- Lista Dinámica de Integrantes / Términos -->
+          <div id="groupMembersInputs" class="group-members-inputs-grid">
+            <!-- Filas de integrantes generadas dinámicamente -->
+          </div>
+
+          <!-- Botones de Control Grupal -->
+          <div style="display: flex; gap: 0.65rem; justify-content: center; flex-wrap: wrap; margin: 1.2rem 0 1.6rem 0;">
+            <button type="button" id="btnAddGroupMember" class="share-act-btn btn-copy-text" style="padding: 0.55rem 1.1rem; font-size: 0.88rem;">
+              ➕ Añadir Integrante
+            </button>
+            <button type="button" id="btnAnalyzeGroup" class="share-act-btn btn-copy-image" style="padding: 0.6rem 1.4rem; font-size: 0.95rem;">
+              ⚡ Calcular Matriz Grupal
+            </button>
+            <button type="button" id="btnPlayGroupHarmony" class="share-act-btn btn-download-png" style="padding: 0.6rem 1.3rem; font-size: 0.9rem;">
+              🎵 Escuchar Armonía del Grupo
+            </button>
+          </div>
+
+          <!-- Métricas Colectivas Principales -->
+          <div class="results-grid" id="groupMetricsGrid" style="margin-bottom: 1.5rem;">
+            <!-- 4 tarjetas de métricas grupales -->
+          </div>
+
+          <!-- Layout Principal de Resultados Grupales: Grafo + Destacados -->
+          <div class="group-results-split" style="margin-bottom: 1.5rem;">
+            <div class="glass-card" style="padding: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 0.4rem;">
+                <h4 style="font-family: var(--font-serif); color: var(--gold-primary); margin: 0; font-size: 0.98rem;">🕸️ Geometría de Red & Centro de Gravedad</h4>
+                <span style="font-size: 0.72rem; color: var(--text-secondary);">Grosor = Afinidad Armónica</span>
+              </div>
+              <canvas id="groupResonanceCanvas" style="width: 100%; height: 270px; border-radius: 8px; display: block;"></canvas>
+            </div>
+
+            <div id="groupHighlightsContainer" class="group-highlights-col">
+              <!-- Vínculo Nuclear, Arco Polar y Concepto Central -->
+            </div>
+          </div>
+
+          <!-- Matriz Cruzada N x N -->
+          <div style="margin-bottom: 1.5rem;">
+            <h3 class="input-title" style="font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 0.6rem;">🔢 Matriz de Resonancia Cruzada (N &times; N)</h3>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+              Cada celda muestra la diferencia (&Delta;), suma (&Sigma;) y afinidad entre dos integrantes. Haz clic en cualquier cruce para abrir su análisis detallado en el Comparador Dúo.
+            </p>
+            <div id="groupMatrixTableContainer">
+              <!-- Tabla N x N -->
+            </div>
+          </div>
+
+          <!-- Bendición Colectiva (Torá & Salmo Protector) -->
+          <div>
+            <h3 class="input-title" style="font-size: 1.15rem; color: var(--gold-primary); margin-bottom: 0.6rem;">🕊️ Bendición Colectiva (Torá & Salmo del Grupo)</h3>
+            <div id="groupBlessingContainer">
+              <!-- Tarjetas de versículo y salmo resonante -->
             </div>
           </div>
         </div>
       </div>
     </div>
+
 
     <!-- SECCIÓN: CÓDIGO DE LA BIBLIA (ELS MATRIX) -->
     <div id="biblecode" class="tab-content">
